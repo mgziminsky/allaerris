@@ -15,9 +15,9 @@ use crate::{config::ModLoader, Result};
 
 #[rustfmt::skip]
 mod exported {
-    pub use modrinth::ApiClient as RawModrinthClient;
-    pub use github::Octocrab as RawGithubClient;
     pub use curseforge::ApiClient as RawForgeClient;
+    pub use github::Octocrab as RawGithubClient;
+    pub use modrinth::ApiClient as RawModrinthClient;
 }
 pub use exported::*;
 
@@ -52,15 +52,18 @@ api! {
 
 /// The main [`Client`] for accessing the various modding APIs
 ///
-/// Can be created using `from`/`into` with one of the supported `Raw*Client`s or a slice of them.
-/// When created from a slice of multiple clients, all operations will be attempted on each
-/// client in order and the first successful result will be returned. If *all* clients fail
-/// the operation, then only the first error encountered will be returned.
-/// For convenience, the supported clients are re-exported as: [`RawForgeClient`], [`RawModrinthClient`],
-/// [`RawGithubClient`]
+/// Can be created using `from`/`into` with one of the supported `Raw*Client`s
+/// or a slice of them. When created from a slice of multiple clients, all
+/// operations will be attempted on each client in order and the first
+/// successful result will be returned. If *all* clients fail the operation,
+/// then only the first error encountered will be returned. For convenience, the
+/// supported clients are re-exported as: [`RawForgeClient`],
+/// [`RawModrinthClient`], [`RawGithubClient`]
 ///
 /// # Example
 /// ```no_run
+/// # use relibium::client::*;
+/// # async fn async_main() -> relibium::Result<()> {
 /// // Single client
 /// let client = Client::from(RawModrinthClient::default());
 /// let m = client.get_mod("mod_id").await;
@@ -75,6 +78,8 @@ api! {
 /// .try_into()?;
 /// let m = client.get_mod("mod_id").await;
 /// assert!(matches!(m, Err(_)));
+/// # Ok(())
+/// # }
 /// ```
 #[derive(Debug, Clone)]
 pub struct Client(ClientInner);

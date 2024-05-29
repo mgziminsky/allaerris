@@ -1,4 +1,4 @@
-#![allow(unused_imports)]
+#![allow(unused_imports, deprecated, clippy::all)]
 
 #[macro_use]
 extern crate serde_derive;

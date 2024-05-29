@@ -28,6 +28,14 @@ impl ModLoader {
             ModLoader::NeoForge => "neoforge",
         }
     }
+
+    /// Returns `true` if the mod loader is [`Unknown`].
+    ///
+    /// [`Unknown`]: ModLoader::Unknown
+    #[must_use]
+    pub fn is_unknown(&self) -> bool {
+        matches!(self, Self::Unknown)
+    }
 }
 
 impl Display for ModLoader {

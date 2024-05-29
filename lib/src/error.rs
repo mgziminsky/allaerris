@@ -1,12 +1,13 @@
+pub type Result<T> = std::result::Result<T, Error>;
+
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
 pub enum Error {
-    /// The user can manually download the mod and place it in the `user` folder of the output directory to mitigate.
-    /// However, they will have to manually update the mod.
+    /// The user can manually download the mod and place it in the `user` folder
+    /// of the output directory to mitigate. However, they will have to manually
+    /// update the mod.
     #[error("The developer of project has denied third party applications from downloading it")]
     DistributionDenied,
-    #[error("The project has already been added")]
-    AlreadyAdded,
     #[error("The project does not exist")]
     DoesNotExist,
     #[error("The project is not compatible")]
@@ -22,10 +23,18 @@ pub enum Error {
     #[error("Operation not supported by this API")]
     Unsupported,
 
+    // Config errors
+    #[error("No profiles have been registered")]
+    NoProfiles,
+    #[error("Requested profile not recognized")]
+    UnknownProfile,
+
+    // External API errors
     Modrinth(modrinth::Error),
     Forge(curseforge::Error),
     GitHub(github::Error),
 
+    // Forwarded lib errors
     Reqwest(#[from] reqwest::Error),
     IO(#[from] std::io::Error),
     Serde(#[from] serde_json::Error),

@@ -33,7 +33,12 @@ impl ApiOps for RawModrinthClient {
         Ok(projects)
     }
 
-    async fn get_project_versions(&self, id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Result<Vec<Version>> {
+    async fn get_project_versions(
+        &self,
+        id: impl AsRef<ProjectIdSvcType>,
+        game_version: impl AsRef<Option<&str>>,
+        loader: impl AsRef<Option<ModLoader>>,
+    ) -> Result<Vec<Version>> {
         let mod_id = id.as_ref().as_modrinth()?;
         let versions = self
             .versions()
@@ -53,12 +58,19 @@ impl ApiOps for RawModrinthClient {
 }
 
 async fn fetch_project(client: &RawModrinthClient, mod_id: &str) -> Result<ApiProject> {
-    client.projects().get_project(&GetProjectParams { mod_id }).await.map_err(Into::into)
+    client
+        .projects()
+        .get_project(&GetProjectParams { mod_id })
+        .await
+        .map_err(Into::into)
 }
 
 mod from {
     use modrinth::{
-        models::{project::ProjectType, version_dependency::DependencyType as ModrinthDepType, Project as ApiProject, Version as ApiVersion, VersionDependency},
+        models::{
+            project::ProjectType, version_dependency::DependencyType as ModrinthDepType, Project as ApiProject, Version as ApiVersion,
+            VersionDependency,
+        },
         Error as ApiError, ErrorResponse,
     };
     use reqwest::StatusCode;

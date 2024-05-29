@@ -36,7 +36,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "1.0"
 tokio = { version = "1.37", default-features = false, features = ["fs"] }
-tokio-util = "0.7"
 url = { version = "2.5", features = ["serde"] }
 
 # Supported Clients
@@ -47,3 +46,6 @@ github = { package = "octocrab", version = "0.38", default-features = false, fea
     "rustls",
     "default-client",
 ] }
+
+[dev-dependencies]
+serde_test = "1.0"

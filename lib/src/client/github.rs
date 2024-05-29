@@ -27,7 +27,12 @@ impl ApiOps for RawGithubClient {
         Ok(mods)
     }
 
-    async fn get_project_versions(&self, id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Result<Vec<Version>> {
+    async fn get_project_versions(
+        &self,
+        id: impl AsRef<ProjectIdSvcType>,
+        game_version: impl AsRef<Option<&str>>,
+        loader: impl AsRef<Option<ModLoader>>,
+    ) -> Result<Vec<Version>> {
         let id = id.as_ref().as_github()?;
         let (owner, repo) = id;
 

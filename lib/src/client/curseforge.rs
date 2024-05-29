@@ -22,7 +22,7 @@ impl ApiOps for RawForgeClient {
     }
 
     async fn get_mods(&self, ids: impl AsRef<[&str]>) -> Result<Vec<Mod>> {
-        let mod_ids = ids.as_ref().into_iter().filter_map(|i| i.parse().ok()).collect();
+        let mod_ids = ids.as_ref().iter().filter_map(|i| i.parse().ok()).collect();
         let mods = self
             .mods()
             .get_mods(&GetModsParams {
@@ -37,7 +37,12 @@ impl ApiOps for RawForgeClient {
         Ok(mods)
     }
 
-    async fn get_project_versions(&self, id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Result<Vec<Version>> {
+    async fn get_project_versions(
+        &self,
+        id: impl AsRef<ProjectIdSvcType>,
+        game_version: impl AsRef<Option<&str>>,
+        loader: impl AsRef<Option<ModLoader>>,
+    ) -> Result<Vec<Version>> {
         let id = id.as_ref().as_forge()?;
         let files = self
             .files()
