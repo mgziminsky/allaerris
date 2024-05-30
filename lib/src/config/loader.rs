@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::{convert::Infallible, fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
@@ -29,9 +31,7 @@ impl ModLoader {
         }
     }
 
-    /// Returns `true` if the mod loader is [`Unknown`].
-    ///
-    /// [`Unknown`]: ModLoader::Unknown
+    /// Returns `true` if the mod loader is [`Unknown`](ModLoader::Unknown).
     #[must_use]
     pub fn is_unknown(&self) -> bool {
         matches!(self, Self::Unknown)

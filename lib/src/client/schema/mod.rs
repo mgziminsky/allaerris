@@ -1,3 +1,6 @@
+#![allow(missing_docs)]
+//! Contains the data types used by the various operations in [Client](super::Client)
+
 macro_rules! export {
     ($($name:ident),*$(,)?) => {$(
         mod $name;

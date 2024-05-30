@@ -2,11 +2,11 @@ use github::models::repos::Asset;
 
 use super::{
     schema::{Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId},
-    ApiOps, RawGithubClient,
+    ApiOps, GithubClient,
 };
 use crate::{config::ModLoader, Error, Result};
 
-impl ApiOps for RawGithubClient {
+impl ApiOps for GithubClient {
     async fn get_mod(&self, id: impl AsRef<str>) -> Result<Mod> {
         fetch_repo(self, id).await.map(Mod)
     }
@@ -79,7 +79,7 @@ impl ApiOps for RawGithubClient {
     }
 }
 
-async fn fetch_repo(client: &RawGithubClient, id: impl AsRef<str>) -> Result<Project> {
+async fn fetch_repo(client: &GithubClient, id: impl AsRef<str>) -> Result<Project> {
     let (owner, name) = id.as_ref().split_once('/').ok_or(Error::InvalidIdentifier)?;
     let repo = client.repos(owner, name).get().await?;
     Ok(repo.into())
@@ -92,14 +92,14 @@ mod from {
     use crate::{
         client::{
             schema::{Project, ProjectId},
-            Client, ClientInner, RawGithubClient,
+            Client, ClientInner, GithubClient,
         },
         github::models::Repository,
         Error,
     };
 
-    impl From<RawGithubClient> for Client {
-        fn from(value: RawGithubClient) -> Self {
+    impl From<GithubClient> for Client {
+        fn from(value: GithubClient) -> Self {
             ClientInner::Github(value).into()
         }
     }

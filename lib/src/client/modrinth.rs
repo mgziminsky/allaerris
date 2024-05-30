@@ -8,11 +8,11 @@ use modrinth::{
 
 use super::{
     schema::{Mod, Modpack, ProjectIdSvcType, Version},
-    ApiOps, RawModrinthClient,
+    ApiOps, ModrinthClient,
 };
 use crate::{config::ModLoader, Result};
 
-impl ApiOps for RawModrinthClient {
+impl ApiOps for ModrinthClient {
     async fn get_mod(&self, id: impl AsRef<str>) -> Result<Mod> {
         fetch_project(self, id.as_ref()).await?.try_into()
     }
@@ -57,7 +57,7 @@ impl ApiOps for RawModrinthClient {
     }
 }
 
-async fn fetch_project(client: &RawModrinthClient, mod_id: &str) -> Result<ApiProject> {
+async fn fetch_project(client: &ModrinthClient, mod_id: &str) -> Result<ApiProject> {
     client
         .projects()
         .get_project(&GetProjectParams { mod_id })
@@ -78,13 +78,13 @@ mod from {
     use crate::{
         client::{
             schema::{self, ProjectId, VersionId},
-            Client, ClientInner, RawModrinthClient,
+            Client, ClientInner, ModrinthClient,
         },
         Error,
     };
 
-    impl From<RawModrinthClient> for Client {
-        fn from(value: RawModrinthClient) -> Self {
+    impl From<ModrinthClient> for Client {
+        fn from(value: ModrinthClient) -> Self {
             ClientInner::Modrinth(value).into()
         }
     }

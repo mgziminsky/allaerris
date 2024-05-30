@@ -1,9 +1,11 @@
+use serde::{Deserialize, Serialize};
 use url::Url;
 
-use crate::client::svc_id_impl;
+use crate::client::service_id::svc_id_impl;
 
 svc_id_impl! {
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    /// The [client](crate::client) specific project id types
+    #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Hash)]
     pub enum ProjectId {
         Forge(usize),
         Modrinth(String),

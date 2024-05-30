@@ -1,11 +1,10 @@
+#![allow(missing_docs)]
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
 pub enum Error {
-    /// The user can manually download the mod and place it in the `user` folder
-    /// of the output directory to mitigate. However, they will have to manually
-    /// update the mod.
     #[error("The developer of project has denied third party applications from downloading it")]
     DistributionDenied,
     #[error("The project does not exist")]
@@ -38,4 +37,8 @@ pub enum Error {
     Reqwest(#[from] reqwest::Error),
     IO(#[from] std::io::Error),
     Serde(#[from] serde_json::Error),
+
+    #[cfg(test)]
+    #[error("Stub fn used for tests")]
+    TestStub,
 }

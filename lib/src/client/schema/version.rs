@@ -2,7 +2,7 @@ use github::models::AssetId;
 use url::Url;
 
 use super::ProjectId;
-use crate::client::svc_id_impl;
+use crate::client::service_id::svc_id_impl;
 
 svc_id_impl! {
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]

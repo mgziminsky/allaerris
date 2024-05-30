@@ -8,11 +8,11 @@ use curseforge::{
 
 use super::{
     schema::{Mod, Modpack, ProjectIdSvcType, Version},
-    ApiOps, RawForgeClient,
+    ApiOps, ForgeClient,
 };
 use crate::{config::ModLoader, Error, Result};
 
-impl ApiOps for RawForgeClient {
+impl ApiOps for ForgeClient {
     async fn get_mod(&self, id: impl AsRef<str>) -> Result<Mod> {
         fetch_mod(self, id.as_ref()).await?.try_into()
     }
@@ -64,7 +64,7 @@ impl ApiOps for RawForgeClient {
     }
 }
 
-async fn fetch_mod(client: &RawForgeClient, id: &str) -> Result<curseforge::models::Mod> {
+async fn fetch_mod(client: &ForgeClient, id: &str) -> Result<curseforge::models::Mod> {
     let mod_id = id.parse().or(Err(Error::InvalidIdentifier))?;
     Ok(client.mods().get_mod(&GetModParams { mod_id }).await?.data)
 }
@@ -79,7 +79,7 @@ mod from {
     use crate::{
         client::{
             schema::{Dependency, DependencyType, Mod, Modpack, Project, ProjectId, Version, VersionId},
-            Client, ClientInner, RawForgeClient,
+            Client, ClientInner, ForgeClient,
         },
         config::ModLoader,
         Error,
@@ -89,8 +89,8 @@ mod from {
     const MOD_CLASS_ID: u32 = 6;
     const MODPACK_CLASS_ID: u32 = 4471;
 
-    impl From<RawForgeClient> for Client {
-        fn from(value: RawForgeClient) -> Self {
+    impl From<ForgeClient> for Client {
+        fn from(value: ForgeClient) -> Self {
             ClientInner::Forge(value).into()
         }
     }

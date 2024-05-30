@@ -1,19 +1,29 @@
+#![warn(missing_docs)]
+//! Library for managing Minecraft mods and modpacks from Modrinth, Curseforge,
+//! and Github
+
+pub mod client;
+pub mod config;
+mod error;
+
 pub use std::error::Error as StdError;
 use std::{env, path::PathBuf};
 
 use dirs::{cache_dir, config_dir, config_local_dir};
 use once_cell::sync::Lazy;
 
-pub mod client;
-pub mod config;
-mod error;
-
 // Re-export the raw clients that we wrap
-pub use curseforge;
-pub use error::*;
-pub use github;
-pub use modrinth;
+#[rustfmt::skip]
+mod exports {
+    pub use curseforge;
+    pub use github;
+    pub use modrinth;
+}
+pub use exports::*;
 
+pub use self::{client::Client, config::Config, error::*};
+
+/// Default directory where global config files will be stored
 pub static CONF_DIR: Lazy<PathBuf> = Lazy::new(|| {
     config_local_dir()
         .expect("system config directory should be known")
@@ -24,6 +34,7 @@ static CACHE_DIR: Lazy<PathBuf> = Lazy::new(|| {
         .expect("system cache directory should be known")
         .join(env!("CARGO_PKG_NAME"))
 });
+/// The minecraft instance directory used by the default minecraft launcher
 pub static DEFAULT_MINECRAFT_DIR: Lazy<PathBuf> = Lazy::new(|| {
     let base = {
         #[cfg(not(target_os = "linux"))]
@@ -44,7 +55,23 @@ pub static DEFAULT_MINECRAFT_DIR: Lazy<PathBuf> = Lazy::new(|| {
     )
 });
 
-mod private {
-    pub trait Sealed {}
+/// Define a local `Sealed` trait
+macro_rules! sealed {
+    () => {
+        mod private {
+            pub trait Sealed {}
+        }
+        use private::Sealed;
+    };
 }
-use private::Sealed;
+pub(crate) use sealed;
+
+
+#[cfg(test)]
+pub(crate) fn block_on<T>(x: impl std::future::Future<Output = T>) -> T {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(x)
+}

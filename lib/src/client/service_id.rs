@@ -1,8 +1,14 @@
 use crate::Result;
 
+/// Use with [svc_id_impl] to set any of the clients as not available for the
+/// defined type
+#[allow(unused)]
 pub enum Unsupported {}
 
-pub trait ServiceId: crate::Sealed {
+/// Represents a known id for one of the supported [client](super::Client) APIs
+// Prefer using [svc_id_impl] to implementing manually
+#[allow(missing_docs)]
+pub trait ServiceId: super::Sealed {
     type ForgeT;
     type ModrinthT;
     type GithubT;
@@ -47,7 +53,7 @@ macro_rules! svc_id_impl {
             Modrinth($M),
             Github($G),
         }
-        impl $crate::Sealed for $name {}
+        impl $crate::client::Sealed for $name {}
         impl $crate::client::ServiceId for $name {
             svc_id_impl!(@fn Forge -> $F);
             svc_id_impl!(@fn Modrinth -> $M);
@@ -58,4 +64,4 @@ macro_rules! svc_id_impl {
         }
     };
 }
-pub(crate) use svc_id_impl;
+pub(super) use svc_id_impl;
