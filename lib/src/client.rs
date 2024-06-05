@@ -16,7 +16,7 @@ use crate::{config::ModLoader, Result};
 mod exported {
     /// The CurseForge API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly
     pub use curseforge::ApiClient as ForgeClient;
-    /// The Github API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly
+    #[doc = "The Github API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly\n\n"]
     pub use github::Octocrab as GithubClient;
     /// The Modrinth API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly
     pub use modrinth::ApiClient as ModrinthClient;
@@ -26,9 +26,11 @@ pub use exported::*;
 crate::sealed!();
 
 macro_rules! api {
+    (@prox +) => (multi::combined);
+    (@prox) => (multi::proxy);
     ($(
         $(#[$attr:meta])*
-        $vis:vis $name:ident($($arg:ident: $ty:ty),*) -> $ret:ty;
+        $(+$prox:tt)?$vis:vis $name:ident($($arg:ident: $ty:ty),*) -> $ret:ty;
     )*) => {
         trait ApiOps {$(
             async fn $name(&self, $($arg: $ty),*) -> Result<$ret>;
@@ -41,7 +43,7 @@ macro_rules! api {
                     ClientInner::Modrinth(c) => c.$name($($arg),*).await,
                     ClientInner::Forge(c) => c.$name($($arg),*).await,
                     ClientInner::Github(c) => c.$name($($arg),*).await,
-                    ClientInner::Multi(c) => multi::proxy(c, |c| c.$name($(&$arg),*)).await,
+                    ClientInner::Multi(c) => api!(@prox $($prox)?)(c, |c| c.$name($(&$arg),*)).await,
                 }
             }
         )*}
@@ -72,14 +74,20 @@ api! {
 
     /// Get all [mods](Mod) listed in `ids`
     ///
-    /// Any invalid ids will be silently ignored
+    /// If called on a multi-client, then the results from all clients
+    /// will be combined with no attempt to dedup. Any invalid ids will
+    /// be silently ignored.
     ///
     /// # Errors
     ///
     /// Any network or api errors from the backing client
-    pub get_mods(ids: impl AsRef<[&str]>) -> Vec<Mod>;
+    ++pub get_mods(ids: impl AsRef<[&str]>) -> Vec<Mod>;
 
     /// Get all [versions](Version) of the project with `id`
+    ///
+    /// If called on a multi-client, then the results from all clients
+    /// will be combined with no attempt to dedup. Any invalid ids will
+    /// be silently ignored.
     ///
     /// # Errors
     ///
@@ -88,7 +96,7 @@ api! {
     /// Any network or api errors from the backing client
     ///
     /// [Error::WrongService]: crate::Error::WrongService
-    pub get_project_versions(id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Vec<Version>;
+    ++pub get_project_versions(id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Vec<Version>;
 }
 
 /// The main [`Client`] for accessing the various modding APIs
