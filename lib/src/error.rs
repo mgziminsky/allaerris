@@ -1,10 +1,41 @@
 #![allow(missing_docs)]
 
+use std::fmt::Display;
+
 pub type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug)]
+pub struct Error {
+    kind: ErrorKind,
+}
+
+impl Error {
+    pub fn kind(&self) -> &ErrorKind {
+        &self.kind
+    }
+}
+
+impl std::error::Error for Error {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        self.kind.source()
+    }
+}
+impl Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.kind.fmt(f)
+    }
+}
+impl<E: Into<ErrorKind>> From<E> for Error {
+    fn from(source: E) -> Self {
+        Error { kind: source.into() }
+    }
+}
 
 #[derive(thiserror::Error, Debug)]
 #[error(transparent)]
-pub enum Error {
+#[non_exhaustive]
+pub enum ErrorKind {
+    // Api Errors
     #[error("The developer of project has denied third party applications from downloading it")]
     DistributionDenied,
     #[error("The project does not exist")]
@@ -27,6 +58,8 @@ pub enum Error {
     NoProfiles,
     #[error("Requested profile not recognized")]
     UnknownProfile,
+    #[error("Profile path must be non-empty and absolute")]
+    PathInvalid,
 
     // External API errors
     Modrinth(modrinth::Error),

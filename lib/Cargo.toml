@@ -21,6 +21,7 @@ keywords = [
 ]
 
 [dependencies]
+async-scoped = { version = "0.9", features = ["use-tokio"] }
 async_zip = { version = "0.0.17", default-features = false, features = [
     "deflate",
     "tokio",

@@ -4,65 +4,68 @@ mod fs_util;
 mod loader;
 mod modpack;
 mod mods;
+mod serde;
 
-/// Types relating to profile [data](ProfileData) and [operations](ProfileBase)
+// Use attribute with newlines so mod docs aren't merged on the same line
+#[doc = "Types relating to [profile data](ProfileData)\n\n"]
 pub mod profile;
 
 use std::{
-    collections::BTreeMap,
-    io::ErrorKind,
+    collections::BTreeSet,
     ops::Deref,
     path::{Path, PathBuf},
 };
 
+use ::serde::{Deserialize, Serialize};
 use once_cell::sync::Lazy;
-use serde::{Deserialize, Serialize};
-use tokio::{self, sync::OnceCell};
 
 #[doc(inline)]
-pub use self::profile::{Profile, ProfileMut};
+pub use self::profile::Profile;
 use self::{
     fs_util::{FsUtil, FsUtils},
-    profile::ProfileData,
+    profile::ProfileByPath,
 };
 pub use self::{loader::*, modpack::*, mods::*};
-use crate::{Error, Result, CONF_DIR};
+use crate::{ErrorKind, Result, CONF_DIR};
 
 /// Full path to the default config file
 pub static DEFAULT_CONFIG_PATH: Lazy<PathBuf> = Lazy::new(|| CONF_DIR.join("config.json"));
+
+type ProfilesList = BTreeSet<ProfileByPath>;
 
 
 /// Global config object containing a list of profile names and their path
 ///
 /// The actual [profile data] is stored externally at the path associated with
-/// profile
+/// the profile.
 ///
-/// [profile data]: ProfileBase
+/// [profile data]: profile::ProfileData
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(default, from = "ConfigDe")]
 pub struct Config {
     /// Should only be [None] when [profiles](Config::profiles) is empty
     #[serde(skip_serializing_if = "Option::is_none")]
-    active_profile: Option<PathBuf>,
+    active: Option<PathBuf>,
 
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    profiles: BTreeMap<PathBuf, String>,
-
-    /// Active profile read from the filesystem will be stored here to prevent
-    /// multiple round trips if accessed more than once
-    #[serde(skip)]
-    cache: OnceCell<ProfileData>,
+    #[serde(
+        skip_serializing_if = "ProfilesList::is_empty",
+        serialize_with = "self::serde::profiles::serialize"
+    )]
+    profiles: ProfilesList,
 }
 
 
 /// Workaround for no support of split borrowing of `self` behind method calls
-macro_rules! get_active {
-    ($self:ident) => {
-        if let Some(ref path) = $self.active_profile {
-            $self.profiles.get_key_value(path).ok_or(Error::UnknownProfile)
-        } else {
-            Err(Error::NoProfiles)
-        }
+macro_rules! get {
+    ($self:ident.active) => {
+        $self.active.as_ref().ok_or(ErrorKind::NoProfiles)?.as_path()
+    };
+    ($self:ident.profile_mut($path:expr)) => {
+        $self
+            .profiles
+            .get($path)
+            .map(ProfileByPath::force_mut)
+            .ok_or(ErrorKind::UnknownProfile.into())
     };
 }
 
@@ -72,43 +75,29 @@ impl Config {
     ///
     /// Will only be `false` when [profiles](Config::profiles) is empty
     pub fn has_active(&self) -> bool {
-        self.active_profile.is_some()
+        self.active.is_some()
     }
 
+    /// Sets the [active profile] to `path` and returns the previous
+    /// [profile data](ProfileData) if it was loaded and `path` changed.
+    ///
+    /// The current [active profile] should be [saved](ProfileMut::save) before
+    /// changing, otherwise any modifications will be lost
+    ///
+    /// [active profile]: Self::active_profile
     /// # Errors
     ///
-    /// [`Error::UnknownProfile`] if `path` is not present in list of known
+    /// [[`ErrorKind::UnknownProfile`]]: if `path` is not present in list of known
     /// profiles
     pub fn set_active(&mut self, path: impl AsRef<Path>) -> Result<()> {
         let path = path.as_ref();
-        if !self.profiles.contains_key(path) {
-            return Err(Error::UnknownProfile);
+        if !self.profiles.contains(path) {
+            return Err(ErrorKind::UnknownProfile)?;
         }
-        if self.active_profile.as_ref().is_some_and(|ap| ap != path) {
-            self.cache.take();
-            self.active_profile.replace(path.to_owned());
+        if self.active.as_ref().is_some_and(|ap| ap != path) {
+            self.active.replace(path.to_owned());
         }
         Ok(())
-    }
-
-    /// Workaround for no support of split borrowing of `self` behind method
-    /// calls
-    ///
-    /// # Errors
-    ///
-    /// When loading the profile from the fs fails, the resulting error is
-    /// returned
-    async fn get_cached(&self, path: &Path) -> Result<&ProfileData> {
-        self.cache
-            .get_or_try_init(|| async {
-                let p = match ProfileData::load(path).await {
-                    Ok(p) => p,
-                    Err(Error::IO(e)) if e.kind() == ErrorKind::NotFound => ProfileData::default(),
-                    err => return err,
-                };
-                Ok(p)
-            })
-            .await
     }
 
     /// Returns the currently active [profile]
@@ -118,52 +107,53 @@ impl Config {
     ///
     /// # Errors
     ///
-    /// [[`Error::NoProfiles`]]: if [profiles] is empty
+    /// [[`ErrorKind::NoProfiles`]]: if [profiles](Profile) is empty
     ///
-    /// [[`Error::UnknownProfile`]] if `path` is not present in list of known
-    /// [profiles]
-    ///
-    /// [profile]: profile::ProfileBase
     /// [profiles]: Self::profiles
-    pub async fn active_profile(&self) -> Result<Profile> {
-        let (path, name) = get_active!(self)?;
-        self.get_cached(path).await.map(|p| Profile {
-            name,
-            path,
-            data: p,
-            dirty: false,
-        })
+    pub fn active_profile(&self) -> Result<&Profile> {
+        self.profile(get!(self.active))
     }
 
-    /// See [`active_profile()`](Config::active_profile())
-    pub async fn active_profile_mut(&mut self) -> Result<ProfileMut> {
-        // NOTE: This would ideally just call active_profile() and discard the immutable
-        // profile for the error checking and init logic. Unfortunately, split borrows
-        // don't work behind method calls, resulting in the whole self being immutably
-        // borrowed
-        let (path, name) = get_active!(self)?;
-        self.get_cached(path).await?; // Only used for init code, discard result on success
-        Ok(ProfileMut {
-            name,
-            path,
-            data: self.cache.get_mut().expect("cached profile should have been initialized"),
-            dirty: false,
-        })
+    /// See [`active_profile`](Self::active_profile)
+    pub fn active_profile_mut(&mut self) -> Result<&mut Profile> {
+        get!(self.profile_mut(get!(self.active)))
     }
 
-    /// Mapping of [`Paths`](PathBuf) => profile name. Actual [profile data] is
-    /// stored in a [config file] located at the `path`
+    /// Return the profile associated with the given `path`
     ///
-    /// [profile data]: ProfileData
-    /// [config file]: profile::FILENAME
-    pub fn profiles(&self) -> &BTreeMap<PathBuf, String> {
-        &self.profiles
+    /// # Errors
+    ///
+    /// [[`ErrorKind::UnknownProfile`]] if `path` is not present in list of
+    /// known [profiles]
+    ///
+    /// [profiles]: Self::profiles
+    pub fn profile(&self, path: impl AsRef<Path>) -> Result<&Profile> {
+        self.profiles
+            .get(path.as_ref())
+            .map(AsRef::as_ref)
+            .ok_or(ErrorKind::UnknownProfile.into())
+    }
+
+    /// See [`profile`](Self::profile)
+    pub fn profile_mut(&mut self, path: impl AsRef<Path>) -> Result<&mut Profile> {
+        get!(self.profile_mut(path.as_ref()))
+    }
+
+    /// The list of [profiles](Profile) sorted by `path`
+    pub fn get_profiles(&self) -> Vec<&Profile> {
+        self.profiles.iter().map(AsRef::as_ref).collect()
+    }
+
+    /// See [`get_profiles`](Self::get_profiles)
+    pub fn get_profiles_mut(&mut self) -> Vec<&mut Profile> {
+        self.profiles.iter().map(ProfileByPath::force_mut).collect()
     }
 }
 
 // Load/Save
 impl Config {
-    /// Load a [config](Config) from the file located at [default config path]
+    /// Load a [config](Config) from the file located at the
+    /// [default config path]
     ///
     /// [default config path]: DEFAULT_CONFIG_PATH
     /// # Errors
@@ -181,11 +171,7 @@ impl Config {
     /// Will return any IO or parse errors encountered while attempting to read
     /// the config
     pub async fn load_from(path: impl AsRef<Path>) -> Result<Self> {
-        let mut c: Config = FsUtil::load_file(path.as_ref()).await?;
-        if c.active_profile.is_none() && !c.profiles.is_empty() {
-            c.active_profile = c.profiles.first_key_value().map(|(p, _)| p.to_owned());
-        }
-        Ok(c)
+        FsUtil::load_file(path.as_ref()).await
     }
 
     /// Save this [config](Config) and the active [profile] to the file located
@@ -198,21 +184,24 @@ impl Config {
     ///
     /// Will return any IO errors encountered while attempting to save to the
     /// filesystem
-    pub async fn save(&self) -> Result<()> {
+    pub async fn save(&mut self) -> Result<()> {
         self.save_to(DEFAULT_CONFIG_PATH.deref()).await
     }
 
     /// Save this [config](Config) and the active [profile] to the file located
-    /// at the `path`
+    /// at `path`
     ///
-    ///
-    /// [profile]: profile::ProfileBase::save
+    /// [profile]: Profile::save
     /// # Errors
     ///
     /// Will return any IO errors encountered while attempting to save to the
     /// filesystem
-    pub async fn save_to(&self, path: impl AsRef<Path>) -> Result<()> {
-        FsUtil::save_file(self, path.as_ref()).await
+    pub async fn save_to(&mut self, path: impl AsRef<Path>) -> Result<()> {
+        FsUtil::save_file(self, path.as_ref()).await?;
+        for profile in self.profiles.iter().map(ProfileByPath::force_mut) {
+            profile.save().await?;
+        }
+        Ok(())
     }
 }
 
@@ -221,23 +210,25 @@ impl Config {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct ConfigDe {
-    active_profile: Option<PathBuf>,
-    profiles: BTreeMap<PathBuf, String>,
+    active: Option<PathBuf>,
+    #[serde(deserialize_with = "self::serde::profiles::deserialize")]
+    profiles: ProfilesList,
 }
 impl From<ConfigDe> for Config {
     fn from(de: ConfigDe) -> Self {
         Self {
-            active_profile: de
-                .active_profile
+            active: de
+                .active
                 // Require active_profile to be present in profiles
-                .and_then(|p| if de.profiles.contains_key(&p) { Some(p) } else { None })
+                .and_then(|p| if de.profiles.contains(p.as_path()) { Some(p) } else { None })
                 // Activate first profile from list if present and not already set
-                .or_else(|| de.profiles.first_key_value().map(|(p, _)| p.to_owned())),
+                .or_else(|| de.profiles.first().map(ProfileByPath::as_path).map(ToOwned::to_owned)),
             profiles: de.profiles,
             ..Default::default()
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {
@@ -252,25 +243,25 @@ mod tests {
 
     impl PartialEq for Config {
         fn eq(&self, other: &Self) -> bool {
-            self.active_profile == other.active_profile && self.profiles == other.profiles
+            self.active == other.active && self.profiles == other.profiles
         }
     }
 
     fn _test_config() -> Config {
         Config {
-            active_profile: Some(PATHS[2].into()),
-            profiles: BTreeMap::from_iter(zip(
-                PATHS.iter().cloned().map(Into::into),
-                NAMES.iter().cloned().map(ToOwned::to_owned),
-            )),
-            cache: OnceCell::new_with(Some(ProfileData::default())),
+            active: Some(PATHS[2].into()),
+            profiles: ProfilesList::from_iter(
+                zip(NAMES.iter().map(ToString::to_string), PATHS.iter().map(Into::into))
+                    .map(|(name, path)| Profile::new_unchecked(name, path))
+                    .map(Into::into),
+            ),
         }
     }
     fn _test_ser_data() -> (Config, Vec<Token>) {
         let config = _test_config();
         let mut tokens = vec![
             Token::Struct { name: "Config", len: 2 },
-            Token::Str("active_profile"),
+            Token::Str("active"),
             Token::Some,
             Token::Str(PATHS[2]),
             Token::Str("profiles"),
@@ -307,7 +298,7 @@ mod tests {
     #[test]
     fn deserialize_no_active() {
         let (mut config, mut tokens) = _test_de_data();
-        config.active_profile.replace(PATHS[0].into()); // Set active_profile to first path
+        config.active.replace(PATHS[0].into()); // Set active_profile to first path
         tokens.drain(1..=3); // Remove active_profile from tokens
         assert_de_tokens(&config, &tokens);
     }
@@ -317,7 +308,7 @@ mod tests {
     #[test]
     fn deserialize_bad_active() {
         let (mut config, mut tokens) = _test_de_data();
-        config.active_profile.replace(PATHS[0].into()); // Set active_profile to first path
+        config.active.replace(PATHS[0].into()); // Set active_profile to first path
         tokens[3] = Token::Str("/some/invalid/path"); // Set active_profile token to path not in profiles
         assert_de_tokens(&config, &tokens);
     }
@@ -327,37 +318,9 @@ mod tests {
         let mut c = _test_config();
         let res = c.set_active("/some/invalid/path");
         assert!(
-            matches!(res, Err(Error::UnknownProfile)),
+            matches!(res, Err(ref e) if matches!(e.kind(), ErrorKind::UnknownProfile)),
             "set_active should fail with correct error given a path not in profiles: {:?}",
             res
-        );
-        assert!(
-            c.cache.initialized(),
-            "cache should still be initialized after failed set: {:?}",
-            c.cache
-        );
-    }
-
-    #[test]
-    fn set_active_same_keep_cache() {
-        let mut c = _test_config();
-        let path = c.active_profile.to_owned().unwrap();
-        c.set_active(path).expect("set_active should succeed using same value");
-        assert!(
-            c.cache.initialized(),
-            "cache should still be initialized after setting same value: {:?}",
-            c.cache
-        );
-    }
-
-    #[test]
-    fn change_active_clear_cache() {
-        let mut c = _test_config();
-        c.set_active(PATHS[1]).expect("set_active should allow setting active_profile");
-        assert!(
-            !c.cache.initialized(),
-            "cache should be cleared after changing active_profile: {:?}",
-            c.cache
         );
     }
 }

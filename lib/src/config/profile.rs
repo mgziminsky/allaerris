@@ -1,180 +1,115 @@
-use std::{ops::Deref, path::Path};
+mod by_path;
+mod data;
+
+use std::{
+    io,
+    path::{Path, PathBuf},
+};
 
 use serde::{Deserialize, Serialize};
+use tokio::sync::OnceCell;
 
-use super::{fs_util::*, Mod, ModLoader, Modpack};
-use crate::Result;
+pub(crate) use self::by_path::ProfileByPath;
+pub use self::data::ProfileData;
+use crate::{config::Mod, ErrorKind, Result};
 
-crate::sealed!();
-
-macro_rules! consts {
-    (MC) => {
-        "1.20"
-    };
-    (ProfileFile) => {
-        concat!(".", env!("CARGO_PKG_NAME"), "-profile")
-    };
-}
-
-/// Minecraft version used for [ProfileData::default()]
-pub const DEFAULT_GAME_VERSION: &str = consts!(MC);
-
-/// Name of file used to [save]/[load] [profiles](ProfileData) from the
-/// filesystem
-///
-/// [save]: ProfileData::save_to
-/// [load]: ProfileData::load
-pub const FILENAME: &str = consts!(ProfileFile);
-
-fn cmp_name(a: &Mod, b: &Mod) -> std::cmp::Ordering {
-    a.name.cmp(&b.name)
+fn name_lowercase(m: &Mod) -> String {
+    m.name.to_lowercase()
 }
 
 
-/// All the data needed to set up a modded instance of Minecraft
-#[derive(Deserialize, Serialize, Debug, Clone)]
-pub struct ProfileData {
-    /// The version of Minecraft to install mods for
-    pub game_version: String,
-
-    /// The type of mod loader to install mods for
-    #[serde(default, skip_serializing_if = "ModLoader::is_unknown")]
-    pub loader: ModLoader,
-
-    /// The list of mods directly managed by this profile.
-    ///
-    /// Any mods in this list will take priority over the same mod
-    /// from the modpack if present. This can be used to override
-    /// the version of some mods in a modpack while leaving the others
-    /// unaffected.
-    pub mods: Vec<Mod>,
-
-    /// The modpack to use as the base for this profile
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub modpack: Option<Modpack>,
+/// A lazy loaded profile containing the `name` and `path`. The external
+/// [profile data](ProfileData) will be loaded and cached on first access.
+/// Path is immutable after creation since it is used as the profile id
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Profile {
+    pub(super) name: String,
+    pub(super) path: PathBuf,
+    #[serde(skip)]
+    data: OnceCell<ProfileData>,
 }
 
-impl ProfileData {
-    #[doc = concat!("Attempt to load a [profile](Self) from a file named `", consts!(ProfileFile), "` located at `path`")]
-    ///
-    /// # Errors
-    /// Will return any errors that occur while trying to read or parse the file
-    pub async fn load(path: impl AsRef<Path>) -> Result<Self> {
-        FsUtil::load_file(&path.as_ref().join(FILENAME)).await
-    }
-
-    #[doc = concat!("Attempt to save the [profile](Self) to a file named `", consts!(ProfileFile), "` located at `path`")]
-    ///
-    /// # Errors
-    /// Will return any errors that occur while trying to write the file
-    pub async fn save_to(&self, path: impl AsRef<Path>) -> Result<()> {
-        FsUtil::save_file(self, &path.as_ref().join(FILENAME)).await
-    }
-}
-
-impl Default for ProfileData {
-    fn default() -> Self {
+impl Profile {
+    pub(super) fn new_unchecked(name: String, path: PathBuf) -> Self {
         Self {
-            game_version: DEFAULT_GAME_VERSION.to_owned(),
-            loader: Default::default(),
-            mods: Default::default(),
-            modpack: None,
-        }
-    }
-}
-
-
-/// Wrapper around [profile data](ProfileData) with the inclusion of a
-/// [name](Self::name) and [path](Self::path).
-pub struct ProfileBase<'c, P: DataType> {
-    /// Profile Name
-    pub name: &'c str,
-    /// Path profile will be [saved](ProfileMut::save) to
-    pub path: &'c Path,
-    pub(super) data: P,
-    pub(super) dirty: bool,
-}
-/// Immutable [ProfileBase] type
-pub type Profile<'c, 'p> = ProfileBase<'c, &'p ProfileData>;
-/// Mutable [ProfileBase] type
-pub type ProfileMut<'c, 'p> = ProfileBase<'c, &'p mut ProfileData>;
-
-/// Mutable function proxies for changing values in [`data`](ProfileData)
-#[allow(missing_docs)]
-impl ProfileMut<'_, '_> {
-    pub fn set_game_version(&mut self, version: impl AsRef<str>) {
-        let version = version.as_ref();
-        if self.game_version != version {
-            self.dirty = true;
-            self.data.game_version = version.to_owned();
+            name,
+            path,
+            data: OnceCell::new(),
         }
     }
 
-    pub fn set_loader(&mut self, loader: ModLoader) {
-        if self.loader != loader {
-            self.dirty = true;
-            self.data.loader = loader;
-        }
-    }
-
-    pub fn set_modpack(&mut self, modpack: Modpack) {
-        if !self.modpack.as_ref().is_some_and(|mp| *mp == modpack) {
-            self.dirty = true;
-            self.data.modpack.replace(modpack);
-        }
-    }
-
-    pub fn remove_modpack(&mut self) -> Option<Modpack> {
-        let old = self.data.modpack.take();
-        if old.is_some() {
-            self.dirty = true;
-        }
-        old
-    }
-
-    /// Save the [profile data](ProfileData) to the filesystem at
-    /// [`path`](Self::path), but only if any of the values have changed since
-    /// the last save.
+    /// Create a new profile with the given `name` and `path`
+    /// # Errors
     ///
-    /// Before saving, the mods list will be sorted by name. Initial values are
-    /// not tracked, so it is possible the save will run with unchanged values
-    /// if any were changed and then changed back.
+    /// Will return an error if `path` is empty or whitespace only
+    pub fn new(name: String, path: PathBuf) -> Result<Self> {
+        if path.as_os_str().to_string_lossy().trim().is_empty() {
+            return Err(ErrorKind::PathInvalid)?;
+        };
+        Ok(Self::new_unchecked(name, path))
+    }
+
+    /// The [path](Path) to the root of this profile.
     ///
+    /// This path is where mods/modpacks will be installed, and where the
+    /// [profile data](ProfileData) is stored in a file named
+    #[doc = concat!('`', data::consts!(FILENAME), '`')]
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    ///
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    ///
+    pub fn set_name(&mut self, name: impl ToString) {
+        self.name = name.to_string();
+    }
+
+    /// Will attempt to load the [profile data](ProfileData) located at this
+    /// profile's [path](Self::path) on first access and return it. Subsequent
+    /// calls will return the previously loaded data without accessing the
+    /// filesystem again
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if loading the data from the
+    /// filesystem fails
+    pub async fn data(&self) -> Result<&ProfileData> {
+        self.data
+            .get_or_try_init(|| async {
+                let p = match ProfileData::load(&self.path).await {
+                    Ok(p) => p,
+                    Err(e) if matches!(e.kind(), ErrorKind::IO(e) if e.kind() == io::ErrorKind::NotFound) => ProfileData::default(),
+                    err => return err,
+                };
+                Ok(p)
+            })
+            .await
+    }
+
+    /// See [`data`](Self::data)
+    pub async fn data_mut(&mut self) -> Result<&mut ProfileData> {
+        self.data().await?; // Ensure data is initialized
+        Ok(self.data.get_mut().expect("data should always have been initialized by here"))
+    }
+
+    /// Sorts [`mods`] list by name then save the [profile data](ProfileData) to
+    /// the filesystem at [`path`](Self::path)
+    ///
+    /// [`mods`]: ProfileData::mods
     /// # Errors
     ///
     /// Will return any IO errors encountered while attempting to save to the
     /// filesystem
     pub async fn save(&mut self) -> Result<()> {
-        if self.dirty {
-            self.data.mods.sort_unstable_by(cmp_name);
-            self.data.save_to(self.path).await?;
-            self.dirty = false;
+        if let Some(data) = self.data.get_mut() {
+            data.mods.sort_by_cached_key(name_lowercase);
+            data.save_to(&self.path).await?;
         }
         Ok(())
-    }
-}
-impl Extend<Mod> for ProfileMut<'_, '_> {
-    #[inline]
-    fn extend<I: IntoIterator<Item = Mod>>(&mut self, iter: I) {
-        let len = self.mods.len();
-        self.data.mods.extend(iter);
-        if len != self.mods.len() {
-            self.dirty = true;
-        }
-    }
-}
-
-
-#[doc(hidden)]
-pub trait DataType: Deref<Target = ProfileData> + Sealed {}
-impl<T> DataType for T where T: Deref<Target = ProfileData> + Sealed {}
-impl Sealed for &ProfileData {}
-impl Sealed for &mut ProfileData {}
-impl<T: DataType> Deref for ProfileBase<'_, T> {
-    type Target = ProfileData;
-
-    fn deref(&self) -> &Self::Target {
-        &self.data
     }
 }
 
@@ -182,37 +117,7 @@ impl<T: DataType> Deref for ProfileBase<'_, T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{client::schema::ProjectId, Error};
-
-    #[test]
-    fn dirty_save() {
-        let mut p = ProfileMut {
-            name: "Test Profile",
-            path: "/dev/null".as_ref(),
-            data: &mut Default::default(),
-            dirty: true,
-        };
-        assert!(
-            matches!(crate::block_on(p.save()), Err(Error::TestStub)),
-            "Save operation should have been attempted"
-        );
-        assert!(p.dirty, "`dirty` should still be true after failed save");
-
-        p.path = "/pass/null".as_ref();
-        assert!(crate::block_on(p.save()).is_ok(), "Save operation should have succeeded");
-        assert!(!p.dirty, "`dirty` should be false after success");
-    }
-
-    #[test]
-    fn not_dirty_save() {
-        let mut p = ProfileMut {
-            name: "Test Profile",
-            path: "/dev/null".as_ref(),
-            data: &mut Default::default(),
-            dirty: false,
-        };
-        assert!(crate::block_on(p.save()).is_ok(), "Save operation should have been skipped");
-    }
+    use crate::client::schema::ProjectId;
 
     #[test]
     fn save_sort() {
@@ -226,7 +131,7 @@ mod tests {
             Mod {
                 id: ProjectId::Forge(1),
                 slug: "test-1".to_owned(),
-                name: "Test 1".to_owned(),
+                name: "test 1".to_owned(),
                 path: None,
             },
             Mod {
@@ -238,23 +143,19 @@ mod tests {
             Mod {
                 id: ProjectId::Forge(0),
                 slug: "test-0".to_owned(),
-                name: "Test 0".to_owned(),
+                name: "test 0".to_owned(),
                 path: None,
             },
         ];
         let sorted = {
             let mut s = unsorted.clone();
-            s.sort_unstable_by(cmp_name);
+            s.sort_by_cached_key(name_lowercase);
             s
         };
-        let mut p = ProfileMut {
-            name: "Test Profile",
-            path: "/pass/null".as_ref(),
-            data: &mut Default::default(),
-            dirty: true,
-        };
-        p.extend(unsorted);
+        dbg!(&sorted);
+        let mut p = Profile::new_unchecked("Test Profile".to_string(), "/pass/null".into());
+        crate::block_on(p.data_mut()).expect("Load should use defaults").mods.extend(unsorted);
         assert!(crate::block_on(p.save()).is_ok(), "Save operation should have succeeded");
-        assert_eq!(sorted.as_slice(), p.mods, "Mods should be sorted after save");
+        assert_eq!(sorted.as_slice(), crate::block_on(p.data()).unwrap().mods, "Mods should be sorted after save");
     }
 }

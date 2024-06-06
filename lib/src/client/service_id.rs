@@ -33,7 +33,7 @@ macro_rules! svc_id_impl {
                 if let Self::[<$name:camel>](v) = self {
                     Ok(v)
                 } else {
-                    Err($crate::Error::WrongService)
+                    Err($crate::ErrorKind::WrongService)?
                 }
             }
         }

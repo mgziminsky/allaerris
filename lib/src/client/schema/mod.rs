@@ -26,6 +26,11 @@ macro_rules! deref {
                 &self.0
             }
         }
+        impl std::ops::DerefMut for $ty {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.0
+            }
+        }
     )*};
 }
 deref!(Mod, Modpack);

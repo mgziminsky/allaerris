@@ -1,10 +1,11 @@
+use async_scoped::TokioScope;
 use github::models::repos::Asset;
 
 use super::{
     schema::{Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId},
     ApiOps, GithubClient,
 };
-use crate::{config::ModLoader, Error, Result};
+use crate::{config::ModLoader, ErrorKind, Result};
 
 impl ApiOps for GithubClient {
     async fn get_mod(&self, id: impl AsRef<str>) -> Result<Mod> {
@@ -18,12 +19,12 @@ impl ApiOps for GithubClient {
 
     async fn get_mods(&self, ids: impl AsRef<[&str]>) -> Result<Vec<Mod>> {
         let ids = ids.as_ref();
-        let mut mods = Vec::with_capacity(ids.len());
-        for id in ids {
-            if let Ok(m) = self.get_mod(id).await {
-                mods.push(m);
+        let (_, mods) = TokioScope::scope_and_block(|s| {
+            for id in ids {
+                s.spawn(self.get_mod(id));
             }
-        }
+        });
+        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(|r| r.ok())).collect();
         Ok(mods)
     }
 
@@ -80,7 +81,7 @@ impl ApiOps for GithubClient {
 }
 
 async fn fetch_repo(client: &GithubClient, id: impl AsRef<str>) -> Result<Project> {
-    let (owner, name) = id.as_ref().split_once('/').ok_or(Error::InvalidIdentifier)?;
+    let (owner, name) = id.as_ref().split_once('/').ok_or(ErrorKind::InvalidIdentifier)?;
     let repo = client.repos(owner, name).get().await?;
     Ok(repo.into())
 }
@@ -95,7 +96,7 @@ mod from {
             Client, ClientInner, GithubClient,
         },
         github::models::Repository,
-        Error,
+        ErrorKind,
     };
 
     impl From<GithubClient> for Client {
@@ -104,7 +105,7 @@ mod from {
         }
     }
 
-    impl From<github::Error> for Error {
+    impl From<github::Error> for ErrorKind {
         fn from(err: github::Error) -> Self {
             match &err {
                 github::Error::GitHub { source, .. } if source.status_code == StatusCode::NOT_FOUND => Self::DoesNotExist,

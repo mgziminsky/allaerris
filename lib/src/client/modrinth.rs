@@ -80,7 +80,7 @@ mod from {
             schema::{self, ProjectId, VersionId},
             Client, ClientInner, ModrinthClient,
         },
-        Error,
+        ErrorKind,
     };
 
     impl From<ModrinthClient> for Client {
@@ -89,7 +89,7 @@ mod from {
         }
     }
 
-    impl From<ApiError> for Error {
+    impl From<ApiError> for ErrorKind {
         fn from(value: ApiError) -> Self {
             match value {
                 ApiError::Response(ErrorResponse { status, .. }) if status == StatusCode::NOT_FOUND => Self::DoesNotExist,
@@ -114,7 +114,7 @@ mod from {
                             icon: project.icon_url,
                         }))
                     } else {
-                        Err(Self::Error::WrongType(stringify!($ty)))
+                        Err(ErrorKind::WrongType(stringify!($ty)))?
                     }
                 }
             }

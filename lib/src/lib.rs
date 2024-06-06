@@ -21,6 +21,7 @@ mod exports {
 }
 pub use exports::*;
 
+#[doc(inline)]
 pub use self::{client::Client, config::Config, error::*};
 
 /// Default directory where global config files will be stored

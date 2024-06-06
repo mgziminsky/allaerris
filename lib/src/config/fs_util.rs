@@ -5,7 +5,7 @@ use std::path::Path;
 use serde::{de::DeserializeOwned, Serialize};
 use tokio::fs::{create_dir_all, OpenOptions};
 
-use crate::{Error, Result};
+use crate::Result;
 
 crate::sealed!();
 
@@ -24,6 +24,8 @@ impl Sealed for FsUtil {}
 // Hacky workaround for RA to allow analyzing both `test` and `not(test)` code
 // by defining an `ide` cfg attribute. This does cause issues with
 // unused_imports though
+//
+// FIXME: Only accept absolute paths
 #[cfg(any(not(test), ide))]
 impl FsUtils for FsUtil {
     async fn load_file<T>(path: &Path) -> Result<T>
@@ -49,14 +51,15 @@ impl FsUtils for FsUtil {
 }
 
 #[cfg(test)]
-mod tests {
+mod tests_impl {
     use super::*;
+    use crate::ErrorKind;
 
     fn check_path<R: Default>(path: &Path) -> Result<R> {
         if path.starts_with("/pass") {
             Ok(R::default())
         } else {
-            Err(Error::TestStub)
+            Err(ErrorKind::TestStub)?
         }
     }
 

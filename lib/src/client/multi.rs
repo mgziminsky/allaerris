@@ -1,7 +1,7 @@
 use std::{borrow::BorrowMut, future::Future};
 
 use super::{Client, ClientInner};
-use crate::{Error, Result};
+use crate::{Error, ErrorKind, Result};
 
 /// Call `func` for each [client](Client) in order and return the first
 /// successful result, or the first error if all calls fail
@@ -20,7 +20,7 @@ where
             err = res.err();
         }
     }
-    Err(err.unwrap_or(Error::DoesNotExist))
+    Err(err.unwrap_or(ErrorKind::DoesNotExist.into()))
 }
 
 /// Call `func` for each [client](Client) in order and return their combined
@@ -52,7 +52,7 @@ where
             }
         }
     }
-    Err(err.unwrap_or(Error::DoesNotExist))
+    ret.unwrap_or(Err(ErrorKind::DoesNotExist.into()))
 }
 
 impl TryFrom<Vec<Client>> for Client {
@@ -60,7 +60,7 @@ impl TryFrom<Vec<Client>> for Client {
 
     fn try_from(value: Vec<Client>) -> super::Result<Self> {
         if value.is_empty() {
-            Err(Error::NoClients)
+            Err(ErrorKind::NoClients)?
         } else {
             Ok(ClientInner::Multi(value).into())
         }

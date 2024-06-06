@@ -10,7 +10,7 @@ use super::{
     schema::{Mod, Modpack, ProjectIdSvcType, Version},
     ApiOps, ForgeClient,
 };
-use crate::{config::ModLoader, Error, Result};
+use crate::{config::ModLoader, ErrorKind, Result};
 
 impl ApiOps for ForgeClient {
     async fn get_mod(&self, id: impl AsRef<str>) -> Result<Mod> {
@@ -65,7 +65,7 @@ impl ApiOps for ForgeClient {
 }
 
 async fn fetch_mod(client: &ForgeClient, id: &str) -> Result<curseforge::models::Mod> {
-    let mod_id = id.parse().or(Err(Error::InvalidIdentifier))?;
+    let mod_id = id.parse().or(Err(ErrorKind::InvalidIdentifier))?;
     Ok(client.mods().get_mod(&GetModParams { mod_id }).await?.data)
 }
 
@@ -82,7 +82,7 @@ mod from {
             Client, ClientInner, ForgeClient,
         },
         config::ModLoader,
-        Error,
+        ErrorKind,
     };
 
     const MINECRAFT_GAME_ID: usize = 432;
@@ -95,7 +95,7 @@ mod from {
         }
     }
 
-    impl From<ApiError> for Error {
+    impl From<ApiError> for ErrorKind {
         fn from(value: ApiError) -> Self {
             match value {
                 ApiError::Response(ErrorResponse { status, .. }) if status == StatusCode::NOT_FOUND => Self::DoesNotExist,
@@ -110,11 +110,11 @@ mod from {
                 type Error = crate::Error;
                 fn try_from(value: curseforge::models::Mod) -> Result<Self, Self::Error> {
                     if value.game_id != MINECRAFT_GAME_ID {
-                        return Err(Self::Error::Incompatible);
+                        return Err(ErrorKind::Incompatible)?;
                     }
 
                     if value.class_id != Some($val) {
-                        return Err(Self::Error::WrongType(stringify!($ty)));
+                        return Err(ErrorKind::WrongType(stringify!($ty)))?;
                     }
 
                     Ok(Self(Project {

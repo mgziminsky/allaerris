@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::client::schema::ProjectId;
+use crate::client::schema::{self, ProjectId};
 
 /// The basic data needed to lookup and install a particular mod from one of the
 /// [supported clients](crate::client)
@@ -23,8 +23,26 @@ pub struct Mod {
     pub path: Option<String>,
 }
 
+impl Eq for Mod {}
 impl PartialEq for Mod {
     fn eq(&self, other: &Self) -> bool {
         self.id == other.id
+    }
+}
+
+impl std::hash::Hash for Mod {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.id.hash(state);
+    }
+}
+
+impl From<schema::Mod> for Mod {
+    fn from(m: schema::Mod) -> Self {
+        Self {
+            id: m.0.id,
+            slug: m.0.slug,
+            name: m.0.name,
+            path: None,
+        }
     }
 }
