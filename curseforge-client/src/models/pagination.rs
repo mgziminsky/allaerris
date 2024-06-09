@@ -24,12 +24,12 @@ pub struct Pagination {
     pub result_count: u32,
     /// The total number of items available by the request
     #[serde(rename = "totalCount")]
-    pub total_count: usize,
+    pub total_count: u64,
 }
 
 impl Pagination {
     /// The response pagination information
-    pub fn new(index: u32, page_size: u32, result_count: u32, total_count: usize) -> Self {
+    pub fn new(index: u32, page_size: u32, result_count: u32, total_count: u64) -> Self {
         Self {
             index,
             page_size,

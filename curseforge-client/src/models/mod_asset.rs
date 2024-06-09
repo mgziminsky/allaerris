@@ -13,9 +13,9 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModAsset {
     #[serde(rename = "id")]
-    pub id: usize,
+    pub id: u64,
     #[serde(rename = "modId")]
-    pub mod_id: usize,
+    pub mod_id: u64,
     #[serde(rename = "title")]
     pub title: String,
     #[serde(rename = "description")]
@@ -27,7 +27,7 @@ pub struct ModAsset {
 }
 
 impl ModAsset {
-    pub fn new(id: usize, mod_id: usize, title: String, description: String, thumbnail_url: ::url::Url, url: ::url::Url) -> Self {
+    pub fn new(id: u64, mod_id: u64, title: String, description: String, thumbnail_url: ::url::Url, url: ::url::Url) -> Self {
         Self {
             id,
             mod_id,

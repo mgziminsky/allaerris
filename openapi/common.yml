@@ -18,4 +18,4 @@ files:
 typeMappings:
   URI: ::url::Url
   i32: u32
-  i64: usize
+  i64: u64

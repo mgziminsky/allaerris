@@ -13,9 +13,9 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Category {
     #[serde(rename = "id")]
-    pub id: usize,
+    pub id: u64,
     #[serde(rename = "gameId")]
-    pub game_id: usize,
+    pub game_id: u64,
     #[serde(rename = "name")]
     pub name: String,
     #[serde(rename = "slug")]
@@ -29,15 +29,15 @@ pub struct Category {
     #[serde(rename = "isClass")]
     pub is_class: bool,
     #[serde(rename = "classId")]
-    pub class_id: usize,
+    pub class_id: u64,
     #[serde(rename = "parentCategoryId")]
-    pub parent_category_id: usize,
+    pub parent_category_id: u64,
     #[serde(rename = "displayIndex")]
-    pub display_index: usize,
+    pub display_index: u64,
 }
 
 impl Category {
-    pub fn new(id: usize, game_id: usize, name: String, slug: String, url: ::url::Url, icon_url: ::url::Url, date_modified: String, is_class: bool, class_id: usize, parent_category_id: usize, display_index: usize) -> Self {
+    pub fn new(id: u64, game_id: u64, name: String, slug: String, url: ::url::Url, icon_url: ::url::Url, date_modified: String, is_class: bool, class_id: u64, parent_category_id: u64, display_index: u64) -> Self {
         Self {
             id,
             game_id,

@@ -14,10 +14,10 @@ use crate::models;
 pub struct Mod {
     /// The mod id
     #[serde(rename = "id")]
-    pub id: usize,
+    pub id: u64,
     /// The game id this mod is for
     #[serde(rename = "gameId")]
-    pub game_id: usize,
+    pub game_id: u64,
     /// The name of the mod
     #[serde(rename = "name")]
     pub name: String,
@@ -33,7 +33,7 @@ pub struct Mod {
     pub status: models::ModStatus,
     /// Number of downloads for the mod
     #[serde(rename = "downloadCount")]
-    pub download_count: usize,
+    pub download_count: u64,
     /// Whether the mod is included in the featured mods list
     #[serde(rename = "isFeatured", skip_serializing_if = "Option::is_none")]
     pub is_featured: Option<serde_json::Value>,
@@ -87,7 +87,7 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn new(id: usize, game_id: usize, name: String, slug: String, links: models::ModLinks, summary: String, status: models::ModStatus, download_count: usize, primary_category_id: u32, categories: Vec<models::Category>, authors: Vec<models::ModAuthor>, logo: models::ModAsset, screenshots: Vec<models::ModAsset>, main_file_id: u32, latest_files: Vec<models::File>, latest_file_indexes: Vec<models::FileIndex>, date_created: String, date_modified: String, date_released: String, game_popularity_rank: u32, is_available: bool, thumbs_up_count: u32) -> Self {
+    pub fn new(id: u64, game_id: u64, name: String, slug: String, links: models::ModLinks, summary: String, status: models::ModStatus, download_count: u64, primary_category_id: u32, categories: Vec<models::Category>, authors: Vec<models::ModAuthor>, logo: models::ModAsset, screenshots: Vec<models::ModAsset>, main_file_id: u32, latest_files: Vec<models::File>, latest_file_indexes: Vec<models::FileIndex>, date_created: String, date_modified: String, date_released: String, game_popularity_rank: u32, is_available: bool, thumbs_up_count: u32) -> Self {
         Self {
             id,
             game_id,

@@ -19,11 +19,11 @@ pub struct FingerprintFuzzyMatch {
     #[serde(rename = "latestFiles")]
     pub latest_files: Vec<models::File>,
     #[serde(rename = "fingerprints")]
-    pub fingerprints: Vec<usize>,
+    pub fingerprints: Vec<u64>,
 }
 
 impl FingerprintFuzzyMatch {
-    pub fn new(id: u32, file: models::File, latest_files: Vec<models::File>, fingerprints: Vec<usize>) -> Self {
+    pub fn new(id: u32, file: models::File, latest_files: Vec<models::File>, fingerprints: Vec<u64>) -> Self {
         Self {
             id,
             file,

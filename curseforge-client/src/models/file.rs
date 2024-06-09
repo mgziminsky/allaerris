@@ -42,10 +42,10 @@ pub struct File {
     pub file_date: String,
     /// The file length in bytes
     #[serde(rename = "fileLength")]
-    pub file_length: usize,
+    pub file_length: u64,
     /// The number of downloads for the file
     #[serde(rename = "downloadCount")]
-    pub download_count: usize,
+    pub download_count: u64,
     #[serde(rename = "downloadUrl")]
     pub download_url: ::url::Url,
     /// List of game versions this file is relevant for
@@ -72,13 +72,13 @@ pub struct File {
     #[serde(rename = "earlyAccessEndDate", skip_serializing_if = "Option::is_none")]
     pub early_access_end_date: Option<String>,
     #[serde(rename = "fileFingerprint")]
-    pub file_fingerprint: usize,
+    pub file_fingerprint: u64,
     #[serde(rename = "modules")]
     pub modules: Vec<models::FileModule>,
 }
 
 impl File {
-    pub fn new(id: u32, game_id: u32, mod_id: u32, is_available: bool, display_name: String, file_name: String, release_type: models::FileReleaseType, file_status: models::FileStatus, hashes: Vec<models::FileHash>, file_date: String, file_length: usize, download_count: usize, download_url: ::url::Url, game_versions: Vec<String>, sortable_game_versions: Vec<models::SortableGameVersion>, dependencies: Vec<models::FileDependency>, file_fingerprint: usize, modules: Vec<models::FileModule>) -> Self {
+    pub fn new(id: u32, game_id: u32, mod_id: u32, is_available: bool, display_name: String, file_name: String, release_type: models::FileReleaseType, file_status: models::FileStatus, hashes: Vec<models::FileHash>, file_date: String, file_length: u64, download_count: u64, download_url: ::url::Url, game_versions: Vec<String>, sortable_game_versions: Vec<models::SortableGameVersion>, dependencies: Vec<models::FileDependency>, file_fingerprint: u64, modules: Vec<models::FileModule>) -> Self {
         Self {
             id,
             game_id,

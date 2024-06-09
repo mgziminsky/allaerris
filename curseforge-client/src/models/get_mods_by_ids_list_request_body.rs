@@ -13,11 +13,11 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetModsByIdsListRequestBody {
     #[serde(rename = "modIds")]
-    pub mod_ids: Vec<usize>,
+    pub mod_ids: Vec<u64>,
 }
 
 impl GetModsByIdsListRequestBody {
-    pub fn new(mod_ids: Vec<usize>) -> Self {
+    pub fn new(mod_ids: Vec<u64>) -> Self {
         Self {
             mod_ids,
         }

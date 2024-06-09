@@ -15,13 +15,13 @@ pub struct GetFeaturedModsRequestBody {
     #[serde(rename = "gameId")]
     pub game_id: u32,
     #[serde(rename = "excludedModIds")]
-    pub excluded_mod_ids: Vec<usize>,
+    pub excluded_mod_ids: Vec<u64>,
     #[serde(rename = "gameVersionTypeId", skip_serializing_if = "Option::is_none")]
     pub game_version_type_id: Option<u32>,
 }
 
 impl GetFeaturedModsRequestBody {
-    pub fn new(game_id: u32, excluded_mod_ids: Vec<usize>) -> Self {
+    pub fn new(game_id: u32, excluded_mod_ids: Vec<u64>) -> Self {
         Self {
             game_id,
             excluded_mod_ids,

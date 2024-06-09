@@ -15,11 +15,11 @@ pub struct FileModule {
     #[serde(rename = "name")]
     pub name: String,
     #[serde(rename = "fingerprint")]
-    pub fingerprint: usize,
+    pub fingerprint: u64,
 }
 
 impl FileModule {
-    pub fn new(name: String, fingerprint: usize) -> Self {
+    pub fn new(name: String, fingerprint: u64) -> Self {
         Self {
             name,
             fingerprint,
