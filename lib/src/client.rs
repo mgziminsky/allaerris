@@ -8,8 +8,8 @@ mod service_id;
 
 pub mod schema;
 
-use self::schema::{Mod, Modpack, Version};
-pub use self::{schema::ProjectIdSvcType, service_id::ServiceId};
+use self::schema::{AsProjectId, Mod, Modpack, ProjectIdSvcType, Version};
+pub use self::service_id::ServiceId;
 use crate::{config::ModLoader, Result};
 
 #[rustfmt::skip]
@@ -30,15 +30,18 @@ macro_rules! api {
     (@prox) => (multi::proxy);
     ($(
         $(#[$attr:meta])*
-        $(+$prox:tt)?$vis:vis $name:ident($($arg:ident: $ty:ty),*) -> $ret:ty;
+        $(+$prox:tt)?$vis:vis $name:ident
+        $(< $( $lt:tt $( : $clt:tt $(+ $dlt:tt )* )? ),* >)? // Generics
+        ($($arg:ident: $ty:ty),*) -> $ret:ty;
     )*) => {
         trait ApiOps {$(
-            async fn $name(&self, $($arg: $ty),*) -> Result<$ret>;
+            async fn $name$(< $( $lt $( : $clt $(+ $dlt )* )? ),* >)?(&self, $($arg: $ty),*) -> Result<$ret>;
         )*}
 
+        /// Methods wrapping the common api actions provided by the different services
         impl Client {$(
             $(#[$attr])*
-            $vis async fn $name(&self, $($arg: $ty),*) -> Result<$ret> {
+            $vis async fn $name$(< $( $lt $( : $clt $(+ $dlt )* )? ),* >)?(&self, $($arg: $ty),*) -> Result<$ret> {
                 match &self.0 {
                     ClientInner::Modrinth(c) => c.$name($($arg),*).await,
                     ClientInner::Forge(c) => c.$name($($arg),*).await,
@@ -54,23 +57,31 @@ api! {
     ///
     /// # Errors
     ///
-    /// [[Error::WrongType]]: if the fetched project type is not a mod
+    /// [[ErrorKind::InvalidIdentifier]]: if `id` fails to parse into the
+    /// format expected by the backing client
+    ///
+    /// [[ErrorKind::WrongType]]: if the fetched project type is not a mod
     ///
     /// Any other network or api errors from the backing client
     ///
-    /// [Error::WrongType]: crate::Error::WrongType
-    pub get_mod(id: impl AsRef<str>) -> Mod;
+    /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
+    /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
+    pub get_mod(id: impl AsProjectId) -> Mod;
 
     /// Get the [modpack](Modpack) with `id`
     ///
     /// # Errors
     ///
-    /// [[Error::WrongType]]: if the fetched project type is not a modpack
+    /// [[ErrorKind::InvalidIdentifier]]: if `id` fails to parse into the
+    /// format expected by the backing client
+    ///
+    /// [[ErrorKind::WrongType]]: if the fetched project type is not a modpack
     ///
     /// Any other network or api errors from the backing client
     ///
-    /// [Error::WrongType]: crate::Error::WrongType
-    pub get_modpack(id: impl AsRef<str>) -> Modpack;
+    /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
+    /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
+    pub get_modpack(id: impl AsProjectId) -> Modpack;
 
     /// Get all [mods](Mod) listed in `ids`
     ///
@@ -81,7 +92,7 @@ api! {
     /// # Errors
     ///
     /// Any network or api errors from the backing client
-    ++pub get_mods(ids: impl AsRef<[&str]>) -> Vec<Mod>;
+    ++pub get_mods<T: AsProjectId>(ids: impl AsRef<[T]>) -> Vec<Mod>;
 
     /// Get all [versions](Version) of the project with `id`
     ///
@@ -91,11 +102,11 @@ api! {
     ///
     /// # Errors
     ///
-    /// [[Error::WrongService]]: if `id` does not belong to the backing [client](Self)
+    /// [[ErrorKind::WrongService]]: if `id` does not belong to the backing [client](Self)
     ///
     /// Any network or api errors from the backing client
     ///
-    /// [Error::WrongService]: crate::Error::WrongService
+    /// [ErrorKind::WrongService]: crate::ErrorKind::WrongService
     ++pub get_project_versions(id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Vec<Version>;
 }
 
@@ -145,4 +156,28 @@ impl From<ClientInner> for Client {
     fn from(value: ClientInner) -> Self {
         Self(value)
     }
+}
+
+macro_rules! as_inner {
+    ($($ty:ty),*$(,)?) => {
+        /// Methods for accessing the raw underlying service clients for
+        /// performing direct queries if something isn't supported
+        impl Client {
+            $(::paste::paste! {
+                #[doc = "Get a reference to the underlying [`"[<$ty Client>]"`] if available"]
+                pub fn [<as_ $ty:lower>](&self) -> Option<&[<$ty Client>]> {
+                    match &self.0 {
+                        ClientInner::$ty(v) => Some(v),
+                        ClientInner::Multi(clients) => clients.iter().filter_map(|c| c.[<as_ $ty:lower>]()).next(),
+                        _ => None,
+                    }
+                }
+            })*
+        }
+    };
+}
+as_inner! {
+    Modrinth,
+    Forge,
+    Github,
 }

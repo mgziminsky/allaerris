@@ -50,7 +50,7 @@ pub struct GetTeamMembersParams<'l1,> {
 #[derive(Clone, Debug)]
 pub struct GetTeamsParams<'l1,> {
     /// The IDs of the teams
-    pub ids: &'l1 str,
+    pub ids: &'l1 [&'l1 str], // MANUAL CHANGE
 }
 
 /// struct for passing parameters to the method [`TeamsApi::join_team`]
@@ -314,7 +314,7 @@ impl<'c> TeamsApi<'c> {
             format!("/teams"),
         )?;
 
-        local_var_req_builder = local_var_req_builder.query(&[("ids", ids)]);
+        local_var_req_builder = local_var_req_builder.query(&[("ids", serde_json::to_string(ids)?)]); // MANUAL CHANGE
 
         let local_var_resp = local_var_req_builder.send().await?;
 

@@ -7,24 +7,25 @@ use modrinth::{
 };
 
 use super::{
-    schema::{Mod, Modpack, ProjectIdSvcType, Version},
+    schema::{AsProjectId, Mod, Modpack, ProjectIdSvcType, Version},
     ApiOps, ModrinthClient,
 };
 use crate::{config::ModLoader, Result};
 
 impl ApiOps for ModrinthClient {
-    async fn get_mod(&self, id: impl AsRef<str>) -> Result<Mod> {
-        fetch_project(self, id.as_ref()).await?.try_into()
+    async fn get_mod(&self, id: impl AsProjectId) -> Result<Mod> {
+        fetch_project(self, id).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: impl AsRef<str>) -> Result<Modpack> {
-        fetch_project(self, id.as_ref()).await?.try_into()
+    async fn get_modpack(&self, id: impl AsProjectId) -> Result<Modpack> {
+        fetch_project(self, id).await?.try_into()
     }
 
-    async fn get_mods(&self, ids: impl AsRef<[&str]>) -> Result<Vec<Mod>> {
+    async fn get_mods<T: AsProjectId>(&self, ids: impl AsRef<[T]>) -> Result<Vec<Mod>> {
+        let ids: Vec<_> = ids.as_ref().into_iter().filter_map(|id| id.try_as_modrinth().ok()).collect();
         let projects = self
             .projects()
-            .get_projects(&GetProjectsParams { ids: ids.as_ref() })
+            .get_projects(&GetProjectsParams { ids: &ids })
             .await?
             .into_iter()
             .filter_map(|p| p.try_into().ok())
@@ -57,7 +58,9 @@ impl ApiOps for ModrinthClient {
     }
 }
 
-async fn fetch_project(client: &ModrinthClient, mod_id: &str) -> Result<ApiProject> {
+#[inline]
+async fn fetch_project(client: &ModrinthClient, id: impl AsProjectId) -> Result<ApiProject> {
+    let mod_id = id.try_as_modrinth()?;
     client
         .projects()
         .get_project(&GetProjectParams { mod_id })
@@ -68,20 +71,24 @@ async fn fetch_project(client: &ModrinthClient, mod_id: &str) -> Result<ApiProje
 mod from {
     use modrinth::{
         models::{
-            project::ProjectType, version_dependency::DependencyType as ModrinthDepType, Project as ApiProject, Version as ApiVersion,
-            VersionDependency,
+            project::ProjectType, version_dependency::DependencyType as ModrinthDepType, Project as ApiProject, ProjectLicense,
+            Version as ApiVersion, VersionDependency,
         },
         Error as ApiError, ErrorResponse,
     };
+    use once_cell::sync::Lazy;
     use reqwest::StatusCode;
+    use url::Url;
 
     use crate::{
         client::{
-            schema::{self, ProjectId, VersionId},
+            schema::{self, Author, ProjectId, VersionId},
             Client, ClientInner, ModrinthClient,
         },
         ErrorKind,
     };
+
+    static HOME: Lazy<Url> = Lazy::new(|| "https://modrinth.com/".parse().expect("base url should always parse successfully"));
 
     impl From<ModrinthClient> for Client {
         fn from(value: ModrinthClient) -> Self {
@@ -98,21 +105,39 @@ mod from {
         }
     }
 
-    macro_rules! try_from_project {
+    impl From<ApiProject> for schema::Project {
+        fn from(project: ApiProject) -> Self {
+            Self {
+                id: ProjectId::Modrinth(project.id),
+                name: project.title,
+                website: HOME
+                    .join(ProjTypeSlug(project.project_type).as_str())
+                    .and_then(|url| url.join(&project.slug))
+                    .ok(),
+                slug: project.slug,
+                description: project.description,
+                created: Some(project.published),
+                updated: Some(project.updated),
+                icon: project.icon_url,
+                downloads: project.downloads as _,
+                authors: vec![Author {
+                    name: project.team,
+                    url: None,
+                }],
+                categories: project.categories,
+                license: Some(project.license.into()),
+                source_url: project.source_url,
+            }
+        }
+    }
+
+    macro_rules! try_from {
         ($($ty:ident),*$(,)?) => {$(
             impl TryFrom<ApiProject> for schema::$ty {
                 type Error = crate::Error;
                 fn try_from(project: ApiProject) -> Result<Self, Self::Error> {
                     if let ProjectType::$ty = project.project_type {
-                        Ok(Self(schema::Project {
-                            id: ProjectId::Modrinth(project.id.clone()),
-                            name: project.title.clone(),
-                            slug: project.slug.clone(),
-                            description: project.description,
-                            created: Some(project.published),
-                            updated: Some(project.updated),
-                            icon: project.icon_url,
-                        }))
+                        Ok(Self(project.into()))
                     } else {
                         Err(ErrorKind::WrongType(stringify!($ty)))?
                     }
@@ -120,7 +145,7 @@ mod from {
             }
         )*};
     }
-    try_from_project! {
+    try_from! {
         Mod,
         Modpack,
     }
@@ -174,6 +199,24 @@ mod from {
                 ModrinthDepType::Required => Self::Required,
                 ModrinthDepType::Optional => Self::Optional,
                 _ => Self::Optional,
+            }
+        }
+    }
+
+    impl From<ProjectLicense> for schema::License {
+        fn from(ProjectLicense { id, name, url }: ProjectLicense) -> Self {
+            Self { name, spdx_id: id, url }
+        }
+    }
+
+    struct ProjTypeSlug(ProjectType);
+    impl ProjTypeSlug {
+        pub fn as_str(&self) -> &str {
+            match self.0 {
+                ProjectType::Mod => "mod",
+                ProjectType::Modpack => "modpack",
+                ProjectType::Resourcepack => "resourcepack",
+                ProjectType::Shader => "shader",
             }
         }
     }

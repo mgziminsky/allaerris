@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
-//! Contains the data types used by the various operations in [Client](super::Client)
+//! Contains the data types used by the various operations in
+//! [Client](super::Client)
 
 macro_rules! export {
     ($($name:ident),*$(,)?) => {$(
@@ -8,6 +9,8 @@ macro_rules! export {
     )*};
 }
 export! {
+    author,
+    license,
     project,
     version,
 }

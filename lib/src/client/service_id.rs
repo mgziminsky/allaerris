@@ -21,19 +21,19 @@ macro_rules! svc_id_impl {
     (@fn $name:ident -> Unsupported) => {
         ::paste::paste! {
             type [<$name:camel T>] = Unsupported;
-            fn [<as_ $name:lower>](&self) -> $crate::Result<&Self::[<$name:camel T>]> {
-                Err($crate::Error::Unsupported)
+            fn [<as_ $name:lower>](&self) -> crate::Result<&Self::[<$name:camel T>]> {
+                Err(crate::Error::Unsupported)
             }
         }
     };
     (@fn $name:ident -> $ty:ty) => {
         ::paste::paste! {
             type [<$name:camel T>] = $ty;
-            fn [<as_ $name:lower>](&self) -> $crate::Result<&Self::[<$name:camel T>]> {
+            fn [<as_ $name:lower>](&self) -> crate::Result<&Self::[<$name:camel T>]> {
                 if let Self::[<$name:camel>](v) = self {
                     Ok(v)
                 } else {
-                    Err($crate::ErrorKind::WrongService)?
+                    Err(crate::ErrorKind::WrongService)?
                 }
             }
         }
@@ -53,14 +53,14 @@ macro_rules! svc_id_impl {
             Modrinth($M),
             Github($G),
         }
-        impl $crate::client::Sealed for $name {}
-        impl $crate::client::ServiceId for $name {
+        impl crate::client::Sealed for $name {}
+        impl crate::client::ServiceId for $name {
             svc_id_impl!(@fn Forge -> $F);
             svc_id_impl!(@fn Modrinth -> $M);
             svc_id_impl!(@fn Github -> $G);
         }
         ::paste::paste! {
-            pub type [<$name SvcType>] = dyn $crate::client::service_id::ServiceId<ForgeT = $F, ModrinthT = $M, GithubT = $G>;
+            pub type [<$name SvcType>] = dyn crate::client::service_id::ServiceId<ForgeT = $F, ModrinthT = $M, GithubT = $G>;
         }
     };
 }
