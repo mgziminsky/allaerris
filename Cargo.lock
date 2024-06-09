@@ -792,6 +792,7 @@ dependencies = [
  "serde_json",
  "size",
  "tokio",
+ "url",
 ]
 
 [[package]]

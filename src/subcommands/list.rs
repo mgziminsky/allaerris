@@ -1,287 +1,140 @@
-#![allow(clippy::unwrap_used)]
+use std::{collections::HashMap, convert::identity, ops::Deref};
 
-use crate::TICK;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use colored::Colorize;
-use ferinth::{
-    structures::{project::Project, user::TeamMember},
-    Ferinth,
+use once_cell::sync::Lazy;
+use relibium::{
+    client::schema::{AsProjectId, Author, ProjectId},
+    config::Profile,
+    modrinth::apis::teams_api::GetTeamsParams,
+    Client,
 };
-use furse::{structures::mod_structs::Mod, Furse};
-use itertools::{izip, Itertools};
-use libium::config::structs::{ModIdentifier, Profile};
-use octocrab::{
-    models::{repos::Release, Repository},
-    OctocrabBuilder,
-};
-use tokio::task::JoinSet;
 
-enum Metadata {
-    CF(Mod),
-    MD(Project, Vec<TeamMember>),
-    GH(Repository, Vec<Release>),
-}
-impl Metadata {
-    fn name(&self) -> &str {
-        match self {
-            Metadata::CF(p) => &p.name,
-            Metadata::MD(p, _) => &p.title,
-            Metadata::GH(p, _) => &p.name,
-        }
-    }
+use crate::tui::{print_mods, print_project_markdown, print_project_verbose};
 
-    fn id(&self) -> ModIdentifier {
-        match self {
-            Metadata::CF(p) => ModIdentifier::CurseForgeProject(p.id),
-            Metadata::MD(p, _) => ModIdentifier::ModrinthProject(p.id.clone()),
-            Metadata::GH(p, _) => {
-                ModIdentifier::GitHubRepository((p.owner.clone().unwrap().login, p.name.clone()))
-            }
-        }
-    }
+static MR_BASE: Lazy<::url::Url> = Lazy::new(|| {
+    "https://modrinth.com/user/"
+        .parse()
+        .expect("base url should always parse successfully")
+});
+
+pub async fn simple(profile: &Profile) -> Result<(), anyhow::Error> {
+    let data = profile.data().await?;
+    print_mods(
+        format_args!(
+            "{} {} on {} {}",
+            profile.name().bold(),
+            format!("({} mods)", data.mods.len()).yellow(),
+            format!("{:?}", data.loader).purple(),
+            data.game_version.green(),
+        ),
+        &data.mods,
+    );
+    Ok(())
 }
 
-pub async fn verbose(md: Ferinth, cf: Furse, profile: &mut Profile, markdown: bool) -> Result<()> {
-    if !markdown {
-        eprint!("Querying metadata... ");
-    }
+pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Result<()> {
+    eprint!("Querying metadata... ");
 
-    let mut tasks: JoinSet<Result<_>> = JoinSet::new();
-    let mut mr_ids = Vec::new();
-    let mut cf_ids = Vec::new();
-    for mod_ in &profile.mods {
-        match mod_.identifier.clone() {
-            ModIdentifier::CurseForgeProject(project_id) => cf_ids.push(project_id),
-            ModIdentifier::ModrinthProject(project_id) => mr_ids.push(project_id),
-            ModIdentifier::GitHubRepository((owner, repo)) => {
-                tasks.spawn(async {
-                    Ok((
-                        OctocrabBuilder::new()
-                            .build()?
-                            .repos(&owner, &repo)
-                            .get()
-                            .await?,
-                        OctocrabBuilder::new()
-                            .build()?
-                            .repos(owner, repo)
-                            .releases()
-                            .list()
-                            .send()
-                            .await?,
-                    ))
+    let data = profile.data().await?;
+    let mut projects = client
+        .get_mods(data.mods.iter().map(|m| &m.id).collect::<Vec<_>>())
+        .await?;
+
+    // NOTE: Should these be moved into relibium?
+    // Doing so would require making additional requests on each mod lookup even if the data isn't used
+
+    // Load the Modrinth team members if we have a modrinth client
+    if let Some(mr_client) = client.as_modrinth() {
+        // Map the team ids to their index in the projects list
+        let teams = projects
+            .iter_mut()
+            .enumerate()
+            .fold(HashMap::new(), |mut acc, (i, m)| {
+                if let ProjectId::Modrinth(_) = m.id {
+                    for team in m.authors.drain(..) {
+                        acc.entry(team.name).or_insert_with(Vec::new).push(i);
+                    }
+                }
+                acc
+            });
+        if !teams.is_empty() {
+            let team_ids = teams.keys().map(AsRef::as_ref).collect::<Vec<_>>();
+            // Get the members for all the teams
+            mr_client
+                .teams()
+                .get_teams(&GetTeamsParams { ids: &team_ids })
+                .await?
+                .into_iter()
+                .flat_map(identity)
+                // Add member names to the author list of every mod they belong to
+                .for_each(|member| {
+                    if let Some(indices) = teams.get(&member.team_id) {
+                        // Clone into all but the last project which can take ownership
+                        if let Some((last, front)) = indices.split_last() {
+                            let author = Author {
+                                name: member.user.name.unwrap_or(member.user.username),
+                                url: MR_BASE.join(&member.user.id).ok(),
+                            };
+                            for v in front {
+                                projects[*v].authors.push(author.clone());
+                            }
+                            projects[*last].authors.push(author);
+                        }
+                    }
                 });
+        }
+    }
+
+    // Calculate Github downloads count from releases
+    // FIXME: Rate Limiting
+    if let Some(gh_client) = client.as_github() {
+        for proj in projects.iter_mut() {
+            if let Ok((own, repo)) = proj.id.try_as_github() {
+                let mut page = gh_client
+                    .repos(own, repo)
+                    .releases()
+                    .list()
+                    .per_page(100)
+                    .send()
+                    .await?;
+                loop {
+                    let sum: u64 = page
+                        .items
+                        .into_iter()
+                        .flat_map(|i| i.assets)
+                        .map(|a| a.download_count as u64)
+                        .sum();
+                    proj.downloads += sum;
+                    if let Some(p) = gh_client.get_page(&page.next).await? {
+                        page = p;
+                    } else {
+                        break;
+                    }
+                }
             }
         }
     }
 
-    let mr_projects = md
-        .get_multiple_projects(&mr_ids.iter().map(|s| &**s).collect::<Vec<_>>())
-        .await?;
-    let mr_teams_members = md
-        .list_multiple_teams_members(
-            &mr_projects
-                .iter()
-                .map(|p| &p.team as &str)
-                .collect::<Vec<_>>(),
-        )
-        .await?;
+    projects.sort_by_cached_key(|p| p.name.trim().to_lowercase());
+    let projects = projects;
 
-    let cf_projects = if cf_ids.is_empty() {
-        Vec::new()
+    let print = if markdown {
+        print_project_markdown
     } else {
-        cf.get_mods(cf_ids).await?
+        print_project_verbose
     };
 
-    let mut metadata = Vec::new();
-    for (project, members) in izip!(mr_projects, mr_teams_members) {
-        metadata.push(Metadata::MD(project, members));
-    }
-    for project in cf_projects {
-        metadata.push(Metadata::CF(project));
-    }
-    while let Some(res) = tasks.join_next().await {
-        let (repo, releases) = res??;
-        metadata.push(Metadata::GH(repo, releases.items));
-    }
-    metadata.sort_unstable_by_key(|e| e.name().to_lowercase());
-
-    if !markdown {
-        println!("{}", &*TICK);
-    }
-
-    for project in &metadata {
-        profile
-            .mods
-            .iter_mut()
-            .find(|mod_| mod_.identifier == project.id())
-            .context("Could not find expected mod")?
-            .name = project.name().to_string();
-
-        if markdown {
-            match project {
-                Metadata::CF(p) => curseforge_md(p),
-                Metadata::MD(p, t) => modrinth_md(p, t),
-                Metadata::GH(p, _) => github_md(p),
-            }
-        } else {
-            match project {
-                Metadata::CF(p) => curseforge(p),
-                Metadata::MD(p, t) => modrinth(p, t),
-                Metadata::GH(p, r) => github(p, r),
-            }
-        }
-    }
+    projects.iter().map(Deref::deref).for_each(print);
 
     Ok(())
 }
 
-pub fn curseforge(project: &Mod) {
-    println!(
-        "
-{}
-  {}\n
-  Link:         {}
-  Source:       {}
-  Project ID:   {}
-  Open Source:  {}
-  Downloads:    {}
-  Authors:      {}
-  Categories:   {}",
-        project.name.bold(),
-        project.summary.trim().italic(),
-        project.links.website_url.to_string().blue().underline(),
-        "CurseForge Mod".dimmed(),
-        project.id.to_string().dimmed(),
-        project
-            .links
-            .source_url
-            .as_ref()
-            .map_or("No".red(), |url| format!(
-                "Yes ({})",
-                url.to_string().blue().underline()
-            )
-            .green()),
-        project.download_count.to_string().yellow(),
-        project
-            .authors
-            .iter()
-            .map(|author| &author.name)
-            .format(", ")
-            .to_string()
-            .cyan(),
-        project
-            .categories
-            .iter()
-            .map(|category| &category.name)
-            .format(", ")
-            .to_string()
-            .magenta(),
-    );
-}
-
-pub fn modrinth(project: &Project, team_members: &[TeamMember]) {
-    println!(
-        "
-{}
-  {}\n
-  Link:         {}
-  Source:       {}
-  Project ID:   {}
-  Open Source:  {}
-  Downloads:    {}
-  Authors:      {}
-  Categories:   {}
-  License:      {}{}",
-        project.title.bold(),
-        project.description.italic(),
-        format!("https://modrinth.com/mod/{}", project.slug)
-            .blue()
-            .underline(),
-        "Modrinth Mod".dimmed(),
-        project.id.dimmed(),
-        project.source_url.as_ref().map_or("No".red(), |url| {
-            format!("Yes ({})", url.to_string().blue().underline()).green()
-        }),
-        project.downloads.to_string().yellow(),
-        team_members
-            .iter()
-            .map(|member| &member.user.username)
-            .format(", ")
-            .to_string()
-            .cyan(),
-        project.categories.iter().format(", ").to_string().magenta(),
-        {
-            if project.license.name.is_empty() {
-                "Custom"
-            } else {
-                &project.license.name
-            }
-        },
-        project.license.url.as_ref().map_or(String::new(), |url| {
-            format!(" ({})", url.to_string().blue().underline())
-        }),
-    );
-}
-
-pub fn github(repo: &Repository, releases: &[Release]) {
-    // Calculate number of downloads
-    let mut downloads = 0;
-    for release in releases {
-        for asset in &release.assets {
-            downloads += asset.download_count;
-        }
-    }
-
-    println!(
-        "
-{}{}\n
-  Link:         {}
-  Source:       {}
-  Identifier:   {}
-  Open Source:  {}
-  Downloads:    {}
-  Authors:      {}
-  Topics:       {}
-  License:      {}",
-        &repo.name.bold(),
-        repo.description
-            .as_ref()
-            .map_or(String::new(), |description| {
-                format!("\n  {description}")
-            })
-            .italic(),
-        repo.html_url
-            .as_ref()
-            .unwrap()
-            .to_string()
-            .blue()
-            .underline(),
-        "GitHub Repository".dimmed(),
-        repo.full_name.as_ref().unwrap().dimmed(),
-        "Yes".green(),
-        downloads.to_string().yellow(),
-        repo.owner.as_ref().unwrap().login.cyan(),
-        repo.topics.as_ref().map_or("".into(), |topics| topics
-            .iter()
-            .format(", ")
-            .to_string()
-            .magenta()),
-        repo.license
-            .as_ref()
-            .map_or("None".into(), |license| format!(
-                "{}{}",
-                license.name,
-                license.html_url.as_ref().map_or(String::new(), |url| {
-                    format!(" ({})", url.to_string().blue().underline())
-                })
-            )),
-    );
-}
-
+/*
 pub fn curseforge_md(project: &Mod) {
     println!(
         "
-**[{}]({})**  
+**[{}]({})**
 _{}_
 
 |             |                 |
@@ -315,7 +168,7 @@ _{}_
 pub fn modrinth_md(project: &Project, team_members: &[TeamMember]) {
     println!(
         "
-**[{}](https://modrinth.com/mod/{})**  
+**[{}](https://modrinth.com/mod/{})**
 _{}_
 
 |             |               |
@@ -369,3 +222,4 @@ pub fn github_md(repo: &Repository) {
         )),
     );
 }
+ */

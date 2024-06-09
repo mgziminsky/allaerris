@@ -3,9 +3,10 @@ use std::{borrow::Cow, fmt::Display};
 use colored::{ColoredString, Colorize};
 use dialoguer::theme::ColorfulTheme;
 use indicatif::ProgressStyle;
+use itertools::Itertools;
 use once_cell::sync::Lazy;
 use relibium::{
-    client::schema::ProjectId,
+    client::schema::{Project, ProjectId},
     config::{Mod, Profile},
 };
 
@@ -36,12 +37,16 @@ pub static STYLE_BYTE: Lazy<ProgressStyle> = Lazy::new(|| {
         .progress_chars("#>-")
 });
 
-pub fn mod_single_line(m: &Mod) -> String {
-    let id = match &m.id {
+fn id_tag(id: &ProjectId) -> String {
+    match id {
         ProjectId::Forge(id) => format!("{} {id:8}", *CF),
         ProjectId::Modrinth(id) => format!("{} {id:8}", *MR),
         ProjectId::Github(_) => GH.to_string(),
-    };
+    }
+}
+
+pub fn mod_single_line(m: &Mod) -> String {
+    let id = id_tag(&m.id);
     let name = match &m.id {
         ProjectId::Forge(_) | ProjectId::Modrinth(_) => m.name.bold().to_string(),
         ProjectId::Github((owner, repo)) => format!("{}/{}", owner.dimmed(), repo.bold()),
@@ -76,15 +81,112 @@ pub async fn print_profile(profile: &Profile, active: bool) {
     );
     println!(
         "{}{}
-        \r  Path:               {}
-        \r  Minecraft Version:  {}
-        \r  Mod Loader:         {}
-        \r  Mods:               {}\n",
+  Path:               {}
+  Minecraft Version:  {}
+  Mod Loader:         {}
+  Mods:               {}
+",
         profile.name().bold(),
         if active { " *" } else { "" },
         profile.path().display().to_string().blue().underline(),
         game_version,
         loader,
         mods,
+    );
+}
+
+pub fn print_project_verbose(proj: &Project) {
+    println!(
+        "\
+{}
+{}
+
+  Link:\t\t{}
+  Project ID:\t{}
+  Open Source:\t{}
+  Downloads:\t{}
+  Authors:\t{}
+  Categories:\t{}
+  License:\t{}
+",
+        proj.name.trim().bold(),
+        proj.description.trim().italic(),
+        proj.website
+            .as_ref()
+            .map(|u| u.as_str())
+            .unwrap_or_default()
+            .blue()
+            .underline(),
+        id_tag(&proj.id).dimmed(),
+        proj.source_url
+            .as_ref()
+            .map(|u| u.as_str())
+            .map(|u| format!("{} {}", *TICK_GREEN, u.blue().underline()).into())
+            .map(Cow::Owned)
+            .unwrap_or(Cow::Borrowed(&*CROSS_RED)),
+        proj.downloads.to_string().yellow(),
+        proj.authors
+            .iter()
+            .format_with(", ", |a, fmt| fmt(&a.name.cyan())),
+        proj.categories
+            .iter()
+            .format_with(", ", |c, fmt| fmt(&c.magenta())),
+        proj.license.as_ref().map_or_else(
+            || "???".to_owned(),
+            |l| {
+                format!(
+                    "{}{}",
+                    l.spdx_id,
+                    l.url.as_ref().map_or_else(String::new, |url| format!(
+                        " ({})",
+                        url.as_str().blue().underline()
+                    ))
+                )
+            }
+        ),
+    );
+}
+
+pub fn print_project_markdown(proj: &Project) {
+    println!(
+        "\
+**[{}]({})**
+_{}_
+
+|             |    |
+|-------------|----|
+| Source      | {} |
+| Open Source | {} |
+| Authors     | {} |
+| Categories  | {} |
+",
+        proj.name.trim(),
+        proj.website
+            .as_ref()
+            .map(|u| u.as_str())
+            .unwrap_or_default(),
+        proj.description.trim(),
+        format_args!(
+            "{} `{}`",
+            match &proj.id {
+                ProjectId::Forge(_) => "Forge",
+                ProjectId::Modrinth(_) => "Modrinth",
+                ProjectId::Github(_) => "Github",
+            },
+            proj.id
+        ),
+        proj.source_url
+            .as_ref()
+            .map(|u| u.as_str())
+            .map(|u| format!("[YES]({u})").into())
+            .unwrap_or(Cow::Borrowed("NO")),
+        proj.authors.iter().format_with(", ", |a, fmt| {
+            if let Some(url) = a.url.as_ref() {
+                fmt(&format_args!("[{}]({})", a.name, url))
+            } else {
+                fmt(&a.name)
+            }
+        }),
+        proj.categories.join(", "),
     );
 }

@@ -169,19 +169,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let profile = get_active_profile(&mut config)?;
             check_empty_profile(profile).await?;
             if verbose {
-                subcommands::list::verbose(client, markdown).await?
+                subcommands::list::verbose(&client, profile, markdown).await?
             } else {
-                let data = profile.data().await?;
-                print_mods(
-                    format_args!(
-                        "{} {} on {} {}",
-                        profile.name().bold(),
-                        format!("({} mods)", data.mods.len()).yellow(),
-                        format!("{:?}", data.loader).purple(),
-                        data.game_version.green(),
-                    ),
-                    &data.mods,
-                );
+                subcommands::list::simple(profile).await?;
             }
         }
         SubCommands::Add { identifiers: ids } => {
