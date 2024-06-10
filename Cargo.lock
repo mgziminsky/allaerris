@@ -781,6 +781,7 @@ dependencies = [
  "clap_complete",
  "colored",
  "dialoguer",
+ "dirs",
  "fs_extra",
  "indicatif",
  "itertools",

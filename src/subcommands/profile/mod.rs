@@ -7,36 +7,49 @@ pub use create::create;
 pub use delete::delete;
 pub use switch::switch;
 
-use anyhow::{anyhow, bail, Result};
-use colored::Colorize;
-use dialoguer::{Confirm, Select};
-use fs_extra::dir::{copy, CopyOptions};
-use relibium::config::{Config, ModLoader};
-use std::{fs::read_dir, path::PathBuf};
-use tokio::fs::create_dir_all;
+use anyhow::{bail, Result};
+use dialoguer::Select;
+use relibium::config::ModLoader;
+use std::path::Path;
 
-use crate::{file_picker::pick_folder, tui::THEME};
+use crate::tui::THEME;
 
-pub fn pick_mod_loader(default: Option<&ModLoader>) -> Result<ModLoader> {
+pub fn pick_mod_loader(default: Option<ModLoader>) -> Result<ModLoader> {
     let mut picker = Select::with_theme(&*THEME)
-        .with_prompt("Which mod loader do you use?")
-        .items(&["Quilt", "Fabric", "Forge", "NeoForge"]);
+        .with_prompt("Select the mod loader to use:")
+        .items(&[
+            "Fabric",
+            "NeoForge",
+            "Forge",
+            "Quilt",
+            "LiteLoader",
+            "Cauldron",
+        ]);
+
     if let Some(default) = default {
         picker = picker.default(match default {
-            ModLoader::Quilt => 0,
-            ModLoader::Fabric => 1,
+            ModLoader::Fabric => 0,
+            ModLoader::NeoForge => 1,
             ModLoader::Forge => 2,
-            ModLoader::NeoForge => 3,
-            ModLoader::Unknown => usize::MAX,
+            ModLoader::Quilt => 3,
+            ModLoader::LiteLoader => 4,
+            ModLoader::Cauldron => 5,
+            _ => !0,
         });
     }
-    match picker.interact()? {
-        0 => Ok(ModLoader::Quilt),
-        1 => Ok(ModLoader::Fabric),
-        2 => Ok(ModLoader::Forge),
-        3 => Ok(ModLoader::NeoForge),
-        _ => unreachable!(),
-    }
+
+    picker
+        .interact()
+        .map(|i| match i {
+            0 => ModLoader::Fabric,
+            1 => ModLoader::NeoForge,
+            2 => ModLoader::Forge,
+            3 => ModLoader::Quilt,
+            4 => ModLoader::LiteLoader,
+            5 => ModLoader::Cauldron,
+            _ => unreachable!(),
+        })
+        .map_err(Into::into)
 }
 
 pub async fn pick_minecraft_version() -> Result<String> {
@@ -73,50 +86,9 @@ pub async fn pick_minecraft_version() -> Result<String> {
     }
 }
 
-/// Check that there isn't already a profile with the same name
-pub fn check_profile_name(config: &Config, name: &str) -> Result<()> {
-    for profile in &config.profiles {
-        if profile.name == name {
-            bail!("A profile with name {name} already exists");
-        }
-    }
-    Ok(())
-}
-
-pub async fn check_output_directory(output_dir: &PathBuf) -> Result<()> {
+pub fn check_profile_path(output_dir: &Path) -> Result<()> {
     if output_dir.is_relative() {
-        bail!("The provided output directory is not absolute, i.e. it is a relative path");
-    }
-    if output_dir.file_name() != Some(std::ffi::OsStr::new("mods")) {
-        println!("{}", "Warning! The output directory is not called `mods`. Most mod loaders will load from a directory called `mods`.".bright_yellow());
-    }
-    let mut backup = false;
-    if output_dir.exists() {
-        for file in read_dir(output_dir)? {
-            let file = file?;
-            if file.path().is_file() && file.file_name() != ".DS_Store" {
-                backup = true;
-                break;
-            }
-        }
-    }
-    if backup {
-        println!(
-            "There are files in your output directory, these will be deleted when you upgrade."
-        );
-        if Confirm::with_theme(&*THEME)
-            .with_prompt("Would like to create a backup?")
-            .interact()?
-        {
-            let backup_dir = pick_folder(
-                &HOME,
-                "Where should the backup be made?",
-                "Output Directory",
-            )?
-            .ok_or_else(|| anyhow!("Please pick a backup directory"))?;
-            create_dir_all(&backup_dir).await?;
-            copy(output_dir, backup_dir, &CopyOptions::new())?;
-        }
+        bail!("The profile directory must be given as an absolute path");
     }
     Ok(())
 }

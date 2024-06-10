@@ -211,34 +211,37 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 }
                 ProfileSubCommands::Configure {
                     game_version,
-                    mod_loader,
+                    loader,
                     name,
-                    output_dir,
                 } => {
                     subcommands::profile::configure(
                         get_active_profile(&mut config)?,
                         game_version,
-                        mod_loader,
+                        loader,
                         name,
                     )
                     .await?;
                 }
                 ProfileSubCommands::Create {
-                    import,
                     game_version,
-                    mod_loader,
+                    loader,
                     name,
-                    output_dir,
+                    path,
                 } => {
-                    subcommands::profile::create(
+                    let profile = subcommands::profile::create(
+                        &client,
                         &mut config,
-                        import,
                         game_version,
-                        mod_loader,
+                        loader,
                         name,
-                        output_dir,
+                        path,
                     )
                     .await?;
+                    println!(
+                        "{}",
+                        "After adding your mods, remember to run `{} upgrade` to download them!"
+                            .yellow()
+                    );
                 }
                 ProfileSubCommands::Delete {
                     profile_name,

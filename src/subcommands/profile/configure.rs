@@ -50,7 +50,7 @@ pub async fn configure(
                 let data = profile.data_mut().await?;
                 match index {
                     0 => data.game_version = pick_minecraft_version().await?,
-                    1 => data.loader = pick_mod_loader(Some(&data.loader))?,
+                    1 => data.loader = pick_mod_loader(Some(data.loader))?,
                     2 => {
                         let name = Input::with_theme(&*THEME)
                             .with_prompt("Change the profile's name")

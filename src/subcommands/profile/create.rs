@@ -1,130 +1,100 @@
-use super::{check_output_directory, check_profile_name, pick_minecraft_version};
-use crate::{file_picker::pick_folder, THEME};
-use anyhow::{bail, Result};
+use anyhow::{bail, Ok, Result};
 use colored::Colorize;
 use dialoguer::{Confirm, Input, Select};
-use libium::{
-    config::structs::{Config, ModLoader, Profile},
-    get_minecraft_dir,
+use relibium::{
+    config::{profile::ProfileData, ModLoader, Profile},
+    Client, Config, DEFAULT_MINECRAFT_DIR,
 };
 use std::path::PathBuf;
 
-#[allow(clippy::option_option)]
+use crate::{
+    file_picker::pick_folder,
+    subcommands::profile::{check_profile_path, pick_mod_loader},
+    tui::{THEME, TICK_GREEN},
+};
+
 pub async fn create(
+    client: &Client,
     config: &mut Config,
-    import: Option<Option<String>>,
     game_version: Option<String>,
-    mod_loader: Option<ModLoader>,
+    loader: Option<ModLoader>,
     name: Option<String>,
-    output_dir: Option<PathBuf>,
+    path: Option<PathBuf>,
 ) -> Result<()> {
-    let mut profile = match (game_version, mod_loader, name, output_dir) {
-        (Some(game_version), Some(mod_loader), Some(name), output_dir) => {
-            check_profile_name(config, &name)?;
-            let output_dir = output_dir.unwrap_or_else(|| get_minecraft_dir().join("mods"));
-            if !output_dir.is_absolute() {
-                bail!("The provided output directory is not absolute, i.e. it is a relative path")
-            }
-            Profile {
-                name,
-                output_dir,
-                game_version,
-                mod_loader,
-                mods: Vec::new(),
-                modpack: None,
-            }
-        }
-        (None, None, None, None) => {
-            let mut selected_mods_dir = get_minecraft_dir().join("mods");
+    let path = path.map_or_else(
+        || {
             println!(
                 "The default mods directory is {}",
-                selected_mods_dir.display()
+                DEFAULT_MINECRAFT_DIR.display()
             );
             if Confirm::with_theme(&*THEME)
-                .with_prompt("Would you like to specify a custom mods directory?")
+                .with_prompt("Would you like to specify a custom profile directory?")
                 .interact()?
             {
-                if let Some(dir) = pick_folder(
-                    &selected_mods_dir,
-                    "Pick an output directory",
-                    "Output Directory",
-                )? {
-                    check_output_directory(&dir).await?;
-                    selected_mods_dir = dir;
-                };
+                pick_folder(DEFAULT_MINECRAFT_DIR.as_path(), "Pick a profile directory")
+            } else {
+                Ok(DEFAULT_MINECRAFT_DIR.clone())
             }
-
-            let name = loop {
-                let name: String = Input::with_theme(&*THEME)
-                    .with_prompt("What should this profile be called?")
-                    .interact_text()?;
-
-                #[allow(clippy::single_match_else)]
-                match check_profile_name(config, &name) {
-                    Ok(()) => break name,
-                    Err(_) => {
-                        println!(
-                            "{}",
-                            "Please provide a name that is not already being used"
-                                .red()
-                                .bold()
-                        );
-                        continue;
-                    }
-                }
-            };
-
-            let selected_version = pick_minecraft_version().await?;
-
-            Profile {
-                name,
-                output_dir: selected_mods_dir,
-                mods: Vec::new(),
-                game_version: selected_version,
-                mod_loader: super::pick_mod_loader(None)?,
-                modpack: None,
-            }
-        }
-        _ => {
-            bail!("Provide at least the name, game version, and mod loader options to create a profile")
-        }
-    };
-
-    if let Some(from) = import {
-        if config.profiles.is_empty() {
-            bail!("There are no profiles configured to import mods from")
-        }
-        // If the profile name has been provided as an option
-        let selection = if let Some(profile_name) = from {
-            match config
-                .profiles
-                .iter()
-                .position(|profile| profile.name == profile_name)
-            {
-                Some(selection) => selection,
-                None => bail!("The profile name provided does not exist"),
-            }
-        } else {
-            let profile_names = config
-                .profiles
-                .iter()
-                .map(|profile| &profile.name)
-                .collect::<Vec<_>>();
-            Select::with_theme(&*THEME)
-                .with_prompt("Select which profile to import mods from")
-                .items(&profile_names)
-                .default(config.active_profile)
-                .interact()?
-        };
-        profile.mods = config.profiles[selection].mods.clone();
+        },
+        Ok,
+    )?;
+    check_profile_path(&path)?;
+    if config.profile(&path).is_ok() {
+        bail!(
+            "Config already contains a profile at the path `{}`",
+            path.display()
+        )
     }
-
     println!(
-        "{}",
-        "After adding your mods, remember to run `ferium upgrade` to download them!".yellow()
+        "{} {} · {}",
+        *TICK_GREEN,
+        "Profile Directory".bold(),
+        path.display().to_string().green()
     );
 
-    config.profiles.push(profile);
-    config.active_profile = config.profiles.len() - 1; // Make created profile active
+    let name = name.map_or_else(
+        || loop {
+            let name: String = Input::with_theme(&*THEME)
+                .with_prompt("What should this profile be called?")
+                .interact_text()?;
+            if !name.trim().is_empty() {
+                break Ok(name);
+            }
+        },
+        Ok,
+    )?;
+
+    let loader = loader.map_or_else(|| pick_mod_loader(None), Ok)?;
+
+    let game_version = if let Some(gv) = game_version {
+        gv
+    } else {
+        let mut versions: Vec<_> = client
+            .get_game_versions()
+            .await?
+            .into_iter()
+            .map(|v| v.version)
+            .collect();
+
+        let selected_version = Select::with_theme(&*THEME)
+            .with_prompt("Which version of Minecraft should this profile use?")
+            .items(&versions)
+            .interact()?;
+
+        versions.swap_remove(selected_version)
+    };
+
+    let profile = Profile::with_data(
+        name,
+        path,
+        ProfileData {
+            game_version,
+            loader,
+            mods: vec![],
+            modpack: None,
+        },
+    )?;
+    config.add_profile(profile).expect("shouldn't fail to add profile since conditions were checked before");
+
     Ok(())
 }

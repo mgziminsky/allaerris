@@ -94,45 +94,35 @@ pub enum ProfileSubCommands {
     /// Optionally, provide the settings to change as arguments.
     #[clap(visible_aliases = ["config", "conf"])]
     Configure {
-        /// The Minecraft version to check compatibility for
+        /// The Minecraft version to use
         #[clap(long, short = 'v')]
         game_version: Option<String>,
-        /// The mod loader to check compatibility for
+        /// The mod loader to use
         #[clap(long, short)]
         #[clap(value_enum)]
-        mod_loader: Option<ModLoader>,
+        loader: Option<ModLoader>,
         /// The name of the profile
         #[clap(long, short)]
         name: Option<String>,
-        /// The directory to output mods to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
     },
     /// Create a new profile.
     /// Optionally, provide the settings as arguments.
-    /// Use the import flag to import mods from another profile.
-    #[clap(visible_alias = "new")]
+    #[clap(visible_aliases = ["new", "add"])]
     Create {
-        /// Copy over the mods from an existing profile.
-        /// Optionally, provide the name of the profile to import mods from.
-        #[clap(long, short, visible_aliases = ["copy", "duplicate"])]
-        #[allow(clippy::option_option)]
-        import: Option<Option<String>>,
-        /// The Minecraft version to check compatibility for
+        /// The Minecraft version to use
         #[clap(long, short = 'v')]
         game_version: Option<String>,
-        /// The mod loader to check compatibility for
+        /// The mod loader to use
         #[clap(long, short)]
         #[clap(value_enum)]
-        mod_loader: Option<ModLoader>,
+        loader: Option<ModLoader>,
         /// The name of the profile
         #[clap(long, short)]
         name: Option<String>,
         /// The directory to output mods to
         #[clap(long, short)]
         #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
+        path: Option<PathBuf>,
     },
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.
