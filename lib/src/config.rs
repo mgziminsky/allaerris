@@ -148,6 +148,21 @@ impl Config {
     pub fn get_profiles_mut(&mut self) -> Vec<&mut Profile> {
         self.profiles.iter().map(ProfileByPath::force_mut).collect()
     }
+
+    /// Add the [profile](Profile) to this config if not already present
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error containing the passed in profile
+    /// if a profile with the same path is already present in the config
+    pub fn add_profile(&mut self, profile: Profile) -> std::result::Result<(), Profile> {
+        if self.profiles.contains(profile.path()) {
+            Err(profile)
+        } else {
+            self.profiles.insert(profile.into());
+            Ok(())
+        }
+    }
 }
 
 // Load/Save
