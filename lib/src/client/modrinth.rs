@@ -1,13 +1,15 @@
+use std::collections::BTreeSet;
+
 use modrinth::{
     apis::{
         projects_api::{GetProjectParams, GetProjectsParams},
         versions_api::GetProjectVersionsParams,
     },
-    models::Project as ApiProject,
+    models::{game_version_tag::VersionType, Project as ApiProject},
 };
 
 use super::{
-    schema::{AsProjectId, Mod, Modpack, ProjectIdSvcType, Version},
+    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version},
     ApiOps, ModrinthClient,
 };
 use crate::{config::ModLoader, Result};
@@ -56,6 +58,18 @@ impl ApiOps for ModrinthClient {
 
         Ok(versions)
     }
+
+    async fn get_game_versions(&self) -> Result<BTreeSet<GameVersion>> {
+        Ok(self
+            .tags()
+            .version_list()
+            .await?
+            .into_iter()
+            // Only keep full releases
+            .filter(|v| v.version_type == VersionType::Release)
+            .map(Into::into)
+            .collect())
+    }
 }
 
 #[inline]
@@ -71,8 +85,8 @@ async fn fetch_project(client: &ModrinthClient, id: impl AsProjectId) -> Result<
 mod from {
     use modrinth::{
         models::{
-            project::ProjectType, version_dependency::DependencyType as ModrinthDepType, Project as ApiProject, ProjectLicense,
-            Version as ApiVersion, VersionDependency,
+            project::ProjectType, version_dependency::DependencyType as ModrinthDepType, GameVersionTag, Project as ApiProject,
+            ProjectLicense, Version as ApiVersion, VersionDependency,
         },
         Error as ApiError, ErrorResponse,
     };
@@ -82,7 +96,7 @@ mod from {
 
     use crate::{
         client::{
-            schema::{self, Author, ProjectId, VersionId},
+            schema::{self, Author, GameVersion, ProjectId, VersionId},
             Client, ClientInner, ModrinthClient,
         },
         ErrorKind,
@@ -208,6 +222,16 @@ mod from {
             Self { name, spdx_id: id, url }
         }
     }
+
+    impl From<GameVersionTag> for GameVersion {
+        fn from(gv: GameVersionTag) -> Self {
+            Self {
+                version: gv.version,
+                release_date: gv.date,
+            }
+        }
+    }
+
 
     struct ProjTypeSlug(ProjectType);
     impl ProjTypeSlug {

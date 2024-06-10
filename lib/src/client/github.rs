@@ -1,11 +1,13 @@
+use std::collections::BTreeSet;
+
 use async_scoped::TokioScope;
 use github::models::repos::Asset;
 
 use super::{
-    schema::{AsProjectId, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId},
+    schema::{AsProjectId, GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId},
     ApiOps, GithubClient,
 };
-use crate::{config::ModLoader, Result};
+use crate::{config::ModLoader, ErrorKind, Result};
 
 impl ApiOps for GithubClient {
     async fn get_mod(&self, id: impl AsProjectId) -> Result<Mod> {
@@ -78,6 +80,10 @@ impl ApiOps for GithubClient {
             .collect();
 
         Ok(files)
+    }
+
+    async fn get_game_versions(&self) -> Result<BTreeSet<GameVersion>> {
+        Err(ErrorKind::Unsupported.into())
     }
 }
 

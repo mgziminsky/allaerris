@@ -8,7 +8,9 @@ mod service_id;
 
 pub mod schema;
 
-use self::schema::{AsProjectId, Mod, Modpack, ProjectIdSvcType, Version};
+use std::collections::BTreeSet;
+
+use self::schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version};
 pub use self::service_id::ServiceId;
 use crate::{config::ModLoader, Result};
 
@@ -108,6 +110,10 @@ api! {
     ///
     /// [ErrorKind::WrongService]: crate::ErrorKind::WrongService
     ++pub get_project_versions(id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Vec<Version>;
+
+    /// Get all available Minecraft [versions](schema::GameVersion)
+    /// in descending order by release date
+    ++pub get_game_versions() -> BTreeSet<GameVersion>;
 }
 
 /// The main [`Client`] for accessing the various modding APIs

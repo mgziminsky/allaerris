@@ -10,6 +10,7 @@ macro_rules! export {
 }
 export! {
     author,
+    game_version,
     license,
     project,
     version,

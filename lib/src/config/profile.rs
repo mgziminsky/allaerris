@@ -29,6 +29,13 @@ pub struct Profile {
     data: OnceCell<ProfileData>,
 }
 
+macro_rules! check_path {
+    ($path:ident) => {
+        if $path.as_os_str().to_string_lossy().trim().is_empty() {
+            return Err(ErrorKind::PathInvalid)?;
+        }
+    };
+}
 impl Profile {
     pub(super) fn new_unchecked(name: String, path: PathBuf) -> Self {
         Self {
@@ -43,10 +50,22 @@ impl Profile {
     ///
     /// Will return an error if `path` is empty or whitespace only
     pub fn new(name: String, path: PathBuf) -> Result<Self> {
-        if path.as_os_str().to_string_lossy().trim().is_empty() {
-            return Err(ErrorKind::PathInvalid)?;
-        };
+        check_path!(path);
         Ok(Self::new_unchecked(name, path))
+    }
+
+    /// Create a new profile with the given `name`, `path`, and
+    /// [`data`](ProfileData)
+    /// # Errors
+    ///
+    /// Will return an error if `path` is empty or whitespace only
+    pub fn with_data(name: String, path: PathBuf, data: ProfileData) -> Result<Self> {
+        check_path!(path);
+        Ok(Self {
+            name,
+            path,
+            data: data.into(),
+        })
     }
 
     /// The [path](Path) to the root of this profile.
@@ -154,8 +173,15 @@ mod tests {
         };
         dbg!(&sorted);
         let mut p = Profile::new_unchecked("Test Profile".to_string(), "/pass/null".into());
-        crate::block_on(p.data_mut()).expect("Load should use defaults").mods.extend(unsorted);
+        crate::block_on(p.data_mut())
+            .expect("Load should use defaults")
+            .mods
+            .extend(unsorted);
         assert!(crate::block_on(p.save()).is_ok(), "Save operation should have succeeded");
-        assert_eq!(sorted.as_slice(), crate::block_on(p.data()).unwrap().mods, "Mods should be sorted after save");
+        assert_eq!(
+            sorted.as_slice(),
+            crate::block_on(p.data()).unwrap().mods,
+            "Mods should be sorted after save"
+        );
     }
 }

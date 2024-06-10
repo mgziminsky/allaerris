@@ -1,5 +1,3 @@
-#![allow(unexpected_cfgs)]
-
 use std::path::Path;
 
 use serde::{de::DeserializeOwned, Serialize};
@@ -21,10 +19,6 @@ pub trait FsUtils: Sealed {
 pub struct FsUtil;
 impl Sealed for FsUtil {}
 
-// Hacky workaround for RA to allow analyzing both `test` and `not(test)` code
-// by defining an `ide` cfg attribute. This does cause issues with
-// unused_imports though
-//
 // FIXME: Only accept absolute paths
 #[cfg(any(not(test), ide))]
 impl FsUtils for FsUtil {

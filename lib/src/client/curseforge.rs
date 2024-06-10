@@ -1,13 +1,16 @@
+use std::collections::BTreeSet;
+
 use curseforge::{
     apis::{
         files_api::GetModFilesParams,
+        minecraft_api::GetMinecraftVersionsParams,
         mods_api::{GetModParams, GetModsParams},
     },
     models::GetModsByIdsListRequestBody,
 };
 
 use super::{
-    schema::{AsProjectId, Mod, Modpack, ProjectIdSvcType, Version},
+    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version},
     ApiOps, ForgeClient,
 };
 use crate::{config::ModLoader, Result};
@@ -62,6 +65,17 @@ impl ApiOps for ForgeClient {
 
         Ok(files)
     }
+
+    async fn get_game_versions(&self) -> Result<BTreeSet<GameVersion>> {
+        Ok(self
+            .minecraft()
+            .get_minecraft_versions(&GetMinecraftVersionsParams { sort_descending: None })
+            .await?
+            .data
+            .into_iter()
+            .map(Into::into)
+            .collect())
+    }
 }
 
 #[inline]
@@ -72,7 +86,7 @@ async fn fetch_mod(client: &ForgeClient, id: impl AsProjectId) -> Result<cursefo
 
 mod from {
     use curseforge::{
-        models::{File, FileDependency, FileRelationType, HashAlgo, ModAuthor, ModLoaderType},
+        models::{File, FileDependency, FileRelationType, HashAlgo, MinecraftGameVersion, ModAuthor, ModLoaderType},
         Error as ApiError, ErrorResponse,
     };
     use once_cell::sync::Lazy;
@@ -81,7 +95,7 @@ mod from {
 
     use crate::{
         client::{
-            schema::{Author, Dependency, DependencyType, Mod, Modpack, Project, ProjectId, Version, VersionId},
+            schema::{Author, Dependency, DependencyType, GameVersion, Mod, Modpack, Project, ProjectId, Version, VersionId},
             Client, ClientInner, ForgeClient,
         },
         config::ModLoader,
@@ -214,6 +228,15 @@ mod from {
     impl From<ModAuthor> for Author {
         fn from(ModAuthor { name, url, .. }: ModAuthor) -> Self {
             Self { name, url: Some(url) }
+        }
+    }
+
+    impl From<MinecraftGameVersion> for GameVersion {
+        fn from(gv: MinecraftGameVersion) -> Self {
+            Self {
+                version: gv.version_string,
+                release_date: gv.date_modified,
+            }
         }
     }
 
