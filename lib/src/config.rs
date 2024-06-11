@@ -43,7 +43,7 @@ type ProfilesList = BTreeSet<ProfileByPath>;
 #[derive(Deserialize, Serialize, Debug, Default, Clone)]
 #[serde(default, from = "ConfigDe")]
 pub struct Config {
-    /// Should only be [None] when [profiles](Config::profiles) is empty
+    /// Will only be [None] when [profiles](Config::profiles) is empty
     #[serde(skip_serializing_if = "Option::is_none")]
     active: Option<PathBuf>,
 
@@ -71,6 +71,11 @@ macro_rules! get {
 
 // Profile
 impl Config {
+    /// Returns the path of the active profile if set
+    pub fn active(&self) -> Option<&PathBuf> {
+        self.active.as_ref()
+    }
+
     /// Returns `true` if an [active profile](Self::active_profile) is set
     ///
     /// Will only be `false` when [profiles](Config::profiles) is empty
@@ -87,7 +92,7 @@ impl Config {
     /// [active profile]: Self::active_profile
     /// # Errors
     ///
-    /// [[`ErrorKind::UnknownProfile`]]: if `path` is not present in list of known
+    /// [`ErrorKind::UnknownProfile`]: if `path` is not present in list of known
     /// profiles
     pub fn set_active(&mut self, path: impl AsRef<Path>) -> Result<()> {
         let path = path.as_ref();
@@ -107,7 +112,7 @@ impl Config {
     ///
     /// # Errors
     ///
-    /// [[`ErrorKind::NoProfiles`]]: if [profiles](Profile) is empty
+    /// [`ErrorKind::NoProfiles`]: if [profiles](Profile) is empty
     ///
     /// [profiles]: Self::profiles
     pub fn active_profile(&self) -> Result<&Profile> {
@@ -123,7 +128,7 @@ impl Config {
     ///
     /// # Errors
     ///
-    /// [[`ErrorKind::UnknownProfile`]] if `path` is not present in list of
+    /// [`ErrorKind::UnknownProfile`] if `path` is not present in list of
     /// known [profiles]
     ///
     /// [profiles]: Self::profiles
@@ -162,6 +167,24 @@ impl Config {
             self.profiles.insert(profile.into());
             Ok(())
         }
+    }
+
+    /// Remove and return the [profile](Profile) for `path`
+    ///
+    /// If the removed profile was the currently [active profile], then the
+    /// active profile will be switched to the first profile
+    ///
+    /// # Errors
+    ///
+    /// [`ErrorKind::UnknownProfile`]: if no profile exists for `path`
+    ///
+    /// [active profile]: Self::active_profile
+    pub fn remove_profile(&mut self, path: impl AsRef<Path>) -> Result<Profile> {
+        let removed: Profile = self.profiles.take(path.as_ref()).map(Into::into).ok_or(ErrorKind::UnknownProfile)?;
+        if self.active.as_ref().is_some_and(|a| a == removed.path()) {
+            self.active = self.profiles.first().map(|p| p.as_path().to_owned());
+        }
+        Ok(removed)
     }
 }
 

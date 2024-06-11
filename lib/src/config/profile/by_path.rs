@@ -27,6 +27,11 @@ impl From<Profile> for ProfileByPath {
         ProfileByPath(val.into())
     }
 }
+impl From<ProfileByPath> for Profile {
+    fn from(val: ProfileByPath) -> Self {
+        val.0.into_inner()
+    }
+}
 /// Required to allow set lookups by `path` only
 impl Borrow<Path> for ProfileByPath {
     fn borrow(&self) -> &Path {
