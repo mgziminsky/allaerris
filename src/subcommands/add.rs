@@ -2,7 +2,7 @@ use anyhow::Result;
 use colored::Colorize;
 use relibium::{config::profile::ProfileData, Client};
 
-use crate::tui::{proj_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
+use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 
 pub async fn add(
     client: Client,
@@ -28,11 +28,11 @@ pub async fn add(
     let added = profile.add_mods(mods.iter());
     // Show already added
     added.iter().filter_map(|r| r.err()).for_each(|m| {
-        println!("{}\t{}", *TICK_YELLOW, proj_single_line(m));
+        println!("{}\t{}", *TICK_YELLOW, mod_single_line(m));
     });
     // Show newly added
     added.iter().filter_map(|r| r.ok()).for_each(|m| {
-        println!("{}\t{}", *TICK_GREEN, proj_single_line(m));
+        println!("{}\t{}", *TICK_GREEN, mod_single_line(m));
     });
     // Show not found
     ids.into_iter()
