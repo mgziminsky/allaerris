@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::Display};
+use std::{borrow::Cow, fmt::Display, ops::Range};
 
 use colored::{ColoredString, Colorize};
 use dialoguer::theme::ColorfulTheme;
@@ -36,6 +36,57 @@ pub static STYLE_BYTE: Lazy<ProgressStyle> = Lazy::new(|| {
         .expect("Progress bar template parse failure")
         .progress_chars("#>-")
 });
+
+macro_rules! min {
+    ($a:expr, $b:expr) => {
+        if $a < $b {
+            $a
+        } else {
+            $b
+        }
+    };
+}
+macro_rules! max {
+    ($a:expr, $b:expr) => {
+        if $a > $b {
+            $a
+        } else {
+            $b
+        }
+    };
+}
+const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
+    let bound = max / 2;
+    let start = min!(bound, len);
+    let end = min!(
+        len,
+        max!(bound, len.saturating_sub(bound - ((max + 1) & 1)))
+    );
+    start..end
+}
+macro_rules! ellipsize {
+    // Ellipsis middle
+    (^ $str:ident, $max:expr) => {{
+        let r = ellipsis_mid($str.len(), $max);
+        format_args!(
+            "{}{}{}",
+            &$str[..r.start],
+            if r.is_empty() { "" } else { "…" },
+            &$str[r.end..],
+        )
+    }};
+    // Ellipsis left
+    (< $str:ident, $max:expr) => {{
+        let i = $str.len().saturating_sub($max - 1);
+        format_args!("{}{}", if i > 0 { "…" } else { "" }, &$str[i..],)
+    }};
+    // Ellipsis right
+    (> $str:ident, $max:expr) => {{
+        let i = min!($str.len(), $max - 1);
+        format_args!("{}{}", &$str[..i], if i < $str.len() { "…" } else { "" },)
+    }};
+}
+pub(crate) use ellipsize;
 
 fn id_tag(id: &ProjectId) -> String {
     match id {
@@ -189,4 +240,32 @@ _{}_
         }),
         proj.categories.join(", "),
     );
+}
+
+pub fn fmt_profile_simple(p: &Profile, name_width: usize, path_width: usize) -> String {
+    let name = p.name();
+    let path = p.path().display().to_string();
+    format!(
+        "{} • {}",
+        ellipsize!(^name, name_width),
+        ellipsize!(^path, path_width),
+    )
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ellipsize() {
+        let x = "12345678909876543210";
+        assert_eq!("12…10", ellipsize!(^ x, 5).to_string());
+        assert_eq!("…4321", ellipsize!(< x, 5).to_string());
+        assert_eq!("1234…", ellipsize!(> x, 5).to_string());
+
+        assert_eq!(x, ellipsize!(^ x, x.len() * 2).to_string());
+        assert_eq!(x, ellipsize!(< x, x.len() * 2).to_string());
+        assert_eq!(x, ellipsize!(> x, x.len() * 2).to_string());
+    }
 }

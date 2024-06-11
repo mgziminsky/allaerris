@@ -22,7 +22,7 @@ use tokio::runtime;
 
 use self::{
     cli::{Ferium, ModpackSubCommands, ProfileSubCommands, SubCommands},
-    tui::print_mods,
+    tui::{fmt_profile_simple, print_mods},
 };
 
 macro_rules! consts {
@@ -247,7 +247,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     profile_name,
                     switch_to,
                 } => {
-                    subcommands::profile::delete(&mut config, profile_name, switch_to)?;
+                    let removed = subcommands::profile::delete(&mut config, profile_name, switch_to)?;
+                    println!("Profile Removed: {}", fmt_profile_simple(&removed, 30, 30));
+                    if let Ok(active) = config.active_profile() {
+                        println!("Active Profile: {}", fmt_profile_simple(active, 30, 30));
+                    }
                 }
                 ProfileSubCommands::List => {
                     for (i, profile) in config.profiles.iter().enumerate() {
