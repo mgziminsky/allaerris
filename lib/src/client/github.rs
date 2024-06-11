@@ -10,18 +10,17 @@ use super::{
 use crate::{config::ModLoader, ErrorKind, Result};
 
 impl ApiOps for GithubClient {
-    async fn get_mod(&self, id: impl AsProjectId) -> Result<Mod> {
+    async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
         fetch_repo(self, id).await.map(Mod)
     }
 
     // No distinction between mods and modpacks for github
-    async fn get_modpack(&self, id: impl AsProjectId) -> Result<Modpack> {
+    async fn get_modpack(&self, id: &impl AsProjectId) -> Result<Modpack> {
         fetch_repo(self, id).await.map(Modpack)
     }
 
-    async fn get_mods<T: AsProjectId>(&self, ids: impl AsRef<[T]>) -> Result<Vec<Mod>> {
+    async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
         // FIXME: Rate limiting
-        let ids = ids.as_ref();
         let (_, mods) = TokioScope::scope_and_block(|s| {
             for id in ids {
                 s.spawn(self.get_mod(id));
@@ -33,17 +32,14 @@ impl ApiOps for GithubClient {
 
     async fn get_project_versions(
         &self,
-        id: impl AsRef<ProjectIdSvcType>,
-        game_version: impl AsRef<Option<&str>>,
-        loader: impl AsRef<Option<ModLoader>>,
+        id: &ProjectIdSvcType,
+        game_version: Option<&str>,
+        loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let id = id.as_ref().as_github()?;
+        let id = id.as_github()?;
         let (owner, repo) = id;
 
-        let filter = [
-            game_version.as_ref().unwrap_or_default(),
-            loader.as_ref().as_ref().map(ModLoader::as_str).unwrap_or_default(),
-        ];
+        let filter = [game_version.unwrap_or_default(), loader.map(ModLoader::as_str).unwrap_or_default()];
         let check = |a: &Asset| {
             filter.iter().all(|f| a.name.contains(f))
                 && (a.name.ends_with(".jar") || a.name.ends_with(".zip"))
@@ -87,6 +83,7 @@ impl ApiOps for GithubClient {
     }
 }
 
+#[inline]
 async fn fetch_repo(client: &GithubClient, id: impl AsProjectId) -> Result<Project> {
     let (owner, name) = id.try_as_github()?;
     let repo = client.repos(owner, name).get().await?;

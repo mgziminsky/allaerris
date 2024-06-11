@@ -15,16 +15,16 @@ use super::{
 use crate::{config::ModLoader, Result};
 
 impl ApiOps for ModrinthClient {
-    async fn get_mod(&self, id: impl AsProjectId) -> Result<Mod> {
+    async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
         fetch_project(self, id).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: impl AsProjectId) -> Result<Modpack> {
+    async fn get_modpack(&self, id: &impl AsProjectId) -> Result<Modpack> {
         fetch_project(self, id).await?.try_into()
     }
 
-    async fn get_mods<T: AsProjectId>(&self, ids: impl AsRef<[T]>) -> Result<Vec<Mod>> {
-        let ids: Vec<_> = ids.as_ref().into_iter().filter_map(|id| id.try_as_modrinth().ok()).collect();
+    async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
+        let ids: Vec<_> = ids.iter().filter_map(|id| id.try_as_modrinth().ok()).collect();
         let projects = self
             .projects()
             .get_projects(&GetProjectsParams { ids: &ids })
@@ -38,17 +38,17 @@ impl ApiOps for ModrinthClient {
 
     async fn get_project_versions(
         &self,
-        id: impl AsRef<ProjectIdSvcType>,
-        game_version: impl AsRef<Option<&str>>,
-        loader: impl AsRef<Option<ModLoader>>,
+        id: &ProjectIdSvcType,
+        game_version: Option<&str>,
+        loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let mod_id = id.as_ref().as_modrinth()?;
+        let mod_id = id.as_modrinth()?;
         let versions = self
             .versions()
             .get_project_versions(&GetProjectVersionsParams {
                 mod_id,
-                loaders: loader.as_ref().map(|l| vec![l.as_str()]),
-                game_versions: game_version.as_ref().map(|v| vec![v]),
+                loaders: loader.map(|l| vec![l.as_str()]),
+                game_versions: game_version.map(|v| vec![v]),
                 featured: None,
             })
             .await?

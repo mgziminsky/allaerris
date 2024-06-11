@@ -40,7 +40,10 @@ macro_rules! api {
             async fn $name$(< $( $lt $( : $clt $(+ $dlt )* )? ),* >)?(&self, $($arg: $ty),*) -> Result<$ret>;
         )*}
 
-        /// Methods wrapping the common api actions provided by the different services
+        /// Methods wrapping the common api actions provided by the different services.
+        ///
+        /// Any ![Copy] args require references to work around long standing compiler bug
+        /// related to recursive resolution of generics...
         impl Client {$(
             $(#[$attr])*
             $vis async fn $name$(< $( $lt $( : $clt $(+ $dlt )* )? ),* >)?(&self, $($arg: $ty),*) -> Result<$ret> {
@@ -48,7 +51,7 @@ macro_rules! api {
                     ClientInner::Modrinth(c) => c.$name($($arg),*).await,
                     ClientInner::Forge(c) => c.$name($($arg),*).await,
                     ClientInner::Github(c) => c.$name($($arg),*).await,
-                    ClientInner::Multi(c) => api!(@prox $($prox)?)(c, |c| c.$name($(&$arg),*)).await,
+                    ClientInner::Multi(c) => api!(@prox $($prox)?)(c, |c| c.$name($($arg),*)).await,
                 }
             }
         )*}
@@ -68,7 +71,7 @@ api! {
     ///
     /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
     /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
-    pub get_mod(id: impl AsProjectId) -> Mod;
+    pub get_mod(id: &impl AsProjectId) -> Mod;
 
     /// Get the [modpack](Modpack) with `id`
     ///
@@ -83,7 +86,7 @@ api! {
     ///
     /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
     /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
-    pub get_modpack(id: impl AsProjectId) -> Modpack;
+    pub get_modpack(id: &impl AsProjectId) -> Modpack;
 
     /// Get all [mods](Mod) listed in `ids`
     ///
@@ -94,7 +97,7 @@ api! {
     /// # Errors
     ///
     /// Any network or api errors from the backing client
-    ++pub get_mods<T: AsProjectId>(ids: impl AsRef<[T]>) -> Vec<Mod>;
+    ++pub get_mods(ids: &[impl AsProjectId]) -> Vec<Mod>;
 
     /// Get all [versions](Version) of the project with `id`
     ///
@@ -109,7 +112,7 @@ api! {
     /// Any network or api errors from the backing client
     ///
     /// [ErrorKind::WrongService]: crate::ErrorKind::WrongService
-    ++pub get_project_versions(id: impl AsRef<ProjectIdSvcType>, game_version: impl AsRef<Option<&str>>, loader: impl AsRef<Option<ModLoader>>) -> Vec<Version>;
+    ++pub get_project_versions(id: &ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Vec<Version>;
 
     /// Get all available Minecraft [versions](schema::GameVersion)
     /// in descending order by release date

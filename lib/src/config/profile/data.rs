@@ -107,7 +107,7 @@ impl ProfileData {
     /// This does not preserve ordering of the remaining mods after removal
     pub fn remove_mods_matching<'a>(&mut self, to_remove: impl AsRef<[&'a str]>) -> Vec<Mod> {
         // Convert all to lowercase once up front
-        let to_remove: Vec<_> = to_remove.as_ref().into_iter().map(|s| (*s, s.to_lowercase())).collect();
+        let to_remove: Vec<_> = to_remove.as_ref().iter().map(|s| (*s, s.to_lowercase())).collect();
 
         let idxs = self.mods.iter().enumerate().fold(vec![], |mut found, (idx, m)| {
             if to_remove

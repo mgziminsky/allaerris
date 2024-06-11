@@ -16,16 +16,16 @@ use super::{
 use crate::{config::ModLoader, Result};
 
 impl ApiOps for ForgeClient {
-    async fn get_mod(&self, id: impl AsProjectId) -> Result<Mod> {
+    async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
         fetch_mod(self, id).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: impl AsProjectId) -> Result<Modpack> {
+    async fn get_modpack(&self, id: &impl AsProjectId) -> Result<Modpack> {
         fetch_mod(self, id).await?.try_into()
     }
 
-    async fn get_mods<T: AsProjectId>(&self, ids: impl AsRef<[T]>) -> Result<Vec<Mod>> {
-        let mod_ids = ids.as_ref().into_iter().filter_map(|i| i.try_as_forge().ok()).collect();
+    async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
+        let mod_ids = ids.iter().filter_map(|i| i.try_as_forge().ok()).collect();
         let mods = self
             .mods()
             .get_mods(&GetModsParams {
@@ -42,17 +42,17 @@ impl ApiOps for ForgeClient {
 
     async fn get_project_versions(
         &self,
-        id: impl AsRef<ProjectIdSvcType>,
-        game_version: impl AsRef<Option<&str>>,
-        loader: impl AsRef<Option<ModLoader>>,
+        id: &ProjectIdSvcType,
+        game_version: Option<&str>,
+        loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let id = id.as_ref().as_forge()?;
+        let id = id.as_forge()?;
         let files = self
             .files()
             .get_mod_files(&GetModFilesParams {
                 mod_id: *id as _,
-                game_version: *game_version.as_ref(),
-                mod_loader_type: loader.as_ref().map(Into::into),
+                game_version,
+                mod_loader_type: loader.map(Into::into),
                 game_version_type_id: None,
                 index: None,
                 page_size: None,
