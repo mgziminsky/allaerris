@@ -36,7 +36,7 @@ impl FsUtils for FsUtil {
     {
         if let Some(path) = path.parent() {
             if !path.exists() {
-                create_dir_all(path).await?
+                create_dir_all(path).await?;
             }
         }
         let file = OpenOptions::new().create(true).write(true).truncate(true).open(path).await?;

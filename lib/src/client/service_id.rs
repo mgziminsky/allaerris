@@ -1,6 +1,6 @@
 use crate::Result;
 
-/// Use with [svc_id_impl] to set any of the clients as not available for the
+/// Use with [`svc_id_impl`] to set any of the clients as not available for the
 /// defined type
 #[allow(unused)]
 pub enum Unsupported {}

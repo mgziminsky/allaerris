@@ -6,7 +6,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{fs_util::*, Mod, ModLoader, Modpack},
+    config::{fs_util::{FsUtil, FsUtils}, Mod, ModLoader, Modpack},
     Result,
 };
 
@@ -22,7 +22,7 @@ macro_rules! consts {
 }
 pub(super) use consts;
 
-/// Minecraft version used for [ProfileData::default()]
+/// Minecraft version used for [`ProfileData::default()`]
 pub const DEFAULT_GAME_VERSION: &str = consts!(DEFAULT_GAME_VERSION);
 
 /// Name of file used to [save]/[load] [profiles](ProfileData) from the

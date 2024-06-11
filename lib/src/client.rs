@@ -16,7 +16,7 @@ use crate::{config::ModLoader, Result};
 
 #[rustfmt::skip]
 mod exported {
-    /// The CurseForge API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly
+    /// The Curseforge API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly
     pub use curseforge::ApiClient as ForgeClient;
     #[doc = "The Github API client used by this project. Convert `into` [Client](struct.Client.html) to use, don't access directly\n\n"]
     pub use github::Octocrab as GithubClient;

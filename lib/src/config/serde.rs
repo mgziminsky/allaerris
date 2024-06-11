@@ -5,7 +5,7 @@ pub(super) mod profiles {
     use super::*;
     use crate::config::{Profile, ProfilesList};
 
-    pub fn serialize<'p, S, Iter, Item>(data: Iter, ser: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S, Iter, Item>(data: Iter, ser: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
         Item: AsRef<Profile>,

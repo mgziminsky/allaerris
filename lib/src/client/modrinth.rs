@@ -212,7 +212,7 @@ mod from {
             match value {
                 ModrinthDepType::Required => Self::Required,
                 ModrinthDepType::Optional => Self::Optional,
-                _ => Self::Optional,
+                _ => Self::Other,
             }
         }
     }

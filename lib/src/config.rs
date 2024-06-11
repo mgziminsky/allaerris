@@ -12,7 +12,6 @@ pub mod profile;
 
 use std::{
     collections::BTreeSet,
-    ops::Deref,
     path::{Path, PathBuf},
 };
 
@@ -199,7 +198,7 @@ impl Config {
     /// Will return any IO or parse errors encountered while attempting to read
     /// the config
     pub async fn load() -> Result<Self> {
-        Self::load_from(DEFAULT_CONFIG_PATH.deref()).await
+        Self::load_from(&*DEFAULT_CONFIG_PATH).await
     }
 
     /// Load a [config](Config) from the file located at `path`
@@ -223,7 +222,7 @@ impl Config {
     /// Will return any IO errors encountered while attempting to save to the
     /// filesystem
     pub async fn save(&mut self) -> Result<()> {
-        self.save_to(DEFAULT_CONFIG_PATH.deref()).await
+        self.save_to(&*DEFAULT_CONFIG_PATH).await
     }
 
     /// Save this [config](Config) and the active [profile] to the file located
@@ -262,7 +261,6 @@ impl From<ConfigDe> for Config {
                 // Activate first profile from list if present and not already set
                 .or_else(|| de.profiles.first().map(ProfileByPath::as_path).map(ToOwned::to_owned)),
             profiles: de.profiles,
-            ..Default::default()
         }
     }
 }
@@ -288,11 +286,10 @@ mod tests {
     fn _test_config() -> Config {
         Config {
             active: Some(PATHS[2].into()),
-            profiles: ProfilesList::from_iter(
-                zip(NAMES.iter().map(ToString::to_string), PATHS.iter().map(Into::into))
-                    .map(|(name, path)| Profile::new_unchecked(name, path))
-                    .map(Into::into),
-            ),
+            profiles: zip(NAMES.iter().map(ToString::to_string), PATHS.iter().map(Into::into))
+                .map(|(name, path)| Profile::new_unchecked(name, path))
+                .map(Into::into)
+                .collect(),
         }
     }
     fn _test_ser_data() -> (Config, Vec<Token>) {
@@ -331,7 +328,7 @@ mod tests {
         assert_de_tokens(&config, &tokens);
     }
 
-    /// When no active_profile is set, then it should get set to the first
+    /// When no `active_profile` is set, then it should get set to the first
     /// listed profile automatically
     #[test]
     fn deserialize_no_active() {
@@ -341,7 +338,7 @@ mod tests {
         assert_de_tokens(&config, &tokens);
     }
 
-    /// When the active_profile is set to a value not in the list of profiles,
+    /// When the `active_profile` is set to a value not in the list of profiles,
     /// then it should get set to the first listed profile automatically
     #[test]
     fn deserialize_bad_active() {
@@ -357,8 +354,7 @@ mod tests {
         let res = c.set_active("/some/invalid/path");
         assert!(
             matches!(res, Err(ref e) if matches!(e.kind(), ErrorKind::UnknownProfile)),
-            "set_active should fail with correct error given a path not in profiles: {:?}",
-            res
+            "set_active should fail with correct error given a path not in profiles: {res:?}"
         );
     }
 }

@@ -24,7 +24,7 @@ impl std::hash::Hash for GameVersion {
 // Sort by date descending
 impl PartialOrd for GameVersion {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        other.release_date.partial_cmp(&self.release_date)
+        Some(self.cmp(other))
     }
 }
 impl Ord for GameVersion {

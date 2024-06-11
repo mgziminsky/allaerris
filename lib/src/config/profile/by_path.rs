@@ -18,6 +18,7 @@ impl ProfileByPath {
     /// # UNSAFE
     /// Only call from config accessors that can guarantee this won't be aliased
     /// via guarantees on the caller
+    #[allow(clippy::mut_from_ref)]
     pub fn force_mut(&self) -> &mut Profile {
         unsafe { &mut *self.0.as_ptr() }
     }
@@ -60,13 +61,13 @@ impl PartialEq for ProfileByPath {
 }
 impl std::hash::Hash for ProfileByPath {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.as_path().hash(state)
+        self.as_path().hash(state);
     }
 }
 
 impl PartialOrd for ProfileByPath {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.as_path().partial_cmp(other.as_path())
+        Some(self.cmp(other))
     }
 }
 impl Ord for ProfileByPath {

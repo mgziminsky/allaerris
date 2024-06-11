@@ -21,12 +21,12 @@ impl ApiOps for GithubClient {
 
     async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
         // FIXME: Rate limiting
-        let (_, mods) = TokioScope::scope_and_block(|s| {
+        let ((), mods) = TokioScope::scope_and_block(|s| {
             for id in ids {
                 s.spawn(self.get_mod(id));
             }
         });
-        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(|r| r.ok())).collect();
+        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(Result::ok)).collect();
         Ok(mods)
     }
 

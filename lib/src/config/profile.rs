@@ -77,13 +77,13 @@ impl Profile {
         &self.path
     }
 
-    ///
+    /// The profile name
     pub fn name(&self) -> &str {
         &self.name
     }
 
-    ///
-    pub fn set_name(&mut self, name: impl ToString) {
+    /// Set the profile name
+    pub fn set_name(&mut self, name: &impl ToString) {
         self.name = name.to_string();
     }
 
