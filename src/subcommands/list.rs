@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::identity, ops::Deref};
+use std::{collections::HashMap, ops::Deref};
 
 use anyhow::Result;
 use colored::Colorize;
@@ -38,7 +38,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
 
     let data = profile.data().await?;
     let mut projects = client
-        .get_mods(data.mods.iter().map(|m| &m.id).collect::<Vec<_>>())
+        .get_mods(&data.mods.iter().map(|m| &m.id).collect::<Vec<_>>())
         .await?;
 
     // NOTE: Should these be moved into relibium?
@@ -53,6 +53,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
             .fold(HashMap::new(), |mut acc, (i, m)| {
                 if let ProjectId::Modrinth(_) = m.id {
                     for team in m.authors.drain(..) {
+                        #[allow(clippy::unwrap_or_default)]
                         acc.entry(team.name).or_insert_with(Vec::new).push(i);
                     }
                 }
@@ -66,7 +67,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
                 .get_teams(&GetTeamsParams { ids: &team_ids })
                 .await?
                 .into_iter()
-                .flat_map(identity)
+                .flatten()
                 // Add member names to the author list of every mod they belong to
                 .for_each(|member| {
                     if let Some(indices) = teams.get(&member.team_id) {

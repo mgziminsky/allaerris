@@ -25,7 +25,7 @@ pub async fn configure(
         }
     }
     if let Some(name) = name {
-        profile.set_name(name);
+        profile.set_name(&name);
         interactive = false;
     }
     if interactive {
@@ -56,7 +56,7 @@ pub async fn configure(
                             .with_prompt("Change the profile's name")
                             .default(profile.name().to_owned())
                             .interact_text()?;
-                        profile.set_name(name);
+                        profile.set_name(&name);
                     }
                     3 => break,
                     _ => unreachable!(),

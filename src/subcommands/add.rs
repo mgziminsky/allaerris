@@ -17,7 +17,7 @@ pub async fn add(
         vec![m]
     } else {
         let ids = ids.iter().map(String::as_str).collect::<Vec<_>>();
-        let mods = client.get_mods(ids).await?;
+        let mods = client.get_mods(&ids).await?;
         eprintln!("{}", *TICK_GREEN);
         mods
     }
