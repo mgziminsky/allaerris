@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
 
 pub(crate) use self::by_path::ProfileByPath;
-pub use self::data::ProfileData;
+pub use self::data::{ProfileData, DEFAULT_GAME_VERSION};
 use crate::{config::Mod, ErrorKind, Result};
 
 fn name_lowercase(m: &Mod) -> String {

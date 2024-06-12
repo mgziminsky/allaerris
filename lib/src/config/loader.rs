@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use std::{convert::Infallible, fmt::Display, str::FromStr};
+use std::{borrow::Cow, convert::Infallible, fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
@@ -65,7 +65,7 @@ impl<'de> Deserialize<'de> for ModLoader {
     where
         D: serde::Deserializer<'de>,
     {
-        let val = Deserialize::deserialize(deserializer)?;
-        Self::from_str(val).map_err(serde::de::Error::custom)
+        let val: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
+        Self::from_str(&val).map_err(serde::de::Error::custom)
     }
 }
