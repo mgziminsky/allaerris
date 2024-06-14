@@ -4,7 +4,7 @@ mod file_picker;
 mod subcommands;
 mod tui;
 
-use anyhow::{anyhow, bail, ensure, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{CommandFactory, Parser};
 use colored::Colorize;
 use relibium::{
@@ -63,7 +63,7 @@ fn main() -> ExitCode {
         let _ = colored::control::set_virtual_terminal(true);
     }
     if let Err(err) = runtime.block_on(actual_main(cli)) {
-        eprintln!("{err:#}");
+        eprintln!("{}", format!("{err:?}").red());
         if err.to_string().contains("error trying to connect") {
             eprintln!(
                 "{}",
@@ -218,7 +218,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     )
                     .await?;
                 }
-                ProfileSubCommands::Create {
+                ProfileSubCommands::Add {
                     game_version,
                     loader,
                     name,
@@ -235,19 +235,22 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     .await?;
                     println!(
                         "{}",
-                        "After adding your mods, remember to run `{} upgrade` to download them!"
-                            .yellow()
+                        format!(
+                            "After adding your mods, remember to run `{}` to download them!",
+                            concat!(consts!(APP_NAME), " upgrade").bold()
+                        )
+                        .yellow()
                     );
                 }
-                ProfileSubCommands::Delete {
+                ProfileSubCommands::Remove {
                     profile_name,
                     switch_to,
                 } => {
                     let removed =
                         subcommands::profile::delete(&mut config, profile_name, switch_to)?;
-                    println!("Profile Removed: {}", fmt_profile_simple(&removed, 30, 30));
+                    println!("Profile Removed: {}", fmt_profile_simple(&removed, 100));
                     if let Ok(active) = config.active_profile() {
-                        println!("Active Profile: {}", fmt_profile_simple(active, 30, 30));
+                        println!("Active Profile:  {}", fmt_profile_simple(active, 100));
                     }
                 }
                 ProfileSubCommands::List => {
@@ -266,9 +269,12 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             };
             if default_flag {
                 println!(
-                    "{} ferium profile help {}",
-                    "Use".yellow(),
-                    "for more information about this subcommand".yellow()
+                    "{}",
+                    format!(
+                        "Use `{}` for more information about this subcommand",
+                        concat!(consts!(APP_NAME), " profile help").bold()
+                    )
+                    .yellow()
                 );
             }
         }
@@ -356,11 +362,13 @@ fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
             ),
             _ => err.into(),
         })
-        .with_context(|| "Failed to load active profile".red().bold())
+        .with_context(|| "Failed to load active profile".bold())
 }
 
 /// Check if `profile` is empty, and if so return an error
 async fn check_empty_profile(profile: &Profile) -> Result<()> {
-    ensure!(!profile.data().await?.is_empty(), MSG_PROFILE_EMPTY);
+    if profile.data().await?.is_empty() {
+        bail!(MSG_PROFILE_EMPTY);
+    }
     Ok(())
 }

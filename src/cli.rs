@@ -34,6 +34,7 @@ pub struct Ferium {
 #[derive(Subcommand)]
 pub enum SubCommands {
     /// Add mods to the profile
+    #[clap(visible_aliases = ["new", "create"])]
     Add {
         /// The identifier(s) of the mod/project/repository
         ///
@@ -78,7 +79,7 @@ pub enum SubCommands {
     Profiles,
     /// Remove mods and/or repositories from the profile.
     /// Optionally, provide a list of names or IDs of the mods to remove.
-    #[clap(visible_alias = "rm")]
+    #[clap(visible_aliases = ["rm", "delete", "del"])]
     Remove {
         /// List of project IDs or case-insensitive names of mods to remove
         mod_names: Vec<String>,
@@ -107,8 +108,8 @@ pub enum ProfileSubCommands {
     },
     /// Create a new profile.
     /// Optionally, provide the settings as arguments.
-    #[clap(visible_aliases = ["new", "add"])]
-    Create {
+    #[clap(visible_aliases = ["new", "create"])]
+    Add {
         /// The Minecraft version to use
         #[clap(long, short = 'v')]
         game_version: Option<String>,
@@ -126,8 +127,8 @@ pub enum ProfileSubCommands {
     },
     /// Delete a profile.
     /// Optionally, provide the name of the profile to delete.
-    #[clap(visible_aliases = ["remove", "rm"])]
-    Delete {
+    #[clap(visible_aliases = ["rm", "delete", "del"])]
+    Remove {
         /// The name of the profile to delete
         profile_name: Option<String>,
         /// The name of the profile to switch to afterwards
@@ -149,6 +150,7 @@ pub enum ProfileSubCommands {
 #[derive(Subcommand)]
 pub enum ModpackSubCommands {
     /// Add a modpack to the config
+    #[clap(visible_aliases = ["new", "create"])]
     Add {
         /// The identifier of the modpack/project
         ///
@@ -179,8 +181,8 @@ pub enum ModpackSubCommands {
         install_overrides: Option<bool>,
     },
     /// Delete the modpack from active profile.
-    #[clap(visible_aliases = ["remove", "rm"])]
-    Delete {
+    #[clap(visible_aliases = ["rm", "delete", "del"])]
+    Remove {
         /// Delete without a confirmation prompt
         #[clap(long, short)]
         force: bool,

@@ -102,7 +102,7 @@ fn profiles_prompt<'p>(
     let mut prompt = Select::with_theme(&*THEME).with_prompt(msg);
     for p in profiles {
         // Adding individually avoids allocating all the Strings twice
-        prompt = prompt.item(fmt_profile_simple(p, 35, 35));
+        prompt = prompt.item(fmt_profile_simple(p, 120));
     }
     prompt
         .interact_opt()

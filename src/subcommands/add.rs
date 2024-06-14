@@ -9,7 +9,7 @@ pub async fn add(
     profile: &mut ProfileData,
     ids: Vec<String>,
 ) -> Result<()> {
-    eprint!("Fetching mod information... ");
+    eprint!("Fetching mod information...");
     let mods = if ids.len() == 1 {
         let m = client.get_mod(&ids[0]).await?;
         eprintln!();

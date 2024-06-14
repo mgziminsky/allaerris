@@ -131,14 +131,20 @@ pub async fn print_profile(profile: &Profile, active: bool) {
         },
     );
     println!(
-        "{}{}
-  Path:               {}
-  Minecraft Version:  {}
-  Mod Loader:         {}
-  Mods:               {}
+        "\
+{}
+    Path:               {}
+    Minecraft Version:  {}
+    Mod Loader:         {}
+    Mods:               {}
 ",
-        profile.name().bold(),
-        if active { " *" } else { "" },
+        {
+            let mut name = profile.name().bold();
+            if active {
+                name = name.underline().italic();
+            }
+            name
+        },
         profile.path().display().to_string().blue().underline(),
         game_version,
         loader,
@@ -242,16 +248,16 @@ _{}_
     );
 }
 
-pub fn fmt_profile_simple(p: &Profile, name_width: usize, path_width: usize) -> String {
+pub fn fmt_profile_simple(p: &Profile, max_width: usize) -> String {
     let name = p.name();
     let path = p.path().display().to_string();
+    let total = name.len() + path.len();
     format!(
         "{} • {}",
-        ellipsize!(^name, name_width),
-        ellipsize!(^path, path_width),
+        ellipsize!(^name, max_width * name.len() / total),
+        ellipsize!(^path, max_width * path.len() / total),
     )
 }
-
 
 #[cfg(test)]
 mod tests {

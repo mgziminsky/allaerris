@@ -1,8 +1,11 @@
-use anyhow::{bail, Ok, Result};
+use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
 use dialoguer::{Confirm, Input, Select};
 use relibium::{
-    config::{profile::ProfileData, ModLoader, Profile},
+    config::{
+        profile::{ProfileData, DEFAULT_GAME_VERSION},
+        ModLoader, Profile,
+    },
     Client, Config, DEFAULT_MINECRAFT_DIR,
 };
 use std::path::PathBuf;
@@ -24,12 +27,13 @@ pub async fn create(
     let path = path.map_or_else(
         || {
             println!(
-                "The default mods directory is {}",
-                DEFAULT_MINECRAFT_DIR.display()
+                "The default profile directory is `{}`",
+                DEFAULT_MINECRAFT_DIR.display().to_string().bold().italic()
             );
-            if Confirm::with_theme(&*THEME)
-                .with_prompt("Would you like to specify a custom profile directory?")
-                .interact()?
+            if config.profile(DEFAULT_MINECRAFT_DIR.as_path()).is_ok()
+                || Confirm::with_theme(&*THEME)
+                    .with_prompt("Would you like to specify a custom profile directory?")
+                    .interact()?
             {
                 pick_folder(DEFAULT_MINECRAFT_DIR.as_path(), "Pick a profile directory")
             } else {
@@ -42,11 +46,11 @@ pub async fn create(
     if config.profile(&path).is_ok() {
         bail!(
             "Config already contains a profile at the path `{}`",
-            path.display()
+            path.display().to_string().bold().italic()
         )
     }
     println!(
-        "{} {} · {}",
+        "{} {} = {}",
         *TICK_GREEN,
         "Profile Directory".bold(),
         path.display().to_string().green()
@@ -69,24 +73,32 @@ pub async fn create(
     let game_version = if let Some(gv) = game_version {
         gv
     } else {
-        let mut versions: Vec<_> = client
-            .get_game_versions()
-            .await?
-            .into_iter()
-            .map(|v| v.version)
-            .collect();
-
-        let selected_version = Select::with_theme(&*THEME)
-            .with_prompt("Which version of Minecraft should this profile use?")
-            .items(&versions)
-            .interact()?;
-
-        versions.swap_remove(selected_version)
+        let versions = client.get_game_versions().await;
+        match versions {
+            Result::Ok(versions) => {
+                let mut versions: Vec<_> = versions.into_iter().map(|v| v.version).collect();
+                Select::with_theme(&*THEME)
+                    .with_prompt("Which version of Minecraft should this profile use?")
+                    .items(&versions)
+                    .interact()
+                    .map(|i| versions.swap_remove(i))?
+            }
+            err => {
+                let err = err
+                    .context("Failed to load minecraft versions".bold())
+                    .unwrap_err();
+                eprintln!("{}", format!("{:#}", err).red());
+                Input::with_theme(&*THEME)
+                    .with_prompt("Enter Minecraft version for the profile:")
+                    .with_initial_text(DEFAULT_GAME_VERSION)
+                    .interact_text()?
+            }
+        }
     };
 
     let profile = Profile::with_data(
         name,
-        path,
+        path.clone(),
         ProfileData {
             game_version,
             loader,
@@ -94,7 +106,13 @@ pub async fn create(
             modpack: None,
         },
     )?;
-    config.add_profile(profile).expect("shouldn't fail to add profile since conditions were checked before");
+    config
+        .add_profile(profile)
+        .expect("shouldn't fail to add profile since conditions were checked before");
+    let _ = config
+        .set_active(path)
+        .context("Failed to switch to newly created profile")
+        .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()));
 
     Ok(())
 }

@@ -8,8 +8,8 @@ use anyhow::Result;
 static HOME: LazyLock<PathBuf> =
     LazyLock::new(|| dirs::home_dir().expect("should be able to determine home dir"));
 
-#[cfg(feature = "gui")]
 /// Use the system file picker to pick a file, with a `default` path (that is [not supported on linux](https://github.com/PolyMeilex/rfd/issues/42))
+#[cfg(any(feature = "gui", ide))]
 fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathBuf> {
     rfd::FileDialog::new()
         .set_can_create_directories(true)
@@ -18,8 +18,8 @@ fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathB
         .pick_folder()
 }
 
-#[cfg(any(not(feature = "gui"), ide))]
 /// Use a terminal input to pick a file, with a `default` path
+#[cfg(not(feature = "gui"))]
 fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathBuf> {
     dialoguer::Input::with_theme(&dialoguer::theme::ColorfulTheme::default())
         .default(default.display().to_string())
