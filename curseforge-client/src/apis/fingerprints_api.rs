@@ -98,8 +98,8 @@ impl<'c> FingerprintsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/fingerprints/fuzzy"),
-        )?;
+            "/v1/fingerprints/fuzzy"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -139,8 +139,11 @@ impl<'c> FingerprintsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/fingerprints/fuzzy/{gameId}", gameId=game_id),
-        )?;
+            format_args!(
+            "/v1/fingerprints/fuzzy/{gameId}"
+            , gameId=game_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -180,8 +183,8 @@ impl<'c> FingerprintsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/fingerprints"),
-        )?;
+            "/v1/fingerprints"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -221,8 +224,11 @@ impl<'c> FingerprintsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/fingerprints/{gameId}", gameId=game_id),
-        )?;
+            format_args!(
+            "/v1/fingerprints/{gameId}"
+            , gameId=game_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

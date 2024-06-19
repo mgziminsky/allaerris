@@ -121,8 +121,11 @@ impl<'c> VersionFilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/version_file/{hash}", hash=crate::urlencode(hash)),
-        )?;
+            format_args!(
+            "/version_file/{hash}"
+            , hash=crate::urlencode(hash)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -166,8 +169,11 @@ impl<'c> VersionFilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/version_file/{hash}/update", hash=crate::urlencode(hash)),
-        )?;
+            format_args!(
+            "/version_file/{hash}/update"
+            , hash=crate::urlencode(hash)
+            )
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("algorithm", algorithm)]);
         local_var_req_builder = local_var_req_builder.json(get_latest_version_from_hash_body);
@@ -194,8 +200,8 @@ impl<'c> VersionFilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/version_files/update"),
-        )?;
+            "/version_files/update"
+        );
         local_var_req_builder = local_var_req_builder.json(get_latest_versions_from_hashes_body);
 
         let local_var_resp = local_var_req_builder.send().await?;
@@ -219,8 +225,11 @@ impl<'c> VersionFilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/version_file/{hash}", hash=crate::urlencode(hash)),
-        )?;
+            format_args!(
+            "/version_file/{hash}"
+            , hash=crate::urlencode(hash)
+            )
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("algorithm", algorithm)]);
 
@@ -250,8 +259,8 @@ impl<'c> VersionFilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/version_files"),
-        )?;
+            "/version_files"
+        );
         local_var_req_builder = local_var_req_builder.json(hash_list);
 
         let local_var_resp = local_var_req_builder.send().await?;

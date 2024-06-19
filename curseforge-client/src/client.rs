@@ -25,8 +25,10 @@ pub struct ApiClient {
 impl ApiClient {
     pub fn builder() -> Builder { Builder::default() }
 
-    pub fn request(&self, method: reqwest::Method, path: impl AsRef<str>) -> crate::Result<reqwest::RequestBuilder> {
-        Ok(self.client.request(method, self.server.join(path.as_ref())?))
+    /// `path` should always start with single `/` and will be appended to the base server url
+    pub fn request(&self, method: reqwest::Method, path: impl ::std::fmt::Display) -> reqwest::RequestBuilder {
+        let base = self.server.as_str().strip_suffix('/').unwrap_or(self.server.as_str());
+        self.client.request(method, format!("{base}{path}"))
     }
 
     pub fn categories(&self) -> apis::CategoriesApi {

@@ -94,8 +94,17 @@ impl<'c> {{classname}}<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::{{{httpMethod}}},
-            format!("{{{path}}}"{{#pathParams}}, {{{baseName}}}={{#isString}}crate::urlencode({{/isString}}{{{paramName}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}{{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}{{/pathParams}}),
-        )?;
+            {{#hasPathParams}}
+            format_args!(
+            {{/hasPathParams}}
+            "{{{path}}}"
+            {{#pathParams}}
+            , {{{baseName}}}={{#isString}}crate::urlencode({{/isString}}{{{paramName}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}{{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}
+            {{/pathParams}}
+            {{#hasPathParams}}
+            )
+            {{/hasPathParams}}
+        );
         {{#hasAuthMethods}}
 
         // Auth

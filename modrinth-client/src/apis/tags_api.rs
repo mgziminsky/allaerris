@@ -103,8 +103,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/category"),
-        )?;
+            "/tag/category"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -125,8 +125,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/donation_platform"),
-        )?;
+            "/tag/donation_platform"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -148,8 +148,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/license"),
-        )?;
+            "/tag/license"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -172,8 +172,11 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/license/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/tag/license/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -194,8 +197,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/loader"),
-        )?;
+            "/tag/loader"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -216,8 +219,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/project_type"),
-        )?;
+            "/tag/project_type"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -238,8 +241,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/report_type"),
-        )?;
+            "/tag/report_type"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -260,8 +263,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/side_type"),
-        )?;
+            "/tag/side_type"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -282,8 +285,8 @@ impl<'c> TagsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/tag/game_version"),
-        )?;
+            "/tag/game_version"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 

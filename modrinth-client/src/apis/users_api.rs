@@ -177,8 +177,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/user/{id_username}/icon", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}/icon"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -217,8 +220,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/user/{id_username}/follows", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}/follows"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -256,8 +262,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/user/{id_username}/payouts", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}/payouts"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -295,8 +304,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/user/{id_username}", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -316,8 +328,8 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/user"),
-        )?;
+            "/user"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -355,8 +367,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/user/{id_username}/projects", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}/projects"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -379,8 +394,8 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/users"),
-        )?;
+            "/users"
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("ids", ids)]);
 
@@ -405,8 +420,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/user/{id_username}", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -446,8 +464,11 @@ impl<'c> UsersApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/user/{id_username}/payouts", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}/payouts"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

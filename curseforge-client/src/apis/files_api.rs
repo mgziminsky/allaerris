@@ -133,8 +133,8 @@ impl<'c> FilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/mods/files"),
-        )?;
+            "/v1/mods/files"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -174,8 +174,12 @@ impl<'c> FilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/{modId}/files/{fileId}", modId=mod_id, fileId=file_id),
-        )?;
+            format_args!(
+            "/v1/mods/{modId}/files/{fileId}"
+            , modId=mod_id
+            , fileId=file_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -214,8 +218,12 @@ impl<'c> FilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/{modId}/files/{fileId}/changelog", modId=mod_id, fileId=file_id),
-        )?;
+            format_args!(
+            "/v1/mods/{modId}/files/{fileId}/changelog"
+            , modId=mod_id
+            , fileId=file_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -254,8 +262,12 @@ impl<'c> FilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/{modId}/files/{fileId}/download-url", modId=mod_id, fileId=file_id),
-        )?;
+            format_args!(
+            "/v1/mods/{modId}/files/{fileId}/download-url"
+            , modId=mod_id
+            , fileId=file_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -294,8 +306,11 @@ impl<'c> FilesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/{modId}/files", modId=mod_id),
-        )?;
+            format_args!(
+            "/v1/mods/{modId}/files"
+            , modId=mod_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

@@ -140,8 +140,8 @@ impl<'c> ModsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/mods/featured"),
-        )?;
+            "/v1/mods/featured"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -181,8 +181,11 @@ impl<'c> ModsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/{modId}", modId=mod_id),
-        )?;
+            format_args!(
+            "/v1/mods/{modId}"
+            , modId=mod_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -221,8 +224,11 @@ impl<'c> ModsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/{modId}/description", modId=mod_id),
-        )?;
+            format_args!(
+            "/v1/mods/{modId}/description"
+            , modId=mod_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -261,8 +267,8 @@ impl<'c> ModsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/v1/mods"),
-        )?;
+            "/v1/mods"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -302,8 +308,8 @@ impl<'c> ModsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/mods/search"),
-        )?;
+            "/v1/mods/search"
+        );
 
         // Auth
         #[allow(unused_mut)]

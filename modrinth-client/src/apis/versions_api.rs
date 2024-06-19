@@ -190,8 +190,11 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/version/{id}/file", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/version/{id}/file"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -235,8 +238,8 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/version"),
-        )?;
+            "/version"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -277,8 +280,11 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/version/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/version/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -316,8 +322,11 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/project/{id_slug}/version", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/version"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         if let Some(ref loaders) = loaders {
             local_var_req_builder = local_var_req_builder.query(&[("loaders", serde_json::to_string(loaders)?)]); // MANUAL CHANGE
@@ -352,8 +361,11 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/version/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/version/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -377,8 +389,12 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/project/{id_slug}/version/{id_number}", id_slug=crate::urlencode(mod_id), id_number=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/version/{id_number}"
+            , id_slug=crate::urlencode(mod_id)
+            , id_number=crate::urlencode(id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -401,8 +417,8 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/versions"),
-        )?;
+            "/versions"
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("ids", serde_json::to_string(ids)?)]); // MANUAL CHANGE
 
@@ -427,8 +443,11 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/version/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/version/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -467,8 +486,11 @@ impl<'c> VersionsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/version/{id}/schedule", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/version/{id}/schedule"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

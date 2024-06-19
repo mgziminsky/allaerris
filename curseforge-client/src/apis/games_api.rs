@@ -116,8 +116,11 @@ impl<'c> GamesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/games/{gameId}", gameId=game_id),
-        )?;
+            format_args!(
+            "/v1/games/{gameId}"
+            , gameId=game_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -156,8 +159,8 @@ impl<'c> GamesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/games"),
-        )?;
+            "/v1/games"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -204,8 +207,11 @@ impl<'c> GamesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/games/{gameId}/version-types", gameId=game_id),
-        )?;
+            format_args!(
+            "/v1/games/{gameId}/version-types"
+            , gameId=game_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -244,8 +250,11 @@ impl<'c> GamesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/games/{gameId}/versions", gameId=game_id),
-        )?;
+            format_args!(
+            "/v1/games/{gameId}/versions"
+            , gameId=game_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -284,8 +293,11 @@ impl<'c> GamesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v2/games/{gameId}/versions", gameId=game_id),
-        )?;
+            format_args!(
+            "/v2/games/{gameId}/versions"
+            , gameId=game_id
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

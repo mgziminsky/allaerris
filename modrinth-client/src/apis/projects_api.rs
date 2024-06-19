@@ -377,8 +377,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/project/{id_slug}/gallery", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/gallery"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -434,8 +437,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/project/{id_slug}/icon", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/icon"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -476,8 +482,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/project/{id_slug}/check", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/check"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -500,8 +509,8 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/project"),
-        )?;
+            "/project"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -543,8 +552,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/project/{id_slug}/gallery", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/gallery"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -584,8 +596,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/project/{id_slug}", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -623,8 +638,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/project/{id_slug}/icon", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/icon"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -662,8 +680,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/project/{id_slug}/follow", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/follow"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -701,8 +722,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/project/{id_slug}/dependencies", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/dependencies"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -725,8 +749,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/project/{id_slug}", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -749,8 +776,8 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/projects"),
-        )?;
+            "/projects"
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("ids", serde_json::to_string(ids)?)]); // MANUAL CHANGE
 
@@ -775,8 +802,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/project/{id_slug}/gallery", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/gallery"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -832,8 +862,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/project/{id_slug}", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -872,8 +905,8 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/projects"),
-        )?;
+            "/projects"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -914,8 +947,8 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/projects_random"),
-        )?;
+            "/projects_random"
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("count", count)]);
 
@@ -940,8 +973,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/project/{id_slug}/schedule", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/schedule"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -980,8 +1016,8 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/search"),
-        )?;
+            "/search"
+        );
 
         if let Some(ref query) = query {
             local_var_req_builder = local_var_req_builder.query(&[("query", query)]);
@@ -1024,8 +1060,11 @@ impl<'c> ProjectsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/project/{id_slug}/follow", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/follow"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

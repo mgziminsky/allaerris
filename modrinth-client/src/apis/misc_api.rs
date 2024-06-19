@@ -50,8 +50,11 @@ impl<'c> MiscApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/updates/{id_slug}/forge_updates.json", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/updates/{id_slug}/forge_updates.json"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -71,8 +74,8 @@ impl<'c> MiscApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/statistics"),
-        )?;
+            "/statistics"
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 

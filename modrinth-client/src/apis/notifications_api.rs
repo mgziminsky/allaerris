@@ -151,8 +151,11 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/notification/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/notification/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -190,8 +193,8 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/notifications"),
-        )?;
+            "/notifications"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -231,8 +234,11 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/notification/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/notification/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -270,8 +276,8 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/notifications"),
-        )?;
+            "/notifications"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -311,8 +317,11 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/user/{id_username}/notifications", id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/user/{id_username}/notifications"
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -350,8 +359,11 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/notification/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/notification/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -389,8 +401,8 @@ impl<'c> NotificationsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/notifications"),
-        )?;
+            "/notifications"
+        );
 
         // Auth
         #[allow(unused_mut)]

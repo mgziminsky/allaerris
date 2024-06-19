@@ -188,8 +188,11 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/message/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/message/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -227,8 +230,8 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/report"),
-        )?;
+            "/report"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -270,8 +273,11 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/report/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/report/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -309,8 +315,8 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/reports"),
-        )?;
+            "/reports"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -350,8 +356,11 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/thread/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/thread/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -389,8 +398,8 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/threads"),
-        )?;
+            "/threads"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -430,8 +439,11 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/report/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/report/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -470,8 +482,11 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/thread/{id}", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/thread/{id}"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -511,8 +526,8 @@ impl<'c> ThreadsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/report"),
-        )?;
+            "/report"
+        );
 
         // Auth
         #[allow(unused_mut)]

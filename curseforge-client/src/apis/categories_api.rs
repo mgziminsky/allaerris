@@ -48,8 +48,8 @@ impl<'c> CategoriesApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/categories"),
-        )?;
+            "/v1/categories"
+        );
 
         // Auth
         #[allow(unused_mut)]

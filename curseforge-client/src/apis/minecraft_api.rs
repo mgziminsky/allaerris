@@ -95,8 +95,8 @@ impl<'c> MinecraftApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/minecraft/modloader"),
-        )?;
+            "/v1/minecraft/modloader"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -143,8 +143,8 @@ impl<'c> MinecraftApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/minecraft/version"),
-        )?;
+            "/v1/minecraft/version"
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -187,8 +187,11 @@ impl<'c> MinecraftApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/minecraft/modloader/{modLoaderName}", modLoaderName=crate::urlencode(mod_loader_name)),
-        )?;
+            format_args!(
+            "/v1/minecraft/modloader/{modLoaderName}"
+            , modLoaderName=crate::urlencode(mod_loader_name)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -227,8 +230,11 @@ impl<'c> MinecraftApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/v1/minecraft/version/{gameVersionString}", gameVersionString=crate::urlencode(game_version_string)),
-        )?;
+            format_args!(
+            "/v1/minecraft/version/{gameVersionString}"
+            , gameVersionString=crate::urlencode(game_version_string)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]

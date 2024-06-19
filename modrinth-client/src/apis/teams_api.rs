@@ -169,8 +169,11 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/team/{id}/members", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/team/{id}/members"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -209,8 +212,12 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::DELETE,
-            format!("/team/{id}/members/{id_username}", id=crate::urlencode(id), id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/team/{id}/members/{id_username}"
+            , id=crate::urlencode(id)
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -248,8 +255,11 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/project/{id_slug}/members", id_slug=crate::urlencode(mod_id)),
-        )?;
+            format_args!(
+            "/project/{id_slug}/members"
+            , id_slug=crate::urlencode(mod_id)
+            )
+        );
 
         let local_var_resp = local_var_req_builder.send().await?;
 
@@ -272,8 +282,11 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/team/{id}/members", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/team/{id}/members"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -311,8 +324,8 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::GET,
-            format!("/teams"),
-        )?;
+            "/teams"
+        );
 
         local_var_req_builder = local_var_req_builder.query(&[("ids", serde_json::to_string(ids)?)]); // MANUAL CHANGE
 
@@ -337,8 +350,11 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::POST,
-            format!("/team/{id}/join", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/team/{id}/join"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -376,8 +392,12 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/team/{id}/members/{id_username}", id=crate::urlencode(id), id_username=crate::urlencode(user)),
-        )?;
+            format_args!(
+            "/team/{id}/members/{id_username}"
+            , id=crate::urlencode(id)
+            , id_username=crate::urlencode(user)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
@@ -416,8 +436,11 @@ impl<'c> TeamsApi<'c> {
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(
             reqwest::Method::PATCH,
-            format!("/team/{id}/owner", id=crate::urlencode(id)),
-        )?;
+            format_args!(
+            "/team/{id}/owner"
+            , id=crate::urlencode(id)
+            )
+        );
 
         // Auth
         #[allow(unused_mut)]
