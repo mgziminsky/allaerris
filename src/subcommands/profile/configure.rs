@@ -61,7 +61,7 @@ pub async fn configure(
                             .default(profile.name().to_owned())
                             .interact_text()?;
                         profile.set_name(&name);
-                    }
+                    },
                     3 => break,
                     _ => unreachable!(),
                 }

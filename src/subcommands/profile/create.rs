@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
 use dialoguer::{Confirm, Input};
@@ -5,7 +7,6 @@ use relibium::{
     config::{profile::ProfileData, ModLoader, Profile},
     Client, Config, DEFAULT_MINECRAFT_DIR,
 };
-use std::path::PathBuf;
 
 use crate::{
     file_picker::pick_folder,
@@ -72,16 +73,12 @@ pub async fn create(
         None => pick_minecraft_version(client).await?,
     };
 
-    let profile = Profile::with_data(
-        name,
-        path.clone(),
-        ProfileData {
-            game_version,
-            loader,
-            mods: vec![],
-            modpack: None,
-        },
-    )?;
+    let profile = Profile::with_data(name, path.clone(), ProfileData {
+        game_version,
+        loader,
+        mods: vec![],
+        modpack: None,
+    })?;
     config
         .add_profile(profile)
         .expect("shouldn't fail to add profile since conditions were checked before");

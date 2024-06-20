@@ -45,18 +45,15 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
     // Load the Modrinth team members if we have a modrinth client
     if let Some(mr_client) = client.as_modrinth() {
         // Map the team ids to their index in the projects list
-        let teams = projects
-            .iter_mut()
-            .enumerate()
-            .fold(HashMap::new(), |mut acc, (i, m)| {
-                if let ProjectId::Modrinth(_) = m.id {
-                    for team in m.authors.drain(..) {
-                        #[allow(clippy::unwrap_or_default)]
-                        acc.entry(team.name).or_insert_with(Vec::new).push(i);
-                    }
+        let teams = projects.iter_mut().enumerate().fold(HashMap::new(), |mut acc, (i, m)| {
+            if let ProjectId::Modrinth(_) = m.id {
+                for team in m.authors.drain(..) {
+                    #[allow(clippy::unwrap_or_default)]
+                    acc.entry(team.name).or_insert_with(Vec::new).push(i);
                 }
-                acc
-            });
+            }
+            acc
+        });
         if !teams.is_empty() {
             let team_ids = teams.keys().map(AsRef::as_ref).collect::<Vec<_>>();
             // Get the members for all the teams
@@ -91,20 +88,9 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
     if let Some(gh_client) = client.as_github() {
         for proj in projects.iter_mut() {
             if let Ok((own, repo)) = proj.id.try_as_github() {
-                let mut page = gh_client
-                    .repos(own, repo)
-                    .releases()
-                    .list()
-                    .per_page(100)
-                    .send()
-                    .await?;
+                let mut page = gh_client.repos(own, repo).releases().list().per_page(100).send().await?;
                 loop {
-                    let sum: u64 = page
-                        .items
-                        .into_iter()
-                        .flat_map(|i| i.assets)
-                        .map(|a| a.download_count as u64)
-                        .sum();
+                    let sum: u64 = page.items.into_iter().flat_map(|i| i.assets).map(|a| a.download_count as u64).sum();
                     proj.downloads += sum;
                     if let Some(p) = gh_client.get_page(&page.next).await? {
                         page = p;
@@ -119,11 +105,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
     projects.sort_by_cached_key(|p| p.name.trim().to_lowercase());
     let projects = projects;
 
-    let print = if markdown {
-        print_project_markdown
-    } else {
-        print_project_verbose
-    };
+    let print = if markdown { print_project_markdown } else { print_project_verbose };
 
     projects.iter().map(Deref::deref).for_each(print);
 

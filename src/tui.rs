@@ -30,9 +30,7 @@ pub static STYLE_NO: Lazy<ProgressStyle> = Lazy::new(|| {
 });
 pub static STYLE_BYTE: Lazy<ProgressStyle> = Lazy::new(|| {
     ProgressStyle::default_bar()
-        .template(
-            "{spinner} {bytes_per_sec} [{wide_bar:.cyan/blue}] {bytes:.cyan}/{total_bytes:.blue}",
-        )
+        .template("{spinner} {bytes_per_sec} [{wide_bar:.cyan/blue}] {bytes:.cyan}/{total_bytes:.blue}")
         .expect("Progress bar template parse failure")
         .progress_chars("#>-")
 });
@@ -58,22 +56,14 @@ macro_rules! max {
 const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
     let bound = max / 2;
     let start = min!(bound, len);
-    let end = min!(
-        len,
-        max!(bound, len.saturating_sub(bound - ((max + 1) & 1)))
-    );
+    let end = min!(len, max!(bound, len.saturating_sub(bound - ((max + 1) & 1))));
     start..end
 }
 macro_rules! ellipsize {
     // Ellipsis middle
     (^ $str:ident, $max:expr) => {{
         let r = ellipsis_mid($str.len(), $max);
-        format_args!(
-            "{}{}{}",
-            &$str[..r.start],
-            if r.is_empty() { "" } else { "…" },
-            &$str[r.end..],
-        )
+        format_args!("{}{}{}", &$str[..r.start], if r.is_empty() { "" } else { "…" }, &$str[r.end..],)
     }};
     // Ellipsis left
     (< $str:ident, $max:expr) => {{
@@ -177,12 +167,7 @@ pub fn print_project_verbose(proj: &Project) {
 ",
         proj.name.trim().bold(),
         proj.description.trim().italic(),
-        proj.website
-            .as_ref()
-            .map(|u| u.as_str())
-            .unwrap_or_default()
-            .blue()
-            .underline(),
+        proj.website.as_ref().map(|u| u.as_str()).unwrap_or_default().blue().underline(),
         id_tag(&proj.id).dimmed(),
         proj.source_url
             .as_ref()
@@ -191,22 +176,17 @@ pub fn print_project_verbose(proj: &Project) {
             .map(Cow::Owned)
             .unwrap_or(Cow::Borrowed(&*CROSS_RED)),
         proj.downloads.to_string().yellow(),
-        proj.authors
-            .iter()
-            .format_with(", ", |a, fmt| fmt(&a.name.cyan())),
-        proj.categories
-            .iter()
-            .format_with(", ", |c, fmt| fmt(&c.magenta())),
+        proj.authors.iter().format_with(", ", |a, fmt| fmt(&a.name.cyan())),
+        proj.categories.iter().format_with(", ", |c, fmt| fmt(&c.magenta())),
         proj.license.as_ref().map_or_else(
             || "???".to_owned(),
             |l| {
                 format!(
                     "{}{}",
                     l.spdx_id,
-                    l.url.as_ref().map_or_else(String::new, |url| format!(
-                        " ({})",
-                        url.as_str().blue().underline()
-                    ))
+                    l.url
+                        .as_ref()
+                        .map_or_else(String::new, |url| format!(" ({})", url.as_str().blue().underline()))
                 )
             }
         ),
@@ -227,10 +207,7 @@ _{}_
 | Categories  | {} |
 ",
         proj.name.trim(),
-        proj.website
-            .as_ref()
-            .map(|u| u.as_str())
-            .unwrap_or_default(),
+        proj.website.as_ref().map(|u| u.as_str()).unwrap_or_default(),
         proj.description.trim(),
         format_args!(
             "{} `{}`",

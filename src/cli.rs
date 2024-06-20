@@ -1,9 +1,10 @@
 #![deny(missing_docs)]
 
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand, ValueHint};
 use clap_complete::Shell;
 use relibium::config::ModLoader;
-use std::path::PathBuf;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -15,8 +16,8 @@ pub struct Ferium {
     /// You can also use the environment variable `TOKIO_WORKER_THREADS`.
     #[clap(long, short)]
     pub threads: Option<usize>,
-    /// Set a GitHub personal access token for increasing the GitHub API rate limit.
-    /// You can also use the environment variable `GITHUB_TOKEN`.
+    /// Set a GitHub personal access token for increasing the GitHub API rate
+    /// limit. You can also use the environment variable `GITHUB_TOKEN`.
     #[clap(long, visible_alias = "gh")]
     pub github_token: Option<String>,
     /// Set a custom CurseForge API key.
@@ -38,10 +39,11 @@ pub enum SubCommands {
     Add {
         /// The identifier(s) of the mod/project/repository
         ///
-        /// The Modrinth project ID is specified at the bottom of the left sidebar under 'Technical information'.
-        /// You can also use the project slug in the URL.
-        /// The CurseForge project ID is specified at the top of the right sidebar under 'About Project'.
-        /// The GitHub identifier is the repository's full name, e.g. `gorilla-devs/ferium`.
+        /// The Modrinth project ID is specified at the bottom of the left
+        /// sidebar under 'Technical information'. You can also use the project
+        /// slug in the URL. The CurseForge project ID is specified at the top
+        /// of the right sidebar under 'About Project'. The GitHub identifier is
+        /// the repository's full name, e.g. `gorilla-devs/ferium`.
         identifiers: Vec<String>,
     },
     /// Print shell auto completions for the specified shell
@@ -50,7 +52,7 @@ pub enum SubCommands {
         #[clap(value_enum)]
         shell: Shell,
     },
-    /// List all the mods in the profile, and with some their metadata if verbose
+    /// List all the mods in the profile, and with their metadata if verbose
     #[clap(visible_alias = "mods")]
     List {
         /// Show additional information about the mod
@@ -89,8 +91,9 @@ pub enum SubCommands {
 
 #[derive(Subcommand)]
 pub enum ProfileSubCommands {
-    /// Configure the current profile's name, Minecraft version, mod loader, and output directory.
-    /// Optionally, provide the settings to change as arguments.
+    /// Configure the current profile's name, Minecraft version, mod loader, and
+    /// output directory. Optionally, provide the settings to change as
+    /// arguments.
     #[clap(visible_aliases = ["config", "conf"])]
     Configure {
         /// The Minecraft version to use
@@ -154,9 +157,10 @@ pub enum ModpackSubCommands {
     Add {
         /// The identifier of the modpack/project
         ///
-        /// The Modrinth project ID is specified at the bottom of the left sidebar under 'Technical information'.
-        /// You can also use the project slug for this.
-        /// The CurseForge project ID is specified at the top of the right sidebar under 'About Project'.
+        /// The Modrinth project ID is specified at the bottom of the left
+        /// sidebar under 'Technical information'. You can also use the
+        /// project slug for this. The CurseForge project ID is
+        /// specified at the top of the right sidebar under 'About Project'.
         id: String,
         /// Whether to install the modpack's overrides to the output directory.
         /// This will override existing files when upgrading.
@@ -170,8 +174,8 @@ pub enum ModpackSubCommands {
         #[clap(long, short)]
         force: bool,
     },
-    /// Configure the current modpack's output directory and installation of overrides.
-    /// Optionally, provide the settings to change as arguments.
+    /// Configure the current modpack's output directory and installation of
+    /// overrides. Optionally, provide the settings to change as arguments.
     #[clap(visible_aliases = ["config", "conf"])]
     Configure {
         /// Whether to install the modpack's overrides to the output directory.
