@@ -4,11 +4,7 @@ use relibium::{config::profile::ProfileData, Client};
 
 use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 
-pub async fn add(
-    client: Client,
-    profile: &mut ProfileData,
-    ids: Vec<String>,
-) -> Result<()> {
+pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>) -> Result<()> {
     eprint!("Fetching mod information...");
     let mods = if ids.len() == 1 {
         let m = client.get_mod(&ids[0]).await?;

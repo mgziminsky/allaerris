@@ -1,15 +1,16 @@
 mod cli;
+mod helpers;
 // mod download;
 mod file_picker;
 mod subcommands;
 mod tui;
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::{CommandFactory, Parser};
 use colored::Colorize;
 use relibium::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
-    config::{Config, Profile, DEFAULT_CONFIG_PATH},
+    config::{Config, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
 };
 use std::{
@@ -22,28 +23,17 @@ use tokio::runtime;
 
 use self::{
     cli::{Ferium, ModpackSubCommands, ProfileSubCommands, SubCommands},
-    subcommands::profile::switch_profile,
+    helpers::consts,
+    helpers::APP_NAME,
+    subcommands::{modpack, profile::switch_profile},
     tui::{fmt_profile_simple, print_mods},
 };
-
-macro_rules! consts {
-    (APP_NAME) => {
-        env!("CARGO_PKG_NAME")
-    };
-}
-const APP_NAME: &str = consts!(APP_NAME);
 
 const USER_AGENT: &str = concat!(
     consts!(APP_NAME),
     "/",
     env!("CARGO_PKG_VERSION"),
     " (Github: mgziminsky)"
-);
-
-const MSG_PROFILE_EMPTY: &str = concat!(
-    "The currently selected profile is empty! Run `",
-    consts!(APP_NAME),
-    " help` to see how to add mods"
 );
 
 fn main() -> ExitCode {
@@ -101,12 +91,6 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             subcommand: Some(ProfileSubCommands::List),
         };
     }
-    // Alias `ferium modpacks` to `ferium modpack list`
-    if let SubCommands::Modpacks = cli_app.subcommand {
-        cli_app.subcommand = SubCommands::Modpack {
-            subcommand: Some(ModpackSubCommands::List),
-        };
-    }
 
     let client: Client = vec![
         ModrinthClient::builder()
@@ -158,13 +142,13 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
     // Run function(s) based on the sub(sub)command to be executed
     match cli_app.subcommand {
-        SubCommands::Complete { .. } | SubCommands::Profiles | SubCommands::Modpacks => {
+        SubCommands::Complete { .. } | SubCommands::Profiles => {
             unreachable!();
         }
         SubCommands::List { verbose, markdown } => {
-            let profile = get_active_profile(&mut config)?;
-            check_empty_profile(profile).await?;
-            if verbose {
+            let profile = helpers::get_active_profile(&mut config)?;
+            helpers::check_empty_profile(profile).await?;
+            if verbose || markdown {
                 subcommands::list::verbose(&client, profile, markdown).await?;
             } else {
                 subcommands::list::simple(profile).await?;
@@ -176,14 +160,14 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             }
             subcommands::add(
                 client,
-                get_active_profile(&mut config)?.data_mut().await?,
+                helpers::get_active_profile(&mut config)?.data_mut().await?,
                 ids,
             )
             .await?;
         }
         SubCommands::Remove { mod_names } => {
-            let profile = get_active_profile(&mut config)?;
-            check_empty_profile(profile).await?;
+            let profile = helpers::get_active_profile(&mut config)?;
+            helpers::check_empty_profile(profile).await?;
             let removed = subcommands::remove(profile.data_mut().await?, mod_names)?;
             if !removed.is_empty() {
                 print_mods(
@@ -203,7 +187,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             });
             match subcommand {
                 ProfileSubCommands::Info => {
-                    tui::print_profile(get_active_profile(&mut config)?, true).await;
+                    tui::print_profile(helpers::get_active_profile(&mut config)?, true).await;
                 }
                 ProfileSubCommands::Configure {
                     game_version,
@@ -211,7 +195,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                     name,
                 } => {
                     subcommands::profile::configure(
-                        get_active_profile(&mut config)?,
+                        &client,
+                        helpers::get_active_profile(&mut config)?,
                         game_version,
                         loader,
                         name,
@@ -278,97 +263,33 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 );
             }
         }
-        _ => todo!(),
-        // SubCommands::Upgrade => {
-        //     let profile = get_active_profile(&mut config).await?;
-        //     check_empty_profile(profile)?;
-        //     subcommands::upgrade(modrinth, curseforge, github, profile).await?;
-        // }
-        // SubCommands::Modpack { subcommand } => {
-        //     let mut default_flag = false;
-        //     let subcommand = subcommand.unwrap_or_else(|| {
-        //         default_flag = true;
-        //         ModpackSubCommands::Info
-        //     });
-        //     match subcommand {
-        //         ModpackSubCommands::Add {
-        //             identifier,
-        //             output_dir,
-        //             install_overrides,
-        //         } => {
-        //             subcommands::modpack::add(
-        //                 identifier,
-        //                 &mut config,
-        //                 output_dir,
-        //                 install_overrides,
-        //                 &curseforge,
-        //                 &modrinth,
-        //             )
-        //             .await?;
-        //         }
-        //         ModpackSubCommands::Configure {
-        //             output_dir,
-        //             install_overrides,
-        //         } => {
-        //             subcommands::modpack::configure(
-        //                 get_active_modpack(&mut config)?,
-        //                 output_dir,
-        //                 install_overrides,
-        //             )?;
-        //         }
-        //         ModpackSubCommands::Delete { force } => {
-        //             subcommands::modpack::delete(&mut config, force)?;
-        //         }
-        //         ModpackSubCommands::Info => {
-        //             subcommands::modpack::info(get_active_modpack(&mut config)?, true);
-        //         }
-        //         ModpackSubCommands::List => {
-        //             config.modpacks().for_each(|(i, p)| {
-        //                 subcommands::profile::info(p, i == config.active_profile)
-        //             });
-        //         }
-        //         ModpackSubCommands::Upgrade => {
-        //             subcommands::modpack::upgrade(
-        //                 &modrinth,
-        //                 &curseforge,
-        //                 get_active_modpack(&mut config)?,
-        //             )
-        //             .await?;
-        //         }
-        //     };
-        //     if default_flag {
-        //         println!(
-        //             "{} ferium modpack help {}",
-        //             "Use".yellow(),
-        //             "for more information about this subcommand".yellow()
-        //         );
-        //     }
-        // }
+        SubCommands::Modpack { subcommand } => {
+            let mut default_flag = false;
+            let subcommand = subcommand.unwrap_or_else(|| {
+                default_flag = true;
+                ModpackSubCommands::Info
+            });
+            modpack::process(subcommand, &mut config, client).await?;
+            if default_flag {
+                println!(
+                    "{}",
+                    format!(
+                        "Use `{}` for more information about this subcommand",
+                        concat!(consts!(APP_NAME), " modpack help").bold()
+                    )
+                    .yellow()
+                );
+            }
+        }
+        SubCommands::Upgrade => {
+            todo!();
+            // let profile = get_active_profile(&mut config).await?;
+            // check_empty_profile(profile)?;
+            // subcommands::upgrade(modrinth, curseforge, github, profile).await?;
+        }
     };
 
     config.save_to(config_path).await?;
 
-    Ok(())
-}
-
-/// Get the active profile with error handling
-fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
-    config
-        .active_profile_mut()
-        .map_err(|err| match err.kind() {
-            relibium::ErrorKind::NoProfiles => anyhow!(
-                "There are no profiles configured, add a profile using `{}`",
-                format!("{APP_NAME} profile create").bold().italic()
-            ),
-            _ => err.into(),
-        })
-        .with_context(|| "Failed to load active profile".bold())
-}
-
-/// Check if `profile` is empty, and if so return an error
-async fn check_empty_profile(profile: &Profile) -> Result<()> {
-    if profile.data().await?.is_empty() {
-        bail!(MSG_PROFILE_EMPTY);
-    }
     Ok(())
 }

@@ -1,18 +1,15 @@
 use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
-use dialoguer::{Confirm, Input, Select};
+use dialoguer::{Confirm, Input};
 use relibium::{
-    config::{
-        profile::{ProfileData, DEFAULT_GAME_VERSION},
-        ModLoader, Profile,
-    },
+    config::{profile::ProfileData, ModLoader, Profile},
     Client, Config, DEFAULT_MINECRAFT_DIR,
 };
 use std::path::PathBuf;
 
 use crate::{
     file_picker::pick_folder,
-    subcommands::profile::{check_profile_path, pick_mod_loader},
+    subcommands::profile::{normalize_profile_path, pick_minecraft_version, pick_mod_loader},
     tui::{THEME, TICK_GREEN},
 };
 
@@ -42,7 +39,7 @@ pub async fn create(
         },
         Ok,
     )?;
-    check_profile_path(&path)?;
+    let path = normalize_profile_path(path)?;
     if config.profile(&path).is_ok() {
         bail!(
             "Config already contains a profile at the path `{}`",
@@ -70,30 +67,9 @@ pub async fn create(
 
     let loader = loader.map_or_else(|| pick_mod_loader(None), Ok)?;
 
-    let game_version = if let Some(gv) = game_version {
-        gv
-    } else {
-        let versions = client.get_game_versions().await;
-        match versions {
-            Result::Ok(versions) => {
-                let mut versions: Vec<_> = versions.into_iter().map(|v| v.version).collect();
-                Select::with_theme(&*THEME)
-                    .with_prompt("Which version of Minecraft should this profile use?")
-                    .items(&versions)
-                    .interact()
-                    .map(|i| versions.swap_remove(i))?
-            }
-            err => {
-                let err = err
-                    .context("Failed to load minecraft versions".bold())
-                    .unwrap_err();
-                eprintln!("{}", format!("{:#}", err).red());
-                Input::with_theme(&*THEME)
-                    .with_prompt("Enter Minecraft version for the profile:")
-                    .with_initial_text(DEFAULT_GAME_VERSION)
-                    .interact_text()?
-            }
-        }
+    let game_version = match game_version {
+        Some(gv) => gv,
+        None => pick_minecraft_version(client).await?,
     };
 
     let profile = Profile::with_data(
@@ -112,7 +88,8 @@ pub async fn create(
     let _ = config
         .set_active(path)
         .context("Failed to switch to newly created profile")
-        .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()));
+        .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()))
+        .inspect(|_| println!("The newly created profile is now active"));
 
     Ok(())
 }

@@ -33,7 +33,7 @@ pub struct Ferium {
 
 #[derive(Subcommand)]
 pub enum SubCommands {
-    /// Add mods to the profile
+    /// Add mods to the active profile
     #[clap(visible_aliases = ["new", "create"])]
     Add {
         /// The identifier(s) of the mod/project/repository
@@ -68,8 +68,6 @@ pub enum SubCommands {
         #[clap(subcommand)]
         subcommand: Option<ModpackSubCommands>,
     },
-    /// List all the modpacks with their data
-    Modpacks,
     /// Create, configure, delete, switch, or list profiles
     Profile {
         #[clap(subcommand)]
@@ -149,7 +147,9 @@ pub enum ProfileSubCommands {
 
 #[derive(Subcommand)]
 pub enum ModpackSubCommands {
-    /// Add a modpack to the config
+    /// Show information about the current modpack
+    Info,
+    /// Set a modpack on the active profile.
     #[clap(visible_aliases = ["new", "create"])]
     Add {
         /// The identifier of the modpack/project
@@ -157,41 +157,26 @@ pub enum ModpackSubCommands {
         /// The Modrinth project ID is specified at the bottom of the left sidebar under 'Technical information'.
         /// You can also use the project slug for this.
         /// The CurseForge project ID is specified at the top of the right sidebar under 'About Project'.
-        identifier: String,
-        /// The Minecraft instance directory to install the modpack to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
+        id: String,
         /// Whether to install the modpack's overrides to the output directory.
         /// This will override existing files when upgrading.
         #[clap(long, short)]
         install_overrides: Option<bool>,
     },
-    /// Configure the current modpack's output directory and installation of overrides.
-    /// Optionally, provide the settings to change as arguments.
-    #[clap(visible_aliases = ["config", "conf"])]
-    Configure {
-        /// The Minecraft instance directory to install the modpack to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        output_dir: Option<PathBuf>,
-        /// Whether to install the modpack's overrides to the output directory.
-        /// This will override existing files when upgrading.
-        #[clap(long, short)]
-        install_overrides: Option<bool>,
-    },
-    /// Delete the modpack from active profile.
+    /// Delete modpack from the active profile.
     #[clap(visible_aliases = ["rm", "delete", "del"])]
     Remove {
         /// Delete without a confirmation prompt
         #[clap(long, short)]
         force: bool,
     },
-    /// Show information about the current modpack
-    Info,
-    /// List all the modpacks with their data
-    List,
-    /// Download and install the latest version of the modpack
-    #[clap(visible_aliases = ["download", "install"])]
-    Upgrade,
+    /// Configure the current modpack's output directory and installation of overrides.
+    /// Optionally, provide the settings to change as arguments.
+    #[clap(visible_aliases = ["config", "conf"])]
+    Configure {
+        /// Whether to install the modpack's overrides to the output directory.
+        /// This will override existing files when upgrading.
+        #[clap(long, short)]
+        install_overrides: Option<bool>,
+    },
 }

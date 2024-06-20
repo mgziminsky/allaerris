@@ -116,8 +116,9 @@ pub fn print_mods(label: impl Display, mods: &[Mod]) {
 }
 
 pub async fn print_profile(profile: &Profile, active: bool) {
-    let (game_version, loader, mods) = profile.data().await.ok().map_or(
+    let (game_version, loader, mods, pack) = profile.data().await.ok().map_or(
         (
+            Cow::Borrowed(&*CROSS_RED),
             Cow::Borrowed(&*CROSS_RED),
             Cow::Borrowed(&*CROSS_RED),
             Cow::Borrowed(&*CROSS_RED),
@@ -127,16 +128,23 @@ pub async fn print_profile(profile: &Profile, active: bool) {
                 Cow::Owned(data.game_version.green()),
                 Cow::Owned(format!("{:?}", data.loader).purple()),
                 Cow::Owned(data.mods.len().to_string().yellow()),
+                Cow::Owned(
+                    data.modpack
+                        .as_deref()
+                        .map_or_else(|| CROSS_RED.to_string(), mod_single_line)
+                        .into(),
+                ),
             )
         },
     );
     println!(
         "\
 {}
-    Path:               {}
-    Minecraft Version:  {}
-    Mod Loader:         {}
-    Mods:               {}
+    Path:        {}
+    MC Version:  {}
+    Mod Loader:  {}
+    Mods:        {}
+    Modpack:     {}
 ",
         {
             let mut name = profile.name().bold();
@@ -149,6 +157,7 @@ pub async fn print_profile(profile: &Profile, active: bool) {
         game_version,
         loader,
         mods,
+        pack,
     );
 }
 

@@ -1,11 +1,15 @@
 use anyhow::Result;
 use dialoguer::{Input, Select};
-use relibium::config::{ModLoader, Profile};
+use relibium::{
+    config::{ModLoader, Profile},
+    Client,
+};
 
 use super::{pick_minecraft_version, pick_mod_loader};
 use crate::tui::THEME;
 
 pub async fn configure(
+    client: &Client,
     profile: &mut Profile,
     game_version: Option<String>,
     loader: Option<ModLoader>,
@@ -49,7 +53,7 @@ pub async fn configure(
             if let Some(index) = selection {
                 let data = profile.data_mut().await?;
                 match index {
-                    0 => data.game_version = pick_minecraft_version().await?,
+                    0 => data.game_version = pick_minecraft_version(client).await?,
                     1 => data.loader = pick_mod_loader(Some(data.loader))?,
                     2 => {
                         let name = Input::with_theme(&*THEME)

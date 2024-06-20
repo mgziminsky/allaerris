@@ -1,16 +1,27 @@
 mod configure;
 mod create;
 mod delete;
+use colored::Colorize;
 pub use configure::configure;
 pub use create::create;
 pub use delete::delete;
 
-use anyhow::{bail, Result};
-use dialoguer::Select;
-use relibium::config::{ModLoader, Profile};
-use std::{ops::Deref, path::Path};
+use anyhow::{Context, Result};
+use dialoguer::{Input, Select};
+use relibium::{
+    config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
+    Client,
+};
+use std::{
+    env,
+    ops::Deref,
+    path::{Path, PathBuf},
+};
+use tokio::sync::OnceCell;
 
 use crate::tui::{fmt_profile_simple, THEME};
+
+static MC_VERSIONS: OnceCell<Vec<String>> = OnceCell::const_new();
 
 pub fn pick_mod_loader(default: Option<ModLoader>) -> Result<ModLoader> {
     let mut picker = Select::with_theme(&*THEME)
@@ -50,8 +61,35 @@ pub fn pick_mod_loader(default: Option<ModLoader>) -> Result<ModLoader> {
         .map_err(Into::into)
 }
 
-pub async fn pick_minecraft_version() -> Result<String> {
-    todo!("Move code from delete to here")
+pub async fn pick_minecraft_version(client: &Client) -> Result<String> {
+    let versions: Result<_> = MC_VERSIONS
+        .get_or_try_init(|| async {
+            Ok(client
+                .get_game_versions()
+                .await?
+                .into_iter()
+                .map(|v| v.version)
+                .collect())
+        })
+        .await;
+    let choice = match versions {
+        Result::Ok(versions) => Select::with_theme(&*THEME)
+            .with_prompt("Which version of Minecraft should this profile use?")
+            .items(versions)
+            .interact()
+            .map(|i| versions[i].clone())?,
+        err => {
+            let err = err
+                .context("Failed to load minecraft versions".bold())
+                .unwrap_err();
+            eprintln!("{}", format!("{:#}", err).red());
+            Input::with_theme(&*THEME)
+                .with_prompt("Enter Minecraft version for the profile:")
+                .with_initial_text(DEFAULT_GAME_VERSION)
+                .interact_text()?
+        }
+    };
+    Ok(choice)
 }
 
 pub fn pick_profile<'p>(
@@ -82,11 +120,14 @@ pub fn pick_profile<'p>(
     Ok(selected)
 }
 
-pub fn check_profile_path(output_dir: &Path) -> Result<()> {
-    if output_dir.is_relative() {
-        bail!("The profile directory must be given as an absolute path");
+pub fn normalize_profile_path(path: PathBuf) -> Result<PathBuf> {
+    if path.is_relative() {
+        env::current_dir()
+            .map(|cd| cd.join(path))
+            .map_err(Into::into)
+    } else {
+        Ok(path)
     }
-    Ok(())
 }
 
 /// Allow loose matching of profiles by either an exact name, or by path suffix
