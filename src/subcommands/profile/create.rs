@@ -47,6 +47,12 @@ pub async fn create(
             path.display().to_string().bold().italic()
         )
     }
+    if ProfileData::file_path(&path).exists() {
+        bail!(
+            "A profile config file already exists at `{}`\n# Use import command instead",
+            path.display().to_string().bold().italic()
+        )
+    }
     println!(
         "{} {} = {}",
         *TICK_GREEN,

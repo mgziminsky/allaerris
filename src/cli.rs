@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueHint};
 use clap_complete::Shell;
-use relibium::config::ModLoader;
+use relibium::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -91,6 +91,49 @@ pub enum SubCommands {
 
 #[derive(Subcommand)]
 pub enum ProfileSubCommands {
+    /// Show information about the current profile
+    Info,
+    /// List all the profiles with their data
+    List,
+    /// Create a new profile.
+    /// Optionally, provide the settings as arguments.
+    #[clap(visible_aliases = ["create"])]
+    New {
+        /// The Minecraft version to use
+        #[clap(long, short = 'v')]
+        game_version: Option<String>,
+        /// The mod loader to use
+        #[clap(long, short)]
+        #[clap(value_enum)]
+        loader: Option<ModLoader>,
+        /// The name of the profile
+        #[clap(long, short)]
+        name: Option<String>,
+        /// The directory to output mods to
+        #[clap(long, short)]
+        #[clap(value_hint(ValueHint::DirPath))]
+        path: Option<PathBuf>,
+    },
+    /// Add/import and existing profile path to the config
+    #[clap(visible_aliases = ["import"])]
+    Add {
+        /// The name of the profile
+        #[clap(long, short)]
+        name: String,
+        /// The directory containing an existing profile config file
+        #[clap(value_hint(ValueHint::DirPath), default_value = DEFAULT_MINECRAFT_DIR.as_os_str())]
+        path: PathBuf,
+    },
+    /// Delete a profile.
+    /// Optionally, provide the name of the profile to delete.
+    #[clap(visible_aliases = ["rm", "delete", "del"])]
+    Remove {
+        /// The name of the profile to delete
+        profile_name: Option<String>,
+        /// The name of the profile to switch to afterwards
+        #[clap(long, short)]
+        switch_to: Option<String>,
+    },
     /// Configure the current profile's name, Minecraft version, mod loader, and
     /// output directory. Optionally, provide the settings to change as
     /// arguments.
@@ -107,39 +150,6 @@ pub enum ProfileSubCommands {
         #[clap(long, short)]
         name: Option<String>,
     },
-    /// Create a new profile.
-    /// Optionally, provide the settings as arguments.
-    #[clap(visible_aliases = ["new", "create"])]
-    Add {
-        /// The Minecraft version to use
-        #[clap(long, short = 'v')]
-        game_version: Option<String>,
-        /// The mod loader to use
-        #[clap(long, short)]
-        #[clap(value_enum)]
-        loader: Option<ModLoader>,
-        /// The name of the profile
-        #[clap(long, short)]
-        name: Option<String>,
-        /// The directory to output mods to
-        #[clap(long, short)]
-        #[clap(value_hint(ValueHint::DirPath))]
-        path: Option<PathBuf>,
-    },
-    /// Delete a profile.
-    /// Optionally, provide the name of the profile to delete.
-    #[clap(visible_aliases = ["rm", "delete", "del"])]
-    Remove {
-        /// The name of the profile to delete
-        profile_name: Option<String>,
-        /// The name of the profile to switch to afterwards
-        #[clap(long, short)]
-        switch_to: Option<String>,
-    },
-    /// Show information about the current profile
-    Info,
-    /// List all the profiles with their data
-    List,
     /// Switch between different profiles.
     /// Optionally, provide the name of the profile to switch to.
     Switch {

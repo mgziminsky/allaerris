@@ -54,6 +54,9 @@ macro_rules! max {
     };
 }
 const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
+    if len <= max {
+        return 0..0;
+    }
     let bound = max / 2;
     let start = min!(bound, len);
     let end = min!(len, max!(bound, len.saturating_sub(bound - ((max + 1) & 1))));
@@ -67,13 +70,13 @@ macro_rules! ellipsize {
     }};
     // Ellipsis left
     (< $str:ident, $max:expr) => {{
-        let i = $str.len().saturating_sub($max - 1);
-        format_args!("{}{}", if i > 0 { "…" } else { "" }, &$str[i..],)
+        let mut i = $str.len().saturating_sub($max);
+        format_args!("{}{}", if i > 0 { i += 1; "…" } else { "" }, &$str[i..])
     }};
     // Ellipsis right
     (> $str:ident, $max:expr) => {{
-        let i = min!($str.len(), $max - 1);
-        format_args!("{}{}", &$str[..i], if i < $str.len() { "…" } else { "" },)
+        let mut i = min!($str.len(), $max);
+        format_args!("{1}{0}", if i < $str.len() { i -= 1; "…" } else { "" }, &$str[..i])
     }};
 }
 pub(crate) use ellipsize;
@@ -237,27 +240,66 @@ _{}_
 pub fn fmt_profile_simple(p: &Profile, max_width: usize) -> String {
     let name = p.name();
     let path = p.path().display().to_string();
-    let total = name.len() + path.len();
-    format!(
-        "{} • {}",
-        ellipsize!(^name, max_width * name.len() / total),
-        ellipsize!(^path, max_width * path.len() / total),
-    )
+    let (name_width, path_width) = prop_widths(name.len(), path.len(), max_width);
+    format!("{} • {}", ellipsize!(^name, name_width), ellipsize!(^path, path_width),)
+}
+
+const fn prop_widths(a: usize, b: usize, max: usize) -> (usize, usize) {
+    let total = a + b;
+    if total <= max {
+        return (a, b);
+    }
+
+    let (short, long) = if a <= b { (a, b) } else { (b, a) };
+
+    let over_total = total - max;
+    let over_long = long.saturating_sub(short * 2);
+    let long = long - min!(over_long, over_total);
+
+    let total = short + long;
+    let short = max * short / total;
+    let long = (max * long).div_ceil(total);
+
+    if a < b {
+        (short, long)
+    } else {
+        (long, short)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn ellipsize() {
-        let x = "12345678909876543210";
-        assert_eq!("12…10", ellipsize!(^ x, 5).to_string());
-        assert_eq!("…4321", ellipsize!(< x, 5).to_string());
-        assert_eq!("1234…", ellipsize!(> x, 5).to_string());
+    const TEST_STR: &str = "12345678909876543210";
 
-        assert_eq!(x, ellipsize!(^ x, x.len() * 2).to_string());
-        assert_eq!(x, ellipsize!(< x, x.len() * 2).to_string());
-        assert_eq!(x, ellipsize!(> x, x.len() * 2).to_string());
+    #[test]
+    fn ellipsize_mid() {
+        // Smaller
+        assert_eq!("12…10", ellipsize!(^ TEST_STR, 5).to_string());
+        // Equal
+        assert_eq!(TEST_STR, ellipsize!(^ TEST_STR, TEST_STR.len()).to_string());
+        // Larger
+        assert_eq!(TEST_STR, ellipsize!(^ TEST_STR, TEST_STR.len() * 2).to_string());
+    }
+
+    #[test]
+    fn ellipsize_start() {
+        // Smaller
+        assert_eq!("…3210", ellipsize!(< TEST_STR, 5).to_string());
+        // Equal
+        assert_eq!(TEST_STR, ellipsize!(< TEST_STR, TEST_STR.len()).to_string());
+        // Larger
+        assert_eq!(TEST_STR, ellipsize!(< TEST_STR, TEST_STR.len() * 2).to_string());
+    }
+
+    #[test]
+    fn ellipsize_end() {
+        // Smaller
+        assert_eq!("1234…", ellipsize!(> TEST_STR, 5).to_string());
+        // Equal
+        assert_eq!(TEST_STR, ellipsize!(> TEST_STR, TEST_STR.len()).to_string());
+        // Larger
+        assert_eq!(TEST_STR, ellipsize!(> TEST_STR, TEST_STR.len() * 2).to_string());
     }
 }

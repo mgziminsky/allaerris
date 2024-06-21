@@ -17,7 +17,7 @@ use clap::{CommandFactory, Parser};
 use colored::Colorize;
 use relibium::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
-    config::{Config, DEFAULT_CONFIG_PATH},
+    config::{profile::ProfileData, Config, Profile, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
 };
 use tokio::runtime;
@@ -25,7 +25,10 @@ use tokio::runtime;
 use self::{
     cli::{Ferium, ModpackSubCommands, ProfileSubCommands, SubCommands},
     helpers::{consts, APP_NAME},
-    subcommands::{modpack, profile::switch_profile},
+    subcommands::{
+        modpack,
+        profile::{normalize_profile_path, switch_profile},
+    },
     tui::{fmt_profile_simple, print_mods},
 };
 
@@ -160,14 +163,16 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 ProfileSubCommands::Info => {
                     tui::print_profile(helpers::get_active_profile(&mut config)?, true).await;
                 },
-                ProfileSubCommands::Configure {
-                    game_version,
-                    loader,
-                    name,
-                } => {
-                    subcommands::profile::configure(&client, helpers::get_active_profile(&mut config)?, game_version, loader, name).await?;
+                ProfileSubCommands::List => {
+                    if let Some(active) = config.active() {
+                        let mut profiles = config.get_profiles();
+                        profiles.sort_by_cached_key(|p| p.name().to_lowercase());
+                        for p in profiles {
+                            tui::print_profile(p, p.path() == active).await;
+                        }
+                    }
                 },
-                ProfileSubCommands::Add {
+                ProfileSubCommands::New {
                     game_version,
                     loader,
                     name,
@@ -183,6 +188,20 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         .yellow()
                     );
                 },
+                ProfileSubCommands::Add { name, path } => {
+                    let path = normalize_profile_path(path)?;
+                    if !ProfileData::file_path(&path).exists() {
+                        bail!(
+                            "No existing profile found at `{}`\nUse `{}` to create one",
+                            path.display().to_string().bold().italic(),
+                            concat!(consts!(APP_NAME), " new").bold(),
+                        );
+                    }
+                    if let Err(prof) = config.add_profile(Profile::new(name, path)?) {
+                        let existing = config.profile(prof.path()).expect("Profile should already exist");
+                        bail!("Profile already present in config: {}", fmt_profile_simple(existing, 80).bold())
+                    }
+                },
                 ProfileSubCommands::Remove { profile_name, switch_to } => {
                     let removed = subcommands::profile::delete(&mut config, profile_name, switch_to)?;
                     println!("Profile Removed: {}", fmt_profile_simple(&removed, 100));
@@ -190,14 +209,12 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                         println!("Active Profile:  {}", fmt_profile_simple(active, 100));
                     }
                 },
-                ProfileSubCommands::List => {
-                    if let Some(active) = config.active() {
-                        let mut profiles = config.get_profiles();
-                        profiles.sort_by_cached_key(|p| p.name().to_lowercase());
-                        for p in profiles {
-                            tui::print_profile(p, p.path() == active).await;
-                        }
-                    }
+                ProfileSubCommands::Configure {
+                    game_version,
+                    loader,
+                    name,
+                } => {
+                    subcommands::profile::configure(&client, helpers::get_active_profile(&mut config)?, game_version, loader, name).await?;
                 },
                 ProfileSubCommands::Switch { profile_name } => {
                     let profiles = config.get_profiles();
