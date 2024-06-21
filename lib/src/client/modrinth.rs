@@ -25,6 +25,9 @@ impl ApiOps for ModrinthClient {
 
     async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
         let ids: Vec<_> = ids.iter().filter_map(|id| id.try_as_modrinth().ok()).collect();
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
         let projects = self
             .projects()
             .get_projects(&GetProjectsParams { ids: &ids })
@@ -236,11 +239,12 @@ mod from {
     struct ProjTypeSlug(ProjectType);
     impl ProjTypeSlug {
         pub fn as_str(&self) -> &str {
+            // Trailing slash is necessary for Url::join
             match self.0 {
-                ProjectType::Mod => "mod",
-                ProjectType::Modpack => "modpack",
-                ProjectType::Resourcepack => "resourcepack",
-                ProjectType::Shader => "shader",
+                ProjectType::Mod => "mod/",
+                ProjectType::Modpack => "modpack/",
+                ProjectType::Resourcepack => "resourcepack/",
+                ProjectType::Shader => "shader/",
             }
         }
     }

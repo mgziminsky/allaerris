@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::client::schema::{self, ProjectId};
+use crate::client::schema::{self, Project, ProjectId};
 
 /// The basic data needed to lookup and install a particular mod from one of the
 /// [supported clients](crate::client)
@@ -16,11 +16,6 @@ pub struct Mod {
     /// The local name of this mod. May not match actual project name from the
     /// [client](crate::Client)
     pub name: String,
-
-    /// If set, overrides the path the mod should be installed to instead of
-    /// using the path specified by the client
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
 }
 
 impl Eq for Mod {}
@@ -38,11 +33,15 @@ impl std::hash::Hash for Mod {
 
 impl From<schema::Mod> for Mod {
     fn from(m: schema::Mod) -> Self {
+        m.0.into()
+    }
+}
+impl From<Project> for Mod {
+    fn from(proj: Project) -> Self {
         Self {
-            id: m.0.id,
-            slug: m.0.slug,
-            name: m.0.name,
-            path: None,
+            id: proj.id,
+            slug: proj.slug,
+            name: proj.name,
         }
     }
 }

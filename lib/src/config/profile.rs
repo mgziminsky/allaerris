@@ -31,7 +31,7 @@ pub struct Profile {
 
 macro_rules! check_path {
     ($path:ident) => {
-        if $path.as_os_str().to_string_lossy().trim().is_empty() {
+        if $path.as_os_str().to_string_lossy().trim().is_empty() || $path.is_relative() {
             return Err(ErrorKind::PathInvalid)?;
         }
     };
@@ -130,6 +130,11 @@ impl Profile {
         }
         Ok(())
     }
+
+    /// Returns true if the [data](ProfileData) file for this [`Profile`] exists.
+    pub fn exists(&self) -> bool {
+        ProfileData::file_path(&self.path).exists()
+    }
 }
 
 
@@ -145,25 +150,21 @@ mod tests {
                 id: ProjectId::Forge(3),
                 slug: "test-3".to_owned(),
                 name: "Test 3".to_owned(),
-                path: None,
             },
             Mod {
                 id: ProjectId::Forge(1),
                 slug: "test-1".to_owned(),
                 name: "test 1".to_owned(),
-                path: None,
             },
             Mod {
                 id: ProjectId::Forge(2),
                 slug: "test-2".to_owned(),
                 name: "Test 2".to_owned(),
-                path: None,
             },
             Mod {
                 id: ProjectId::Forge(0),
                 slug: "test-0".to_owned(),
                 name: "test 0".to_owned(),
-                path: None,
             },
         ];
         let sorted = {

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::Mod;
+use crate::client::schema;
 
 /// The basic data needed to lookup and install a particular modpack from one of
 /// the [supported clients](crate::client)
@@ -12,6 +13,16 @@ pub struct Modpack {
 
     /// Whether or not to install overrides contained in the modpack
     pub install_overrides: bool,
+}
+
+impl Modpack {
+    /// Creates a new config [`Modpack`] from a [`schema::Modpack`]
+    pub fn new(pack: schema::Modpack, install_overrides: bool) -> Self {
+        Self {
+            info: pack.0.into(),
+            install_overrides,
+        }
+    }
 }
 
 impl PartialEq for Modpack {

@@ -6,7 +6,10 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{fs_util::{FsUtil, FsUtils}, Mod, ModLoader, Modpack},
+    config::{
+        fs_util::{FsUtil, FsUtils},
+        Mod, ModLoader, Modpack,
+    },
     Result,
 };
 
@@ -67,7 +70,7 @@ impl ProfileData {
     /// # Errors
     /// Will return any errors that occur while trying to read or parse the file
     pub async fn load(path: impl AsRef<Path>) -> Result<Self> {
-        FsUtil::load_file(&path.as_ref().join(FILENAME)).await
+        FsUtil::load_file(&Self::file_path(path)).await
     }
 
     #[doc = concat!("Attempt to save the [profile](Self) to a file named `", consts!(FILENAME), "` located at `path`")]
@@ -129,6 +132,12 @@ impl ProfileData {
     /// Panics if any `index` is out of bounds.
     pub fn remove_mods_at(&mut self, indices: impl AsRef<[usize]>) -> Vec<Mod> {
         remove_sorted!(self.mods, BinaryHeap::from_iter(indices.as_ref()).into_iter())
+    }
+
+    /// Returns the path where this [`ProfileData`] would be saved given the
+    /// provided base path
+    pub fn file_path(path: impl AsRef<Path>) -> std::path::PathBuf {
+        path.as_ref().join(FILENAME)
     }
 }
 

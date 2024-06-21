@@ -25,7 +25,10 @@ impl ApiOps for ForgeClient {
     }
 
     async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
-        let mod_ids = ids.iter().filter_map(|i| i.try_as_forge().ok()).collect();
+        let mod_ids: Vec<_> = ids.iter().filter_map(|i| i.try_as_forge().ok()).collect();
+        if mod_ids.is_empty() {
+            return Ok(vec![]);
+        }
         let mods = self
             .mods()
             .get_mods(&GetModsParams {
