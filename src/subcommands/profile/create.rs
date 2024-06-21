@@ -8,9 +8,9 @@ use relibium::{
     Client, Config, DEFAULT_MINECRAFT_DIR,
 };
 
+use super::helpers::{normalize_profile_path, pick_minecraft_version, pick_mod_loader};
 use crate::{
     file_picker::pick_folder,
-    subcommands::profile::{normalize_profile_path, pick_minecraft_version, pick_mod_loader},
     tui::{THEME, TICK_GREEN},
 };
 

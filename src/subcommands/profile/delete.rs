@@ -3,7 +3,7 @@ use std::ops::Deref;
 use anyhow::{bail, Result};
 use relibium::{config::Profile, Config};
 
-use super::pick_profile;
+use super::helpers::pick_profile;
 use crate::subcommands::profile::switch_profile;
 
 pub fn delete(config: &mut Config, name: Option<String>, switch_to: Option<String>) -> Result<Profile> {

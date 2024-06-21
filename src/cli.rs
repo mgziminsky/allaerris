@@ -11,7 +11,7 @@ use relibium::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
 #[clap(arg_required_else_help = true)]
 pub struct Ferium {
     #[clap(subcommand)]
-    pub subcommand: SubCommands,
+    pub subcommand: SubCommand,
     /// Sets the number of worker threads the tokio runtime will use.
     /// You can also use the environment variable `TOKIO_WORKER_THREADS`.
     #[clap(long, short)]
@@ -33,7 +33,7 @@ pub struct Ferium {
 }
 
 #[derive(Subcommand)]
-pub enum SubCommands {
+pub enum SubCommand {
     /// Add mods to the active profile
     #[clap(visible_aliases = ["new", "create"])]
     Add {
@@ -68,12 +68,12 @@ pub enum SubCommands {
     /// Add, configure, delete, switch, list, or upgrade modpacks
     Modpack {
         #[clap(subcommand)]
-        subcommand: Option<ModpackSubCommands>,
+        subcommand: Option<ModpackSubCommand>,
     },
     /// Create, configure, delete, switch, or list profiles
     Profile {
         #[clap(subcommand)]
-        subcommand: Option<ProfileSubCommands>,
+        subcommand: Option<ProfileSubCommand>,
     },
     /// List all the profiles with their data
     Profiles,
@@ -90,7 +90,7 @@ pub enum SubCommands {
 }
 
 #[derive(Subcommand)]
-pub enum ProfileSubCommands {
+pub enum ProfileSubCommand {
     /// Show information about the current profile
     Info,
     /// List all the profiles with their data
@@ -159,7 +159,7 @@ pub enum ProfileSubCommands {
 }
 
 #[derive(Subcommand)]
-pub enum ModpackSubCommands {
+pub enum ModpackSubCommand {
     /// Show information about the current modpack
     Info,
     /// Set a modpack on the active profile.

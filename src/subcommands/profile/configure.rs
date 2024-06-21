@@ -5,7 +5,7 @@ use relibium::{
     Client,
 };
 
-use super::{pick_minecraft_version, pick_mod_loader};
+use super::helpers::{pick_minecraft_version, pick_mod_loader};
 use crate::tui::THEME;
 
 pub async fn configure(

@@ -7,25 +7,25 @@ use relibium::{
 };
 
 use crate::{
-    cli::ModpackSubCommands,
+    cli::ModpackSubCommand,
     helpers::get_active_profile,
     tui::{mod_single_line, CROSS_RED, THEME, TICK_GREEN},
 };
 
 const MSG_NO_PACK: &str = "No modpack on active profile";
 
-pub async fn process(subcommand: ModpackSubCommands, config: &mut Config, client: Client) -> Result<()> {
+pub async fn process(subcommand: ModpackSubCommand, config: &mut Config, client: Client) -> Result<()> {
     match subcommand {
-        ModpackSubCommands::Info => {
+        ModpackSubCommand::Info => {
             let pack = &get_active_profile(config)?.data().await?.modpack;
             if let Some(ref pack) = pack {
                 print_pack(pack);
             }
         },
-        ModpackSubCommands::Add { id, install_overrides } => {
+        ModpackSubCommand::Add { id, install_overrides } => {
             add(id, get_active_profile(config)?, install_overrides, &client).await?;
         },
-        ModpackSubCommands::Remove { force } => {
+        ModpackSubCommand::Remove { force } => {
             let profile = get_active_profile(config)?.data_mut().await?;
             if let Some(ref modpack) = profile.modpack {
                 if force
@@ -40,7 +40,7 @@ pub async fn process(subcommand: ModpackSubCommands, config: &mut Config, client
                 bail!(MSG_NO_PACK)
             }
         },
-        ModpackSubCommands::Configure { install_overrides } => {
+        ModpackSubCommand::Configure { install_overrides } => {
             let mp = get_active_profile(config)?
                 .data_mut()
                 .await?

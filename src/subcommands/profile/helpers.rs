@@ -1,6 +1,3 @@
-mod configure;
-mod create;
-mod delete;
 use std::{
     env,
     ops::Deref,
@@ -9,9 +6,6 @@ use std::{
 
 use anyhow::{Context, Result};
 use colored::Colorize;
-pub use configure::configure;
-pub use create::create;
-pub use delete::delete;
 use dialoguer::{Input, Select};
 use relibium::{
     config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
@@ -130,7 +124,7 @@ fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Resu
 /// This is a macro to get around overzealous mutable borrow rules on config
 macro_rules! switch_profile {
     ($config:expr, $profiles:expr, $switch_to:expr) => {{
-        let selected = crate::subcommands::profile::pick_profile("Select a new profile to set as active", &$profiles, $switch_to)?;
+        let selected = crate::subcommands::profile::helpers::pick_profile("Select a new profile to set as active", &$profiles, $switch_to)?;
         if let Some(selected) = selected {
             $config.set_active(selected.to_owned())?;
         }
