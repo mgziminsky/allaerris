@@ -13,6 +13,7 @@ use crate::{
 svc_id_impl! {
     /// The [client](crate::client) specific project id types
     #[derive(Deserialize, Serialize, Debug, Clone, Eq, Hash)]
+    #[serde(rename_all = "lowercase")]
     pub enum ProjectId {
         Forge(u64),
         Modrinth(String),

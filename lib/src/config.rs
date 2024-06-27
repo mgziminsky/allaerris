@@ -1,6 +1,5 @@
 //! Configuration types used for managing and interacting with mods/modpacks on
 //! the system
-mod fs_util;
 mod loader;
 mod modpack;
 mod mods;
@@ -10,25 +9,22 @@ mod serde;
 #[doc = "Types relating to [profile data](ProfileData)\n\n"]
 pub mod profile;
 
-use std::{
-    collections::BTreeSet,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeSet, path::Path};
 
 use ::serde::{Deserialize, Serialize};
 use once_cell::sync::Lazy;
 
 #[doc(inline)]
 pub use self::profile::Profile;
-use self::{
-    fs_util::{FsUtil, FsUtils},
-    profile::ProfileByPath,
-};
+use self::profile::ProfileByPath;
 pub use self::{loader::*, modpack::*, mods::*};
-use crate::{ErrorKind, Result, CONF_DIR};
+use crate::{
+    fs_util::{FsUtil, FsUtils},
+    ErrorKind, PathAbsolute, Result, CONF_DIR,
+};
 
 /// Full path to the default config file
-pub static DEFAULT_CONFIG_PATH: Lazy<PathBuf> = Lazy::new(|| CONF_DIR.join("config.json"));
+pub static DEFAULT_CONFIG_PATH: Lazy<PathAbsolute> = Lazy::new(|| CONF_DIR.join("config.json"));
 
 type ProfilesList = BTreeSet<ProfileByPath>;
 
@@ -44,7 +40,7 @@ type ProfilesList = BTreeSet<ProfileByPath>;
 pub struct Config {
     /// Will only be [None] when [profiles](Config::profiles) is empty
     #[serde(skip_serializing_if = "Option::is_none")]
-    active: Option<PathBuf>,
+    active: Option<PathAbsolute>,
 
     #[serde(
         skip_serializing_if = "ProfilesList::is_empty",
@@ -57,7 +53,7 @@ pub struct Config {
 /// Workaround for no support of split borrowing of `self` behind method calls
 macro_rules! get {
     ($self:ident.active) => {
-        $self.active.as_ref().ok_or(ErrorKind::NoProfiles)?.as_path()
+        $self.active.as_ref().ok_or(ErrorKind::NoProfiles)?
     };
     ($self:ident.profile_mut($path:expr)) => {
         $self
@@ -71,7 +67,7 @@ macro_rules! get {
 // Profile
 impl Config {
     /// Returns the path of the active profile if set
-    pub fn active(&self) -> Option<&PathBuf> {
+    pub fn active(&self) -> Option<&PathAbsolute> {
         self.active.as_ref()
     }
 
@@ -93,7 +89,7 @@ impl Config {
     ///
     /// [`ErrorKind::UnknownProfile`]: if `path` is not present in list of known
     /// profiles
-    pub fn set_active(&mut self, path: impl AsRef<Path>) -> Result<()> {
+    pub fn set_active(&mut self, path: impl AsRef<PathAbsolute>) -> Result<()> {
         let path = path.as_ref();
         if !self.profiles.contains(path) {
             return Err(ErrorKind::UnknownProfile)?;
@@ -160,7 +156,7 @@ impl Config {
     /// This function will return an error containing the passed in profile
     /// if a profile with the same path is already present in the config
     pub fn add_profile(&mut self, profile: Profile) -> std::result::Result<(), Profile> {
-        if self.profiles.contains(profile.path()) {
+        if self.profiles.contains(&*profile.path) {
             Err(profile)
         } else {
             self.profiles.insert(profile.into());
@@ -180,8 +176,8 @@ impl Config {
     /// [active profile]: Self::active_profile
     pub fn remove_profile(&mut self, path: impl AsRef<Path>) -> Result<Profile> {
         let removed: Profile = self.profiles.take(path.as_ref()).map(Into::into).ok_or(ErrorKind::UnknownProfile)?;
-        if self.active.as_ref().is_some_and(|a| a == removed.path()) {
-            self.active = self.profiles.first().map(|p| p.as_path().to_owned());
+        if self.active.as_ref().is_some_and(|a| a == &removed.path) {
+            self.active = self.profiles.first().map(|p| p.as_absolute().to_owned());
         }
         Ok(removed)
     }
@@ -247,7 +243,7 @@ impl Config {
 #[derive(Deserialize, Default)]
 #[serde(default)]
 struct ConfigDe {
-    active: Option<PathBuf>,
+    active: Option<PathAbsolute>,
     #[serde(deserialize_with = "self::serde::profiles::deserialize")]
     profiles: ProfilesList,
 }
@@ -257,9 +253,9 @@ impl From<ConfigDe> for Config {
             active: de
                 .active
                 // Require active_profile to be present in profiles
-                .and_then(|p| if de.profiles.contains(p.as_path()) { Some(p) } else { None })
+                .and_then(|p| if de.profiles.contains(&p) { Some(p) } else { None })
                 // Activate first profile from list if present and not already set
-                .or_else(|| de.profiles.first().map(ProfileByPath::as_path).map(ToOwned::to_owned)),
+                .or_else(|| de.profiles.first().map(ProfileByPath::as_absolute).map(ToOwned::to_owned)),
             profiles: de.profiles,
         }
     }
@@ -274,7 +270,13 @@ mod tests {
 
     use super::*;
 
-    const PATHS: &[&str] = &["/test/profile/path/1", "/test/profile/path/2", "/test/profile/path/3"];
+    static PATHS: Lazy<[PathAbsolute; 3]> = Lazy::new(|| {
+        [
+            PathAbsolute::new("/test/profile/path/1").unwrap(),
+            PathAbsolute::new("/test/profile/path/2").unwrap(),
+            PathAbsolute::new("/test/profile/path/3").unwrap(),
+        ]
+    });
     const NAMES: &[&str] = &["Profile 1", "Profile 2", "Profile 3"];
 
     impl PartialEq for Config {
@@ -285,9 +287,9 @@ mod tests {
 
     fn _test_config() -> Config {
         Config {
-            active: Some(PATHS[2].into()),
-            profiles: zip(NAMES.iter().map(ToString::to_string), PATHS.iter().map(Into::into))
-                .map(|(name, path)| Profile::new_unchecked(name, path))
+            active: Some(PATHS[2].clone()),
+            profiles: zip(NAMES, &*PATHS)
+                .map(|(name, path)| Profile::new(name.to_string(), path.clone()))
                 .map(Into::into)
                 .collect(),
         }
@@ -298,11 +300,18 @@ mod tests {
             Token::Struct { name: "Config", len: 2 },
             Token::Str("active"),
             Token::Some,
-            Token::Str(PATHS[2]),
+            Token::NewtypeStruct { name: "PathAbsolute" },
+            Token::Str(PATHS[2].to_str().unwrap()),
             Token::Str("profiles"),
             Token::Map { len: Some(PATHS.len()) },
         ];
-        tokens.extend(zip(PATHS, NAMES).flat_map(|(p, n)| [*p, *n]).map(Token::Str));
+        tokens.extend(zip(&*PATHS, NAMES).flat_map(|(p, n)| {
+            [
+                Token::NewtypeStruct { name: "PathAbsolute" },
+                Token::Str(p.to_str().unwrap()),
+                Token::Str(n),
+            ]
+        }));
         tokens.extend([Token::MapEnd, Token::StructEnd]);
 
         (config, tokens)
@@ -312,6 +321,7 @@ mod tests {
         if let Token::Struct { name, .. } = tokens.first_mut().unwrap() {
             *name = "ConfigDe";
         }
+        tokens.retain_mut(|t| !matches!(t, Token::NewtypeStruct { .. }));
         (config, tokens)
     }
 
@@ -333,7 +343,7 @@ mod tests {
     #[test]
     fn deserialize_no_active() {
         let (mut config, mut tokens) = _test_de_data();
-        config.active.replace(PATHS[0].into()); // Set active_profile to first path
+        config.active.replace(PATHS[0].clone()); // Set active_profile to first path
         tokens.drain(1..=3); // Remove active_profile from tokens
         assert_de_tokens(&config, &tokens);
     }
@@ -343,7 +353,7 @@ mod tests {
     #[test]
     fn deserialize_bad_active() {
         let (mut config, mut tokens) = _test_de_data();
-        config.active.replace(PATHS[0].into()); // Set active_profile to first path
+        config.active.replace(PATHS[0].clone()); // Set active_profile to first path
         tokens[3] = Token::Str("/some/invalid/path"); // Set active_profile token to path not in profiles
         assert_de_tokens(&config, &tokens);
     }
@@ -351,7 +361,7 @@ mod tests {
     #[test]
     fn set_active_invalid() {
         let mut c = _test_config();
-        let res = c.set_active("/some/invalid/path");
+        let res = c.set_active(PathAbsolute::new("/some/invalid/path").unwrap());
         assert!(
             matches!(res, Err(ref e) if matches!(e.kind(), ErrorKind::UnknownProfile)),
             "set_active should fail with correct error given a path not in profiles: {res:?}"

@@ -2,9 +2,9 @@
 name = "relibium"
 version = "2.0.0"
 edition = "2021"
-rust-version = '1.77.0'
+rust-version = '1.79.0'
 authors = [
-    "Michael Ziminsky",
+    "Michael Ziminsky (Z)",
     "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>",
     "Daniel Hauck (SolidTux)",
 ]
@@ -21,6 +21,7 @@ keywords = [
 ]
 
 [dependencies]
+anyhow = "1.0"
 async-scoped = { version = "0.9", features = ["use-tokio"] }
 async_zip = { version = "0.0.17", default-features = false, features = [
     "deflate",

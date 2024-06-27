@@ -71,12 +71,30 @@ macro_rules! ellipsize {
     // Ellipsis left
     (< $str:ident, $max:expr) => {{
         let mut i = $str.len().saturating_sub($max);
-        format_args!("{}{}", if i > 0 { i += 1; "…" } else { "" }, &$str[i..])
+        format_args!(
+            "{}{}",
+            if i > 0 {
+                i += 1;
+                "…"
+            } else {
+                ""
+            },
+            &$str[i..]
+        )
     }};
     // Ellipsis right
     (> $str:ident, $max:expr) => {{
         let mut i = min!($str.len(), $max);
-        format_args!("{1}{0}", if i < $str.len() { i -= 1; "…" } else { "" }, &$str[..i])
+        format_args!(
+            "{1}{0}",
+            if i < $str.len() {
+                i -= 1;
+                "…"
+            } else {
+                ""
+            },
+            &$str[..i]
+        )
     }};
 }
 pub(crate) use ellipsize;
@@ -146,7 +164,7 @@ pub async fn print_profile(profile: &Profile, active: bool) {
             }
             name
         },
-        profile.path().display().to_string().blue().underline(),
+        profile.path.display().to_string().blue().underline(),
         game_version,
         loader,
         mods,
@@ -239,7 +257,7 @@ _{}_
 
 pub fn fmt_profile_simple(p: &Profile, max_width: usize) -> String {
     let name = p.name();
-    let path = p.path().display().to_string();
+    let path = p.path.display().to_string();
     let (name_width, path_width) = prop_widths(name.len(), path.len(), max_width);
     format!("{} • {}", ellipsize!(^name, name_width), ellipsize!(^path, path_width),)
 }
@@ -265,6 +283,21 @@ const fn prop_widths(a: usize, b: usize, max: usize) -> (usize, usize) {
     } else {
         (long, short)
     }
+}
+
+// Compile time tests of the `prop_widths` fn
+macro_rules! assert_widths {
+    // Copied and adapted from static_assertions
+    ($(($a:literal, $b:literal, $x:literal) == ($l:literal, $r:literal));*$(;)?) => {$(
+        const _: [(); !matches!(prop_widths($a, $b, $x), ($l, $r)) as usize] = [];
+    )*};
+}
+assert_widths! {
+    (20, 20, 20) == (10, 10);
+    (10, 20, 15) == ( 5, 10);
+    (10, 50, 30) == (10, 20);
+    (50, 10, 30) == (20, 10);
+    (20, 25, 30) == (13, 17);
 }
 
 #[cfg(test)]

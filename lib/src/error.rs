@@ -53,7 +53,7 @@ pub enum ErrorKind {
     #[error("Operation not supported by this API")]
     Unsupported,
 
-    // Config errors
+    // Config
     #[error("No profiles have been registered")]
     NoProfiles,
     #[error("Requested profile not recognized")]
@@ -61,7 +61,7 @@ pub enum ErrorKind {
     #[error("Profile path must be non-empty and absolute")]
     PathInvalid,
 
-    // External API errors
+    // External API
     Modrinth(modrinth::Error),
     Forge(curseforge::Error),
     GitHub(github::Error),
@@ -69,7 +69,8 @@ pub enum ErrorKind {
     // Forwarded lib errors
     Reqwest(#[from] reqwest::Error),
     IO(#[from] std::io::Error),
-    Serde(#[from] serde_json::Error),
+
+    Unexpected(#[from] anyhow::Error),
 
     #[cfg(test)]
     #[error("Stub fn used for tests")]

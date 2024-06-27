@@ -1,29 +1,27 @@
 use std::{
     collections::{BinaryHeap, HashSet},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{
-        fs_util::{FsUtil, FsUtils},
-        Mod, ModLoader, Modpack,
-    },
-    Result,
+    config::{Mod, ModLoader, Modpack},
+    fs_util::{FsUtil, FsUtils},
+    PathAbsolute, Result,
 };
 
 
 /// Macro for consts used in docs
 macro_rules! consts {
     (DEFAULT_GAME_VERSION) => {
-        "1.20"
+        "1.21"
     };
     (FILENAME) => {
         concat!(".", env!("CARGO_PKG_NAME"), "-profile")
     };
 }
-pub(super) use consts;
+pub(crate) use consts;
 
 /// Minecraft version used for [`ProfileData::default()`]
 pub const DEFAULT_GAME_VERSION: &str = consts!(DEFAULT_GAME_VERSION);
@@ -69,15 +67,15 @@ impl ProfileData {
     ///
     /// # Errors
     /// Will return any errors that occur while trying to read or parse the file
-    pub async fn load(path: impl AsRef<Path>) -> Result<Self> {
-        FsUtil::load_file(&Self::file_path(path)).await
+    pub async fn load(path: impl AsRef<PathAbsolute>) -> Result<Self> {
+        FsUtil::load_file(&path.as_ref().join(FILENAME)).await
     }
 
     #[doc = concat!("Attempt to save the [profile](Self) to a file named `", consts!(FILENAME), "` located at `path`")]
     ///
     /// # Errors
     /// Will return any errors that occur while trying to write the file
-    pub async fn save_to(&self, path: impl AsRef<Path>) -> Result<()> {
+    pub async fn save_to(&self, path: impl AsRef<PathAbsolute>) -> Result<()> {
         FsUtil::save_file(self, &path.as_ref().join(FILENAME)).await
     }
 
@@ -136,7 +134,7 @@ impl ProfileData {
 
     /// Returns the path where this [`ProfileData`] would be saved given the
     /// provided base path
-    pub fn file_path(path: impl AsRef<Path>) -> std::path::PathBuf {
+    pub fn file_path(path: impl AsRef<Path>) -> PathBuf {
         path.as_ref().join(FILENAME)
     }
 }

@@ -4,11 +4,12 @@ use anyhow::{bail, Context, Ok, Result};
 use colored::Colorize;
 use dialoguer::{Confirm, Input};
 use relibium::{
+    checked_types::PathAbsolute,
     config::{profile::ProfileData, ModLoader, Profile},
     Client, Config, DEFAULT_MINECRAFT_DIR,
 };
 
-use super::helpers::{normalize_profile_path, pick_minecraft_version, pick_mod_loader};
+use super::helpers::{pick_minecraft_version, pick_mod_loader};
 use crate::{
     file_picker::pick_folder,
     tui::{THEME, TICK_GREEN},
@@ -28,19 +29,19 @@ pub async fn create(
                 "The default profile directory is `{}`",
                 DEFAULT_MINECRAFT_DIR.display().to_string().bold().italic()
             );
-            if config.profile(DEFAULT_MINECRAFT_DIR.as_path()).is_ok()
+            if config.profile(&*DEFAULT_MINECRAFT_DIR).is_ok()
                 || Confirm::with_theme(&*THEME)
                     .with_prompt("Would you like to specify a custom profile directory?")
                     .interact()?
             {
-                pick_folder(DEFAULT_MINECRAFT_DIR.as_path(), "Pick a profile directory")
+                pick_folder(&*DEFAULT_MINECRAFT_DIR, "Pick a profile directory")
             } else {
-                Ok(DEFAULT_MINECRAFT_DIR.clone())
+                Ok(DEFAULT_MINECRAFT_DIR.to_path_buf())
             }
         },
         Ok,
     )?;
-    let path = normalize_profile_path(path)?;
+    let path = PathAbsolute::new(path)?;
     if config.profile(&path).is_ok() {
         bail!(
             "Config already contains a profile at the path `{}`",
@@ -84,7 +85,7 @@ pub async fn create(
         loader,
         mods: vec![],
         modpack: None,
-    })?;
+    });
     config
         .add_profile(profile)
         .expect("shouldn't fail to add profile since conditions were checked before");

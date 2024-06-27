@@ -2,13 +2,7 @@
 //! Contains the data types used by the various operations in
 //! [Client](super::Client)
 
-macro_rules! export {
-    ($($name:ident),*$(,)?) => {$(
-        mod $name;
-        pub use $name::*;
-    )*};
-}
-export! {
+crate::mod_export! {
     author,
     game_version,
     license,

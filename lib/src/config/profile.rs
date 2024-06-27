@@ -1,17 +1,14 @@
 mod by_path;
 mod data;
 
-use std::{
-    io,
-    path::{Path, PathBuf},
-};
+use std::io;
 
 use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
 
 pub(crate) use self::by_path::ProfileByPath;
-pub use self::data::{ProfileData, DEFAULT_GAME_VERSION};
-use crate::{config::Mod, ErrorKind, Result};
+pub use self::data::*;
+use crate::{config::Mod, ErrorKind, PathAbsolute, Result};
 
 fn name_lowercase(m: &Mod) -> String {
     m.name.to_lowercase()
@@ -24,20 +21,21 @@ fn name_lowercase(m: &Mod) -> String {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub(super) name: String,
-    pub(super) path: PathBuf,
+
+    /// The [path](Path) to the root of this profile.
+    ///
+    /// This path is where mods/modpacks will be installed, and where the
+    /// [profile data](ProfileData) is stored in a file named
+    #[doc = concat!('`', data::consts!(FILENAME), '`')]
+    pub path: PathAbsolute,
+
     #[serde(skip)]
     data: OnceCell<ProfileData>,
 }
 
-macro_rules! check_path {
-    ($path:ident) => {
-        if $path.as_os_str().to_string_lossy().trim().is_empty() || $path.is_relative() {
-            return Err(ErrorKind::PathInvalid)?;
-        }
-    };
-}
 impl Profile {
-    pub(super) fn new_unchecked(name: String, path: PathBuf) -> Self {
+    /// Creates a new [`Profile`].
+    pub fn new(name: String, path: PathAbsolute) -> Self {
         Self {
             name,
             path,
@@ -45,36 +43,14 @@ impl Profile {
         }
     }
 
-    /// Create a new profile with the given `name` and `path`
-    /// # Errors
-    ///
-    /// Will return an error if `path` is empty or whitespace only
-    pub fn new(name: String, path: PathBuf) -> Result<Self> {
-        check_path!(path);
-        Ok(Self::new_unchecked(name, path))
-    }
-
     /// Create a new profile with the given `name`, `path`, and
     /// [`data`](ProfileData)
-    /// # Errors
-    ///
-    /// Will return an error if `path` is empty or whitespace only
-    pub fn with_data(name: String, path: PathBuf, data: ProfileData) -> Result<Self> {
-        check_path!(path);
-        Ok(Self {
+    pub fn with_data(name: String, path: PathAbsolute, data: ProfileData) -> Self {
+        Self {
             name,
             path,
             data: data.into(),
-        })
-    }
-
-    /// The [path](Path) to the root of this profile.
-    ///
-    /// This path is where mods/modpacks will be installed, and where the
-    /// [profile data](ProfileData) is stored in a file named
-    #[doc = concat!('`', data::consts!(FILENAME), '`')]
-    pub fn path(&self) -> &Path {
-        &self.path
+        }
     }
 
     /// The profile name
@@ -131,7 +107,8 @@ impl Profile {
         Ok(())
     }
 
-    /// Returns true if the [data](ProfileData) file for this [`Profile`] exists.
+    /// Returns true if the [data](ProfileData) file for this [`Profile`]
+    /// exists.
     pub fn exists(&self) -> bool {
         ProfileData::file_path(&self.path).exists()
     }
@@ -173,7 +150,7 @@ mod tests {
             s
         };
         dbg!(&sorted);
-        let mut p = Profile::new_unchecked("Test Profile".to_string(), "/pass/null".into());
+        let mut p = Profile::new("Test Profile".to_string(), "/dev/null/pass".parse().unwrap());
         crate::block_on(p.data_mut())
             .expect("Load should use defaults")
             .mods

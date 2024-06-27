@@ -1,13 +1,10 @@
-use std::{
-    env,
-    ops::Deref,
-    path::{Path, PathBuf},
-};
+use std::ops::Deref;
 
 use anyhow::{Context, Result};
 use colored::Colorize;
 use dialoguer::{Input, Select};
 use relibium::{
+    checked_types::PathAbsolute,
     config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
     Client,
 };
@@ -75,7 +72,7 @@ pub async fn pick_minecraft_version(client: &Client) -> Result<String> {
     Ok(choice)
 }
 
-pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], filter: Option<String>) -> Result<Option<&'p Path>> {
+pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], filter: Option<String>) -> Result<Option<&'p PathAbsolute>> {
     let filter = filter.unwrap_or_default();
     let found: Vec<_> = profiles.iter().filter(|p| cmp_profile(p, &filter)).map(Deref::deref).collect();
     let selected = match found.len() {
@@ -83,7 +80,7 @@ pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], fil
             eprintln!("No profiles found that matched `{filter}`");
             profiles_prompt(msg, profiles)?
         },
-        1 => found.first().map(|p| p.path()),
+        1 => found.first().map(|p| &p.path),
         _ => {
             if !filter.is_empty() {
                 eprintln!("Found multiple profiles matching `{filter}`");
@@ -95,21 +92,12 @@ pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], fil
     Ok(selected)
 }
 
-pub fn normalize_profile_path(path: PathBuf) -> Result<PathBuf> {
-    if path.is_relative() {
-        env::current_dir().map(|cd| cd.join(path)).map_err(Into::into)
-    } else {
-        Ok(path)
-    }
-}
-
 /// Allow loose matching of profiles by either an exact name, or by path suffix
 fn cmp_profile(profile: &Profile, name: &str) -> bool {
-    profile.name() == name || profile.path().ends_with(name)
+    profile.name() == name || profile.path.ends_with(name)
 }
 
-fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Result<Option<&'p Path>> {
-    // let profiles = profiles.as_ref();
+fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Result<Option<&'p PathAbsolute>> {
     let mut prompt = Select::with_theme(&*THEME).with_prompt(msg);
     for p in profiles {
         // Adding individually avoids allocating all the Strings twice
@@ -117,7 +105,7 @@ fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Resu
     }
     prompt
         .interact_opt()
-        .map(|choice| choice.map(|i| profiles[i].path()))
+        .map(|choice| choice.map(|i| &profiles[i].path))
         .map_err(Into::into)
 }
 

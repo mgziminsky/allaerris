@@ -1,5 +1,7 @@
 use std::{borrow::Borrow, cell::RefCell, path::Path};
 
+use crate::PathAbsolute;
+
 use super::Profile;
 
 /// Crate internal wrapper around a [profile](Profile) for use in a
@@ -14,6 +16,9 @@ impl ProfileByPath {
     pub fn as_path(&self) -> &Path {
         self.borrow()
     }
+    pub fn as_absolute(&self) -> &PathAbsolute {
+        self.borrow()
+    }
 
     /// # UNSAFE
     /// Only call from config accessors that can guarantee this won't be aliased
@@ -25,7 +30,7 @@ impl ProfileByPath {
 }
 impl From<Profile> for ProfileByPath {
     fn from(val: Profile) -> Self {
-        ProfileByPath(val.into())
+        Self(val.into())
     }
 }
 impl From<ProfileByPath> for Profile {
@@ -36,7 +41,12 @@ impl From<ProfileByPath> for Profile {
 /// Required to allow set lookups by `path` only
 impl Borrow<Path> for ProfileByPath {
     fn borrow(&self) -> &Path {
-        unsafe { &*self.0.as_ptr() }.path()
+        &unsafe { &*self.0.as_ptr() }.path
+    }
+}
+impl Borrow<PathAbsolute> for ProfileByPath {
+    fn borrow(&self) -> &PathAbsolute {
+        &unsafe { &*self.0.as_ptr() }.path
     }
 }
 impl AsRef<Profile> for ProfileByPath {

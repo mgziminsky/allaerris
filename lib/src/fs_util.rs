@@ -1,7 +1,8 @@
 use std::path::Path;
 
+use anyhow::{anyhow, Context};
 use serde::{de::DeserializeOwned, Serialize};
-use tokio::fs::{create_dir_all, OpenOptions};
+use tokio::fs::{create_dir_all, File};
 
 use crate::Result;
 
@@ -19,15 +20,16 @@ pub trait FsUtils: Sealed {
 pub struct FsUtil;
 impl Sealed for FsUtil {}
 
-// FIXME: Only accept absolute paths
 #[cfg(any(not(test), ide))]
 impl FsUtils for FsUtil {
     async fn load_file<T>(path: &Path) -> Result<T>
     where
         T: DeserializeOwned,
     {
-        let file = OpenOptions::new().read(true).open(path).await?;
-        serde_json::from_reader(file.into_std().await).map_err(Into::into)
+        let file = File::open(path).await?;
+        serde_json::from_reader(file.into_std().await)
+            .with_context(|| anyhow!("Failed to deserialize file `{}`", path.display()))
+            .map_err(Into::into)
     }
 
     async fn save_file<T>(data: &T, path: &Path) -> Result<()>
@@ -39,8 +41,10 @@ impl FsUtils for FsUtil {
                 create_dir_all(path).await?;
             }
         }
-        let file = OpenOptions::new().create(true).write(true).truncate(true).open(path).await?;
-        serde_json::to_writer_pretty(file.into_std().await, data).map_err(Into::into)
+        let file = File::create(path).await?;
+        serde_json::to_writer_pretty(file.into_std().await, data)
+            .with_context(|| anyhow!("Failed to serialize file `{}`", path.display()))
+            .map_err(Into::into)
     }
 }
 
@@ -50,7 +54,7 @@ mod tests_impl {
     use crate::ErrorKind;
 
     fn check_path<R: Default>(path: &Path) -> Result<R> {
-        if path.starts_with("/pass") {
+        if path.iter().any(|c| c == "pass") {
             Ok(R::default())
         } else {
             Err(ErrorKind::TestStub)?

@@ -106,7 +106,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
     let config_path = &cli_app
         .config_file
         .or_else(|| var_os("FERIUM_CONFIG_FILE").map(Into::into))
-        .unwrap_or(DEFAULT_CONFIG_PATH.to_owned());
+        .unwrap_or(DEFAULT_CONFIG_PATH.to_owned().into());
     let mut config = Config::load_from(config_path)
         .await
         .with_context(|| {

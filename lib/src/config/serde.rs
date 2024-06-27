@@ -40,10 +40,13 @@ pub(super) mod profiles {
                 A: serde::de::MapAccess<'de>,
             {
                 let mut out = Value::new();
-                while let Some((path, name)) = map.next_entry()? {
-                    // Skip invalid paths
-                    if let Ok(profile) = Profile::new(name, path) {
-                        out.insert(profile.into());
+                loop {
+                    match map.next_entry() {
+                        Ok(Some((path, name))) => {
+                            out.insert(Profile::new(name, path).into());
+                        },
+                        Err(_) => { /* Invalid Profile - Skip */ },
+                        Ok(None) => break,
                     }
                 }
                 Ok(out)

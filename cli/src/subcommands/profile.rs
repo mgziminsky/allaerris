@@ -6,16 +6,12 @@ mod helpers;
 use anyhow::{bail, Context, Result};
 use colored::Colorize;
 use relibium::{
+    checked_types::PathAbsolute,
     config::{profile::ProfileData, Profile},
     Client, Config,
 };
 
-use self::{
-    configure::configure,
-    create::create,
-    delete::delete,
-    helpers::{normalize_profile_path, switch_profile},
-};
+use self::{configure::configure, create::create, delete::delete, helpers::switch_profile};
 use crate::{
     cli::ProfileSubCommand,
     helpers::{consts, get_active_profile},
@@ -33,7 +29,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config, client:
                 let mut profiles = config.get_profiles();
                 profiles.sort_by_cached_key(|p| p.name().to_lowercase());
                 for p in profiles {
-                    tui::print_profile(p, p.path() == active).await;
+                    tui::print_profile(p, p.path == *active).await;
                 }
             }
         },
@@ -54,7 +50,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config, client:
             );
         },
         ProfileSubCommand::Add { name, path } => {
-            let path = normalize_profile_path(path)?;
+            let path = PathAbsolute::new(path)?;
             if !ProfileData::file_path(&path).exists() {
                 bail!(
                     "No existing profile found at `{}`\nUse `{}` to create one",
@@ -62,8 +58,8 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config, client:
                     concat!(consts!(APP_NAME), " new").bold(),
                 );
             }
-            if let Err(prof) = config.add_profile(Profile::new(name, path.clone())?) {
-                let existing = config.profile(prof.path()).expect("Profile should already exist");
+            if let Err(prof) = config.add_profile(Profile::new(name, path.clone())) {
+                let existing = config.profile(prof.path).expect("Profile should already exist");
                 bail!("Profile already present in config: {}", fmt_profile_simple(existing, 80).bold())
             }
             let _ = config

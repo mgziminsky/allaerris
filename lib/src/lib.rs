@@ -2,12 +2,14 @@
 //! Library for managing Minecraft mods and modpacks from Modrinth, Curseforge,
 //! and Github
 
+pub mod checked_types;
 pub mod client;
 pub mod config;
 mod error;
+mod fs_util;
 
+use std::env;
 pub use std::error::Error as StdError;
-use std::{env, path::PathBuf};
 
 use once_cell::sync::Lazy;
 
@@ -20,22 +22,27 @@ mod exports {
 }
 pub use exports::*;
 
+use self::checked_types::PathAbsolute;
 #[doc(inline)]
 pub use self::{client::Client, config::Config, error::*};
 
 /// Default directory where global config files will be stored
-pub static CONF_DIR: Lazy<PathBuf> = Lazy::new(|| {
+pub static CONF_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
     dirs::config_local_dir()
         .expect("system config directory should be known")
         .join(env!("CARGO_PKG_NAME"))
+        .try_into()
+        .unwrap()
 });
-static CACHE_DIR: Lazy<PathBuf> = Lazy::new(|| {
+static CACHE_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
     dirs::cache_dir()
         .expect("system cache directory should be known")
         .join(env!("CARGO_PKG_NAME"))
+        .try_into()
+        .unwrap()
 });
 /// The minecraft instance directory used by the default minecraft launcher
-pub static DEFAULT_MINECRAFT_DIR: Lazy<PathBuf> = Lazy::new(|| {
+pub static DEFAULT_MINECRAFT_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
     let base = {
         #[cfg(not(target_os = "linux"))]
         {
@@ -47,12 +54,15 @@ pub static DEFAULT_MINECRAFT_DIR: Lazy<PathBuf> = Lazy::new(|| {
         }
     };
 
-    base.expect("system home/config directory should be known").join(
-        #[cfg(not(target_os = "macos"))]
-        ".minecraft",
-        #[cfg(target_os = "macos")]
-        "minecraft",
-    )
+    base.expect("system home/config directory should be known")
+        .join(
+            #[cfg(not(target_os = "macos"))]
+            ".minecraft",
+            #[cfg(target_os = "macos")]
+            "minecraft",
+        )
+        .try_into()
+        .unwrap()
 });
 
 /// Define a local `Sealed` trait
@@ -64,7 +74,15 @@ macro_rules! sealed {
         use private::Sealed;
     };
 }
-pub(crate) use sealed;
+use sealed;
+
+macro_rules! mod_export {
+    ($($name:ident),*$(,)?) => {$(
+        mod $name;
+        pub use $name::*;
+    )*};
+}
+use mod_export;
 
 
 #[cfg(test)]
