@@ -6,7 +6,7 @@ use dialoguer::{Confirm, Input};
 use relibium::{
     checked_types::PathAbsolute,
     config::{profile::ProfileData, ModLoader, Profile},
-    Client, Config, DEFAULT_MINECRAFT_DIR,
+    Config, DEFAULT_MINECRAFT_DIR,
 };
 
 use super::helpers::{pick_minecraft_version, pick_mod_loader};
@@ -16,7 +16,6 @@ use crate::{
 };
 
 pub async fn create(
-    client: &Client,
     config: &mut Config,
     game_version: Option<String>,
     loader: Option<ModLoader>,
@@ -77,7 +76,7 @@ pub async fn create(
 
     let game_version = match game_version {
         Some(gv) => gv,
-        None => pick_minecraft_version(client).await?,
+        None => pick_minecraft_version(None).await?,
     };
 
     let profile = Profile::with_data(name, path.clone(), ProfileData {

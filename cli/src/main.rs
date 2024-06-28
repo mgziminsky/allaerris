@@ -25,7 +25,7 @@ use tokio::runtime;
 use self::{
     cli::{Ferium, ModpackSubCommand, ProfileSubCommand, SubCommand},
     helpers::{consts, APP_NAME},
-    subcommands::{modpack, profile},
+    subcommands::{list, modpack, profile},
     tui::print_mods,
 };
 
@@ -75,7 +75,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         );
         return Ok(());
     }
-    // Alias `ferium profiles` to `ferium profile list`
+    // Alias `profiles` to `profile list`
     if let SubCommand::Profiles = cli_app.subcommand {
         cli_app.subcommand = SubCommand::Profile {
             subcommand: Some(ProfileSubCommand::List),
@@ -128,9 +128,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let profile = helpers::get_active_profile(&mut config)?;
             helpers::check_empty_profile(profile).await?;
             if verbose || markdown {
-                subcommands::list::verbose(&client, profile, markdown).await?;
+                list::verbose(&client, profile, markdown).await?;
             } else {
-                subcommands::list::simple(profile).await?;
+                list::simple(profile).await?;
             }
         },
         SubCommand::Add { identifiers: ids } => {
@@ -156,7 +156,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 default_flag = true;
                 ProfileSubCommand::Info
             });
-            profile::process(subcommand, &mut config, &client).await?;
+            profile::process(subcommand, &mut config).await?;
             if default_flag {
                 println!(
                     "{}",

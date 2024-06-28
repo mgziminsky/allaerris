@@ -1,11 +1,9 @@
-use std::{
-    path::{Path, PathBuf},
-    sync::LazyLock,
-};
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use once_cell::sync::Lazy;
 
-static HOME: LazyLock<PathBuf> = LazyLock::new(|| dirs::home_dir().expect("should be able to determine home dir"));
+static HOME: Lazy<PathBuf> = Lazy::new(|| dirs::home_dir().expect("should be able to determine home dir"));
 
 /// Use the system file picker to pick a file, with a `default` path (that is [not supported on linux](https://github.com/PolyMeilex/rfd/issues/42))
 #[cfg(any(feature = "gui", ide))]
@@ -20,7 +18,7 @@ fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathB
 /// Use a terminal input to pick a file, with a `default` path
 #[cfg(not(feature = "gui"))]
 fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathBuf> {
-    dialoguer::Input::with_theme(&dialoguer::theme::ColorfulTheme::default())
+    dialoguer::Input::with_theme(&*crate::tui::THEME)
         .default(default.display().to_string())
         .with_prompt(prompt)
         .report(false)

@@ -6,7 +6,6 @@ use dialoguer::{Input, Select};
 use relibium::{
     checked_types::PathAbsolute,
     config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
-    Client,
 };
 use tokio::sync::OnceCell;
 
@@ -50,14 +49,13 @@ pub fn pick_mod_loader(default: Option<ModLoader>) -> Result<ModLoader> {
         .map_err(Into::into)
 }
 
-pub async fn pick_minecraft_version(client: &Client) -> Result<String> {
-    let versions: Result<_> = MC_VERSIONS
-        .get_or_try_init(|| async { Ok(client.get_game_versions().await?.into_iter().map(|v| v.version).collect()) })
-        .await;
+pub async fn pick_minecraft_version(default: Option<&str>) -> Result<String> {
+    let versions = MC_VERSIONS.get_or_try_init(fetch_versions).await;
     let choice = match versions {
         Result::Ok(versions) => Select::with_theme(&*THEME)
             .with_prompt("Which version of Minecraft should this profile use?")
             .items(versions)
+            .default(default.and_then(|d| versions.iter().position(|v| v == d)).unwrap_or(0))
             .interact()
             .map(|i| versions[i].clone())?,
         err => {
@@ -65,7 +63,7 @@ pub async fn pick_minecraft_version(client: &Client) -> Result<String> {
             eprintln!("{}", format!("{:#}", err).red());
             Input::with_theme(&*THEME)
                 .with_prompt("Enter Minecraft version for the profile:")
-                .with_initial_text(DEFAULT_GAME_VERSION)
+                .with_initial_text(default.unwrap_or(DEFAULT_GAME_VERSION))
                 .interact_text()?
         },
     };
@@ -106,6 +104,40 @@ fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Resu
     prompt
         .interact_opt()
         .map(|choice| choice.map(|i| &profiles[i].path))
+        .map_err(Into::into)
+}
+
+async fn fetch_versions() -> Result<Vec<String>> {
+    use serde::Deserialize;
+    #[derive(Deserialize)]
+    #[serde(rename_all = "lowercase")]
+    enum ReleaseType {
+        Release,
+        #[serde(other)]
+        Other,
+    }
+    #[derive(Deserialize)]
+    struct Version {
+        id: String,
+        r#type: ReleaseType,
+    }
+    #[derive(Deserialize)]
+    struct Manifest {
+        versions: Vec<Version>,
+    }
+    reqwest::get("https://launchermeta.mojang.com/mc/game/version_manifest.json")
+        .await?
+        .json::<Manifest>()
+        .await
+        .map(|r| {
+            r.versions
+                .into_iter()
+                .filter_map(|v| match v.r#type {
+                    ReleaseType::Release => Some(v.id),
+                    ReleaseType::Other => None,
+                })
+                .collect()
+        })
         .map_err(Into::into)
 }
 

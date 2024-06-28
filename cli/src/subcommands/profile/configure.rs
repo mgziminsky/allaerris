@@ -1,20 +1,11 @@
 use anyhow::Result;
 use dialoguer::{Input, Select};
-use relibium::{
-    config::{ModLoader, Profile},
-    Client,
-};
+use relibium::config::{ModLoader, Profile};
 
 use super::helpers::{pick_minecraft_version, pick_mod_loader};
 use crate::tui::THEME;
 
-pub async fn configure(
-    client: &Client,
-    profile: &mut Profile,
-    game_version: Option<String>,
-    loader: Option<ModLoader>,
-    name: Option<String>,
-) -> Result<()> {
+pub async fn configure(profile: &mut Profile, game_version: Option<String>, loader: Option<ModLoader>, name: Option<String>) -> Result<()> {
     let mut interactive = true;
 
     {
@@ -48,12 +39,13 @@ pub async fn configure(
             let selection = Select::with_theme(&*THEME)
                 .with_prompt("Which setting would you like to change")
                 .items(&items)
+                .default(0)
                 .interact_opt()?;
 
             if let Some(index) = selection {
                 let data = profile.data_mut().await?;
                 match index {
-                    0 => data.game_version = pick_minecraft_version(client).await?,
+                    0 => data.game_version = pick_minecraft_version(Some(&data.game_version)).await?,
                     1 => data.loader = pick_mod_loader(Some(data.loader))?,
                     2 => {
                         let name = Input::with_theme(&*THEME)

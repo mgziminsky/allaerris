@@ -8,7 +8,7 @@ use colored::Colorize;
 use relibium::{
     checked_types::PathAbsolute,
     config::{profile::ProfileData, Profile},
-    Client, Config,
+    Config,
 };
 
 use self::{configure::configure, create::create, delete::delete, helpers::switch_profile};
@@ -19,7 +19,7 @@ use crate::{
 };
 
 
-pub async fn process(subcommand: ProfileSubCommand, config: &mut Config, client: &Client) -> Result<()> {
+pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Result<()> {
     match subcommand {
         ProfileSubCommand::Info => {
             tui::print_profile(get_active_profile(config)?, true).await;
@@ -39,7 +39,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config, client:
             name,
             path,
         } => {
-            create(client, config, game_version, loader, name, path).await?;
+            create(config, game_version, loader, name, path).await?;
             println!(
                 "{}",
                 format!(
@@ -80,7 +80,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config, client:
             loader,
             name,
         } => {
-            configure(client, get_active_profile(config)?, game_version, loader, name).await?;
+            configure(get_active_profile(config)?, game_version, loader, name).await?;
         },
         ProfileSubCommand::Switch { profile_name } => {
             let profiles = config.get_profiles();
