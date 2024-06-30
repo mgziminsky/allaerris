@@ -1,4 +1,4 @@
 '!include': common.yml
-inputSpec: https://raw.githubusercontent.com/aternosorg/php-curseforge-api/master/openapi.yaml
+inputSpec: openapi/curseforge-schema.yaml
 packageName: curseforge-client
 outputDir:  curseforge-client
