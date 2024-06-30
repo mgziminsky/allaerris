@@ -13,7 +13,7 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Game {
     #[serde(rename = "id")]
-    pub id: u32,
+    pub id: u64,
     #[serde(rename = "name")]
     pub name: String,
     #[serde(rename = "slug")]
@@ -29,7 +29,7 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new(id: u32, name: String, slug: String, date_modified: String, assets: models::GameAssets, status: models::CoreStatus, api_status: models::CoreApiStatus) -> Self {
+    pub fn new(id: u64, name: String, slug: String, date_modified: String, assets: models::GameAssets, status: models::CoreStatus, api_status: models::CoreApiStatus) -> Self {
         Self {
             id,
             name,

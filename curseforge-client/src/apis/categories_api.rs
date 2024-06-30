@@ -18,9 +18,9 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct GetCategoriesParams<> {
     /// A game unique id
-    pub game_id: u32,
+    pub game_id: u64,
     /// A class unique id
-    pub class_id: Option<u32>,
+    pub class_id: Option<u64>,
     /// A flag used to only return classes
     pub classes_only: Option<bool>,
 }

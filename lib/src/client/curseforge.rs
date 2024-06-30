@@ -49,11 +49,11 @@ impl ApiOps for ForgeClient {
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let id = id.as_forge()?;
+        let mod_id = *id.as_forge()?;
         let files = self
             .files()
             .get_mod_files(&GetModFilesParams {
-                mod_id: *id as _,
+                mod_id,
                 game_version,
                 mod_loader_type: loader.map(Into::into),
                 game_version_type_id: None,
@@ -83,7 +83,7 @@ impl ApiOps for ForgeClient {
 
 #[inline]
 async fn fetch_mod(client: &ForgeClient, id: impl AsProjectId) -> Result<curseforge::models::Mod> {
-    let mod_id = id.try_as_forge()? as _;
+    let mod_id = id.try_as_forge()?;
     Ok(client.mods().get_mod(&GetModParams { mod_id }).await?.data)
 }
 
@@ -106,8 +106,8 @@ mod from {
     };
 
     const MINECRAFT_GAME_ID: u64 = 432;
-    const MOD_CLASS_ID: u32 = 6;
-    const MODPACK_CLASS_ID: u32 = 4471;
+    const MOD_CLASS_ID: u64 = 6;
+    const MODPACK_CLASS_ID: u64 = 4471;
 
     static HOME: Lazy<Url> = Lazy::new(|| {
         "https://www.curseforge.com/minecraft/"
@@ -195,8 +195,8 @@ mod from {
     impl From<File> for Version {
         fn from(file: File) -> Self {
             Self {
-                id: VersionId::Forge(file.id as _),
-                project_id: ProjectId::Forge(file.mod_id as _),
+                id: VersionId::Forge(file.id),
+                project_id: ProjectId::Forge(file.mod_id),
                 title: file.display_name,
                 download_url: file.download_url,
                 filename: file.file_name,
@@ -211,7 +211,7 @@ mod from {
     impl From<FileDependency> for Dependency {
         fn from(value: FileDependency) -> Self {
             Self {
-                project_id: ProjectId::Forge(value.mod_id as _),
+                project_id: ProjectId::Forge(value.mod_id),
                 id: None,
                 dep_type: value.relation_type.into(),
             }
@@ -245,7 +245,7 @@ mod from {
 
 
     /// Values taken from the api as of 2024-06
-    fn class_slug(cid: u32) -> Option<&'static str> {
+    const fn class_slug(cid: u64) -> Option<&'static str> {
         Some(match cid {
             5 => "bukkit-plugins",
             6 => "mc-mods",

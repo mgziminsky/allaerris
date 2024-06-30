@@ -7,7 +7,7 @@ use crate::client::service_id::svc_id_impl;
 svc_id_impl! {
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub enum VersionId {
-        Forge(usize),
+        Forge(u64),
         Modrinth(String),
         Github(AssetId),
     }
@@ -18,9 +18,9 @@ pub struct Version {
     pub id: VersionId,
     pub project_id: ProjectId,
     pub title: String,
-    pub download_url: Url,
+    pub download_url: Option<Url>,
     pub filename: String,
-    pub length: usize,
+    pub length: u64,
     pub date: String,
     pub sha1: Option<String>,
     pub deps: Vec<Dependency>,

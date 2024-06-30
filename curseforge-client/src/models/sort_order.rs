@@ -10,7 +10,6 @@
 
 use crate::models;
 
-/// Possible enum values:  * asc = Ascending  * desc = Descending 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum SortOrder {
     #[default]

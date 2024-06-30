@@ -24,7 +24,7 @@ pub struct GetFingerprintFuzzyMatchesParams<'l1,> {
 #[derive(Clone, Debug)]
 pub struct GetFingerprintFuzzyMatchesByGameParams<'l2,> {
     /// The game id the find matches in
-    pub game_id: u32,
+    pub game_id: u64,
     pub get_fuzzy_matches_request_body: &'l2 GetFuzzyMatchesRequestBody,
 }
 
@@ -38,7 +38,7 @@ pub struct GetFingerprintMatchesParams<'l1,> {
 #[derive(Clone, Debug)]
 pub struct GetFingerprintMatchesByGameParams<'l2,> {
     /// The game id the find matches in
-    pub game_id: u32,
+    pub game_id: u64,
     pub get_fingerprint_matches_request_body: &'l2 GetFingerprintMatchesRequestBody,
 }
 

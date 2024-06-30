@@ -15,19 +15,19 @@ pub struct FileIndex {
     #[serde(rename = "gameVersion")]
     pub game_version: String,
     #[serde(rename = "fileId")]
-    pub file_id: u32,
+    pub file_id: u64,
     #[serde(rename = "filename")]
     pub filename: String,
     #[serde(rename = "releaseType")]
     pub release_type: models::FileReleaseType,
     #[serde(rename = "gameVersionTypeId", skip_serializing_if = "Option::is_none")]
-    pub game_version_type_id: Option<u32>,
+    pub game_version_type_id: Option<u64>,
     #[serde(rename = "modLoader")]
     pub mod_loader: models::ModLoaderType,
 }
 
 impl FileIndex {
-    pub fn new(game_version: String, file_id: u32, filename: String, release_type: models::FileReleaseType, mod_loader: models::ModLoaderType) -> Self {
+    pub fn new(game_version: String, file_id: u64, filename: String, release_type: models::FileReleaseType, mod_loader: models::ModLoaderType) -> Self {
         Self {
             game_version,
             file_id,

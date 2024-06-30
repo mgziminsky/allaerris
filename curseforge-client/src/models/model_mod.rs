@@ -39,13 +39,13 @@ pub struct Mod {
     pub is_featured: Option<serde_json::Value>,
     /// The main category of the mod as it was chosen by the mod author
     #[serde(rename = "primaryCategoryId")]
-    pub primary_category_id: u32,
+    pub primary_category_id: u64,
     /// List of categories that this mod is related to
     #[serde(rename = "categories")]
     pub categories: Vec<models::Category>,
     /// The class id this mod belongs to
     #[serde(rename = "classId", skip_serializing_if = "Option::is_none")]
-    pub class_id: Option<u32>,
+    pub class_id: Option<u64>,
     /// List of the mod's authors
     #[serde(rename = "authors")]
     pub authors: Vec<models::ModAuthor>,
@@ -56,7 +56,7 @@ pub struct Mod {
     pub screenshots: Vec<models::ModAsset>,
     /// The id of the main file of the mod
     #[serde(rename = "mainFileId")]
-    pub main_file_id: u32,
+    pub main_file_id: u64,
     /// List of latest files of the mod
     #[serde(rename = "latestFiles")]
     pub latest_files: Vec<models::File>,
@@ -87,7 +87,7 @@ pub struct Mod {
 }
 
 impl Mod {
-    pub fn new(id: u64, game_id: u64, name: String, slug: String, links: models::ModLinks, summary: String, status: models::ModStatus, download_count: u64, primary_category_id: u32, categories: Vec<models::Category>, authors: Vec<models::ModAuthor>, logo: models::ModAsset, screenshots: Vec<models::ModAsset>, main_file_id: u32, latest_files: Vec<models::File>, latest_file_indexes: Vec<models::FileIndex>, date_created: String, date_modified: String, date_released: String, game_popularity_rank: u32, is_available: bool, thumbs_up_count: u32) -> Self {
+    pub fn new(id: u64, game_id: u64, name: String, slug: String, links: models::ModLinks, summary: String, status: models::ModStatus, download_count: u64, primary_category_id: u64, categories: Vec<models::Category>, authors: Vec<models::ModAuthor>, logo: models::ModAsset, screenshots: Vec<models::ModAsset>, main_file_id: u64, latest_files: Vec<models::File>, latest_file_indexes: Vec<models::FileIndex>, date_created: String, date_modified: String, date_released: String, game_popularity_rank: u32, is_available: bool, thumbs_up_count: u32) -> Self {
         Self {
             id,
             game_id,

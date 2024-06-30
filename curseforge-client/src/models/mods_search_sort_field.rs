@@ -10,39 +10,38 @@
 
 use crate::models;
 
-/// Possible enum values:  * 1 = Featured  * 2 = Popularity  * 3 = LastUpdated              * 4 = Name  * 5 = Author  * 6 = TotalDownloads  * 7 = Category  * 8 = GameVersion 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ModsSearchSortField {
     #[default]
     #[serde(rename = "1")]
-    Variant1,
+    Featured,
     #[serde(rename = "2")]
-    Variant2,
+    Popularity,
     #[serde(rename = "3")]
-    Variant3,
+    LastUpdated,
     #[serde(rename = "4")]
-    Variant4,
+    Name,
     #[serde(rename = "5")]
-    Variant5,
+    Author,
     #[serde(rename = "6")]
-    Variant6,
+    TotalDownloads,
     #[serde(rename = "7")]
-    Variant7,
+    Category,
     #[serde(rename = "8")]
-    Variant8,
+    GameVersion,
 }
 
 impl std::fmt::Display for ModsSearchSortField {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Variant1 => "1",
-            Self::Variant2 => "2",
-            Self::Variant3 => "3",
-            Self::Variant4 => "4",
-            Self::Variant5 => "5",
-            Self::Variant6 => "6",
-            Self::Variant7 => "7",
-            Self::Variant8 => "8",
+            Self::Featured => "1",
+            Self::Popularity => "2",
+            Self::LastUpdated => "3",
+            Self::Name => "4",
+            Self::Author => "5",
+            Self::TotalDownloads => "6",
+            Self::Category => "7",
+            Self::GameVersion => "8",
         })
     }
 }

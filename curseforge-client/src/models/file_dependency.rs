@@ -13,13 +13,13 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileDependency {
     #[serde(rename = "modId")]
-    pub mod_id: u32,
+    pub mod_id: u64,
     #[serde(rename = "relationType")]
     pub relation_type: models::FileRelationType,
 }
 
 impl FileDependency {
-    pub fn new(mod_id: u32, relation_type: models::FileRelationType) -> Self {
+    pub fn new(mod_id: u64, relation_type: models::FileRelationType) -> Self {
         Self {
             mod_id,
             relation_type,

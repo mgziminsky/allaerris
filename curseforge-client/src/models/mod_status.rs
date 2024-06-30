@@ -10,45 +10,44 @@
 
 use crate::models;
 
-/// Current mod status Possible enum values:  * 1 = New  * 2 = ChangesRequired  * 3 = UnderSoftReview  * 4 = Approved  * 5 = Rejected  * 6 = ChangesMade  * 7 = Inactive  * 8 = Abandoned  * 9 = Deleted  * 10 = UnderReview 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ModStatus {
     #[default]
     #[serde(rename = "1")]
-    Variant1,
+    New,
     #[serde(rename = "2")]
-    Variant2,
+    ChangesRequired,
     #[serde(rename = "3")]
-    Variant3,
+    UnderSoftReview,
     #[serde(rename = "4")]
-    Variant4,
+    Approved,
     #[serde(rename = "5")]
-    Variant5,
+    Rejected,
     #[serde(rename = "6")]
-    Variant6,
+    ChangesMade,
     #[serde(rename = "7")]
-    Variant7,
+    Inactive,
     #[serde(rename = "8")]
-    Variant8,
+    Abandoned,
     #[serde(rename = "9")]
-    Variant9,
+    Deleted,
     #[serde(rename = "10")]
-    Variant10,
+    UnderReview,
 }
 
 impl std::fmt::Display for ModStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Variant1 => "1",
-            Self::Variant2 => "2",
-            Self::Variant3 => "3",
-            Self::Variant4 => "4",
-            Self::Variant5 => "5",
-            Self::Variant6 => "6",
-            Self::Variant7 => "7",
-            Self::Variant8 => "8",
-            Self::Variant9 => "9",
-            Self::Variant10 => "10",
+            Self::New => "1",
+            Self::ChangesRequired => "2",
+            Self::UnderSoftReview => "3",
+            Self::Approved => "4",
+            Self::Rejected => "5",
+            Self::ChangesMade => "6",
+            Self::Inactive => "7",
+            Self::Abandoned => "8",
+            Self::Deleted => "9",
+            Self::UnderReview => "10",
         })
     }
 }

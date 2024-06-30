@@ -13,11 +13,11 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetModFilesRequestBody {
     #[serde(rename = "fileIds")]
-    pub file_ids: Vec<u32>,
+    pub file_ids: Vec<u64>,
 }
 
 impl GetModFilesRequestBody {
-    pub fn new(file_ids: Vec<u32>) -> Self {
+    pub fn new(file_ids: Vec<u64>) -> Self {
         Self {
             file_ids,
         }

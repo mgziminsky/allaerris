@@ -14,13 +14,13 @@ use crate::models;
 pub struct File {
     /// The file id
     #[serde(rename = "id")]
-    pub id: u32,
+    pub id: u64,
     /// The game id related to the mod that this file belongs to
     #[serde(rename = "gameId")]
-    pub game_id: u32,
+    pub game_id: u64,
     /// The mod id
     #[serde(rename = "modId")]
-    pub mod_id: u32,
+    pub mod_id: u64,
     /// Whether the file is available to download
     #[serde(rename = "isAvailable")]
     pub is_available: bool,
@@ -46,8 +46,8 @@ pub struct File {
     /// The number of downloads for the file
     #[serde(rename = "downloadCount")]
     pub download_count: u64,
-    #[serde(rename = "downloadUrl")]
-    pub download_url: ::url::Url,
+    #[serde(rename = "downloadUrl", skip_serializing_if = "Option::is_none")]
+    pub download_url: Option<::url::Url>,
     /// List of game versions this file is relevant for
     #[serde(rename = "gameVersions")]
     pub game_versions: Vec<String>,
@@ -60,13 +60,13 @@ pub struct File {
     #[serde(rename = "exposeAsAlternative", skip_serializing_if = "Option::is_none")]
     pub expose_as_alternative: Option<bool>,
     #[serde(rename = "parentProjectFileId", skip_serializing_if = "Option::is_none")]
-    pub parent_project_file_id: Option<u32>,
+    pub parent_project_file_id: Option<u64>,
     #[serde(rename = "alternateFileId", skip_serializing_if = "Option::is_none")]
-    pub alternate_file_id: Option<u32>,
+    pub alternate_file_id: Option<u64>,
     #[serde(rename = "isServerPack", skip_serializing_if = "Option::is_none")]
     pub is_server_pack: Option<bool>,
     #[serde(rename = "serverPackFileId", skip_serializing_if = "Option::is_none")]
-    pub server_pack_file_id: Option<u32>,
+    pub server_pack_file_id: Option<u64>,
     #[serde(rename = "isEarlyAccessContent", skip_serializing_if = "Option::is_none")]
     pub is_early_access_content: Option<bool>,
     #[serde(rename = "earlyAccessEndDate", skip_serializing_if = "Option::is_none")]
@@ -78,7 +78,7 @@ pub struct File {
 }
 
 impl File {
-    pub fn new(id: u32, game_id: u32, mod_id: u32, is_available: bool, display_name: String, file_name: String, release_type: models::FileReleaseType, file_status: models::FileStatus, hashes: Vec<models::FileHash>, file_date: String, file_length: u64, download_count: u64, download_url: ::url::Url, game_versions: Vec<String>, sortable_game_versions: Vec<models::SortableGameVersion>, dependencies: Vec<models::FileDependency>, file_fingerprint: u64, modules: Vec<models::FileModule>) -> Self {
+    pub fn new(id: u64, game_id: u64, mod_id: u64, is_available: bool, display_name: String, file_name: String, release_type: models::FileReleaseType, file_status: models::FileStatus, hashes: Vec<models::FileHash>, file_date: String, file_length: u64, download_count: u64, game_versions: Vec<String>, sortable_game_versions: Vec<models::SortableGameVersion>, dependencies: Vec<models::FileDependency>, file_fingerprint: u64, modules: Vec<models::FileModule>) -> Self {
         Self {
             id,
             game_id,
@@ -92,12 +92,12 @@ impl File {
             file_date,
             file_length,
             download_count,
-            download_url,
             game_versions,
             sortable_game_versions,
             dependencies,
             file_fingerprint,
             modules,
+            download_url: None,
             expose_as_alternative: None,
             parent_project_file_id: None,
             alternate_file_id: None,

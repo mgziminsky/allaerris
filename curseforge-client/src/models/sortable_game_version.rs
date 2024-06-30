@@ -26,7 +26,7 @@ pub struct SortableGameVersion {
     pub game_version_release_date: String,
     /// Game version type id
     #[serde(rename = "gameVersionTypeId", skip_serializing_if = "Option::is_none")]
-    pub game_version_type_id: Option<u32>,
+    pub game_version_type_id: Option<u64>,
 }
 
 impl SortableGameVersion {

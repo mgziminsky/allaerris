@@ -24,14 +24,14 @@ pub struct GetFeaturedModsParams<'l1,> {
 #[derive(Clone, Debug)]
 pub struct GetModParams<> {
     /// The mod id.
-    pub mod_id: u32,
+    pub mod_id: u64,
 }
 
 /// struct for passing parameters to the method [`ModsApi::get_mod_description`]
 #[derive(Clone, Debug)]
 pub struct GetModDescriptionParams<> {
     /// The mod id.
-    pub mod_id: u32,
+    pub mod_id: u64,
 }
 
 /// struct for passing parameters to the method [`ModsApi::get_mods`]
@@ -44,11 +44,11 @@ pub struct GetModsParams<'l1,> {
 #[derive(Clone, Debug)]
 pub struct SearchModsParams<'l4,'l5,'l11,> {
     /// Filter by game id.
-    pub game_id: u32,
+    pub game_id: u64,
     /// Filter by section id (discoverable via Categories)
-    pub class_id: Option<u32>,
+    pub class_id: Option<u64>,
     /// Filter by category id
-    pub category_id: Option<u32>,
+    pub category_id: Option<u64>,
     /// Filter by game version string
     pub game_version: Option<&'l4 str>,
     /// Filter by free text search in the mod name and author
@@ -60,9 +60,9 @@ pub struct SearchModsParams<'l4,'l5,'l11,> {
     /// Filter only mods associated to a given modloader (Forge, Fabric ...). Must be coupled with gameVersion. 
     pub mod_loader_type: Option<ModLoaderType>,
     /// Filter only mods that contain files tagged with versions of the given gameVersionTypeId
-    pub game_version_type_id: Option<u32>,
+    pub game_version_type_id: Option<u64>,
     /// Filter only mods that the given authorId is a member of.
-    pub author_id: Option<u32>,
+    pub author_id: Option<u64>,
     /// Filter by slug (coupled with classId will result in a unique result).
     pub slug: Option<&'l11 str>,
     /// A zero based index of the first item to include in the response, the limit is: (index + pageSize <= 10,000).

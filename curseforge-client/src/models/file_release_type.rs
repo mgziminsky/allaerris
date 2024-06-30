@@ -10,24 +10,23 @@
 
 use crate::models;
 
-/// Possible enum values:  * 1 = Release  * 2 = Beta  * 3 = Alpha 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum FileReleaseType {
     #[default]
     #[serde(rename = "1")]
-    Variant1,
+    Release,
     #[serde(rename = "2")]
-    Variant2,
+    Beta,
     #[serde(rename = "3")]
-    Variant3,
+    Alpha,
 }
 
 impl std::fmt::Display for FileReleaseType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Variant1 => "1",
-            Self::Variant2 => "2",
-            Self::Variant3 => "3",
+            Self::Release => "1",
+            Self::Beta => "2",
+            Self::Alpha => "3",
         })
     }
 }

@@ -62,7 +62,7 @@ impl ApiOps for GithubClient {
                         id: VersionId::Github(a.id),
                         project_id: ProjectId::Github(id.clone()),
                         title: a.label.unwrap_or_default(),
-                        download_url: a.url,
+                        download_url: Some(a.url),
                         filename: a.name,
                         length: a.size as _,
                         date: a.updated_at.to_rfc3339(),

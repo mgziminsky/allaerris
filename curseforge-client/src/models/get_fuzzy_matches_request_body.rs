@@ -13,13 +13,13 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetFuzzyMatchesRequestBody {
     #[serde(rename = "gameId")]
-    pub game_id: u32,
+    pub game_id: u64,
     #[serde(rename = "fingerprints")]
     pub fingerprints: Vec<models::FolderFingerprint>,
 }
 
 impl GetFuzzyMatchesRequestBody {
-    pub fn new(game_id: u32, fingerprints: Vec<models::FolderFingerprint>) -> Self {
+    pub fn new(game_id: u64, fingerprints: Vec<models::FolderFingerprint>) -> Self {
         Self {
             game_id,
             fingerprints,

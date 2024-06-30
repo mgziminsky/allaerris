@@ -13,7 +13,7 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FingerprintFuzzyMatch {
     #[serde(rename = "id")]
-    pub id: u32,
+    pub id: u64,
     #[serde(rename = "file")]
     pub file: models::File,
     #[serde(rename = "latestFiles")]
@@ -23,7 +23,7 @@ pub struct FingerprintFuzzyMatch {
 }
 
 impl FingerprintFuzzyMatch {
-    pub fn new(id: u32, file: models::File, latest_files: Vec<models::File>, fingerprints: Vec<u64>) -> Self {
+    pub fn new(id: u64, file: models::File, latest_files: Vec<models::File>, fingerprints: Vec<u64>) -> Self {
         Self {
             id,
             file,

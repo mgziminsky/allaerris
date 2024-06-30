@@ -10,24 +10,23 @@
 
 use crate::models;
 
-/// Possible enum values:  * 1 = Approved  * 2 = Deleted  * 3 = New 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum GameVersionStatus {
     #[default]
     #[serde(rename = "1")]
-    Variant1,
+    Approved,
     #[serde(rename = "2")]
-    Variant2,
+    Deleted,
     #[serde(rename = "3")]
-    Variant3,
+    New,
 }
 
 impl std::fmt::Display for GameVersionStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Variant1 => "1",
-            Self::Variant2 => "2",
-            Self::Variant3 => "3",
+            Self::Approved => "1",
+            Self::Deleted => "2",
+            Self::New => "3",
         })
     }
 }

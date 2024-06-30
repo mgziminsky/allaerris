@@ -24,40 +24,40 @@ pub struct GetFilesParams<'l1,> {
 #[derive(Clone, Debug)]
 pub struct GetModFileParams<> {
     /// The mod id the file belongs to
-    pub mod_id: u32,
+    pub mod_id: u64,
     /// The file id.
-    pub file_id: u32,
+    pub file_id: u64,
 }
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_file_changelog`]
 #[derive(Clone, Debug)]
 pub struct GetModFileChangelogParams<> {
     /// The mod id the file belongs to
-    pub mod_id: u32,
+    pub mod_id: u64,
     /// The file id.
-    pub file_id: u32,
+    pub file_id: u64,
 }
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_file_download_url`]
 #[derive(Clone, Debug)]
 pub struct GetModFileDownloadUrlParams<> {
     /// The mod id the file belongs to
-    pub mod_id: u32,
+    pub mod_id: u64,
     /// The file id.
-    pub file_id: u32,
+    pub file_id: u64,
 }
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_files`]
 #[derive(Clone, Debug)]
 pub struct GetModFilesParams<'l2,> {
     /// The mod id the files belong to
-    pub mod_id: u32,
+    pub mod_id: u64,
     /// Filter by game version string
     pub game_version: Option<&'l2 str>,
     /// ModLoaderType enumeration Filter only files associated to a given modloader (Forge, Fabric ...). 
     pub mod_loader_type: Option<ModLoaderType>,
     /// Filter only files that are tagged with versions of the given gameVersionTypeId
-    pub game_version_type_id: Option<u32>,
+    pub game_version_type_id: Option<u64>,
     /// A zero based index of the first item to include in the response, the limit is: (index + pageSize <= 10,000).
     pub index: Option<u32>,
     /// The number of items to include in the response, the default/maximum value is 50.

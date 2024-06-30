@@ -13,7 +13,7 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModAuthor {
     #[serde(rename = "id")]
-    pub id: u32,
+    pub id: u64,
     #[serde(rename = "name")]
     pub name: String,
     #[serde(rename = "url")]
@@ -21,7 +21,7 @@ pub struct ModAuthor {
 }
 
 impl ModAuthor {
-    pub fn new(id: u32, name: String, url: ::url::Url) -> Self {
+    pub fn new(id: u64, name: String, url: ::url::Url) -> Self {
         Self {
             id,
             name,

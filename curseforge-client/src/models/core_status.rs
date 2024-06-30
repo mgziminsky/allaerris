@@ -10,33 +10,32 @@
 
 use crate::models;
 
-/// CoreStatus Possible enum values:  * 1 = Draft  * 2 = Test  * 3 = PendingReview  * 4 = Rejected  * 5 = Approved  * 6 = Live 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum CoreStatus {
     #[default]
     #[serde(rename = "1")]
-    Variant1,
+    Draft,
     #[serde(rename = "2")]
-    Variant2,
+    Test,
     #[serde(rename = "3")]
-    Variant3,
+    PendingReview,
     #[serde(rename = "4")]
-    Variant4,
+    Rejected,
     #[serde(rename = "5")]
-    Variant5,
+    Approved,
     #[serde(rename = "6")]
-    Variant6,
+    Live,
 }
 
 impl std::fmt::Display for CoreStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Variant1 => "1",
-            Self::Variant2 => "2",
-            Self::Variant3 => "3",
-            Self::Variant4 => "4",
-            Self::Variant5 => "5",
-            Self::Variant6 => "6",
+            Self::Draft => "1",
+            Self::Test => "2",
+            Self::PendingReview => "3",
+            Self::Rejected => "4",
+            Self::Approved => "5",
+            Self::Live => "6",
         })
     }
 }

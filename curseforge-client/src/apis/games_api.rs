@@ -18,7 +18,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct GetGameParams<> {
     /// A game unique id
-    pub game_id: u32,
+    pub game_id: u64,
 }
 
 /// struct for passing parameters to the method [`GamesApi::get_games`]
@@ -34,21 +34,21 @@ pub struct GetGamesParams<> {
 #[derive(Clone, Debug)]
 pub struct GetVersionTypesParams<> {
     /// A game unique id
-    pub game_id: u32,
+    pub game_id: u64,
 }
 
 /// struct for passing parameters to the method [`GamesApi::get_versions`]
 #[derive(Clone, Debug)]
 pub struct GetVersionsParams<> {
     /// A game unique id
-    pub game_id: u32,
+    pub game_id: u64,
 }
 
 /// struct for passing parameters to the method [`GamesApi::get_versions_v2`]
 #[derive(Clone, Debug)]
 pub struct GetVersionsV2Params<> {
     /// A game unique id
-    pub game_id: u32,
+    pub game_id: u64,
 }
 
 

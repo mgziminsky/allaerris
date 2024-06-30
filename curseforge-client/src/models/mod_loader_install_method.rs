@@ -10,27 +10,26 @@
 
 use crate::models;
 
-/// ModLoaderInstallMethod Possible enum values:  * 1 = ForgeInstaller  * 2 = ForgeJarInstall  * 3 = ForgeInstaller_v2  * 4 = FabricInstaller 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum ModLoaderInstallMethod {
     #[default]
     #[serde(rename = "1")]
-    Variant1,
+    ForgeInstaller,
     #[serde(rename = "2")]
-    Variant2,
+    ForgeJarInstall,
     #[serde(rename = "3")]
-    Variant3,
+    ForgeInstallerV2,
     #[serde(rename = "4")]
-    Variant4,
+    FabricInstaller,
 }
 
 impl std::fmt::Display for ModLoaderInstallMethod {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Variant1 => "1",
-            Self::Variant2 => "2",
-            Self::Variant3 => "3",
-            Self::Variant4 => "4",
+            Self::ForgeInstaller => "1",
+            Self::ForgeJarInstall => "2",
+            Self::ForgeInstallerV2 => "3",
+            Self::FabricInstaller => "4",
         })
     }
 }

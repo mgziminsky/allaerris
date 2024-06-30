@@ -13,7 +13,7 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GameVersion {
     #[serde(rename = "id")]
-    pub id: u32,
+    pub id: u64,
     #[serde(rename = "name")]
     pub name: String,
     #[serde(rename = "slug")]
@@ -21,7 +21,7 @@ pub struct GameVersion {
 }
 
 impl GameVersion {
-    pub fn new(id: u32, name: String, slug: String) -> Self {
+    pub fn new(id: u64, name: String, slug: String) -> Self {
         Self {
             id,
             name,
