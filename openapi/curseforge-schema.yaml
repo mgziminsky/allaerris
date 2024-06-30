@@ -1029,6 +1029,7 @@ components:
         downloadUrl:
           type: string
           format: uri
+          nullable: true
         gameVersions:
           type: array
           items:
