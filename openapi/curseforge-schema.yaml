@@ -943,25 +943,21 @@ components:
           type: integer
           format: int64
     CoreApiStatus:
-      description: |
-        CoreApiStatus
-        Possible enum values:
-         * 1 = Private
-         * 2 = Public
+      x-enum-varnames:
+        - Private
+        - Public
       type: integer
       enum:
         - 1
         - 2
     CoreStatus:
-      description: |
-        CoreStatus
-        Possible enum values:
-         * 1 = Draft
-         * 2 = Test
-         * 3 = PendingReview
-         * 4 = Rejected
-         * 5 = Approved
-         * 6 = Live
+      x-enum-varnames:
+        - Draft
+        - Test
+        - PendingReview
+        - Rejected
+        - Approved
+        - Live
       type: integer
       enum:
         - 1
@@ -1122,14 +1118,13 @@ components:
           type: integer
           format: int64
     FileRelationType:
-      description: |
-        Possible enum values:
-         * 1 = EmbeddedLibrary
-         * 2 = OptionalDependency
-         * 3 = RequiredDependency
-         * 4 = Tool
-         * 5 = Incompatible
-         * 6 = Include
+      x-enum-varnames:
+        - EmbeddedLibrary
+        - OptionalDependency
+        - RequiredDependency
+        - Tool
+        - Incompatible
+        - Include
       type: integer
       enum:
         - 1
@@ -1139,35 +1134,32 @@ components:
         - 5
         - 6
     FileReleaseType:
-      description: |
-        Possible enum values:
-         * 1 = Release
-         * 2 = Beta
-         * 3 = Alpha
+      x-enum-varnames:
+        - Release
+        - Beta
+        - Alpha
       type: integer
       enum:
         - 1
         - 2
         - 3
     FileStatus:
-      description: |
-        Status of the file
-        Possible enum values:
-         * 1 = Processing
-         * 2 = ChangesRequired
-         * 3 = UnderReview
-         * 4 = Approved
-         * 5 = Rejected
-         * 6 = MalwareDetected
-         * 7 = Deleted
-         * 8 = Archived
-         * 9 = Testing
-         * 10 = Released
-         * 11 = ReadyForReview
-         * 12 = Deprecated
-         * 13 = Baking
-         * 14 = AwaitingPublishing
-         * 15 = FailedPublishing
+      x-enum-varnames:
+        - Processing
+        - ChangesRequired
+        - UnderReview
+        - Approved
+        - Rejected
+        - MalwareDetected
+        - Deleted
+        - Archived
+        - Testing
+        - Released
+        - ReadyForReview
+        - Deprecated
+        - Baking
+        - AwaitingPublishing
+        - FailedPublishing
       type: integer
       enum:
         - 1
@@ -1328,11 +1320,10 @@ components:
         slug:
           type: string
     GameVersionStatus:
-      description: |
-        Possible enum values:
-         * 1 = Approved
-         * 2 = Deleted
-         * 3 = New
+      x-enum-varnames:
+        - Approved
+        - Deleted
+        - New
       type: integer
       enum:
         - 1
@@ -1352,10 +1343,9 @@ components:
         slug:
           type: string
     GameVersionTypeStatus:
-      description: |
-        Possible enum values:
-         * 1 = Normal
-         * 2 = Deleted
+      x-enum-varnames:
+        - Normal
+        - Deleted
       type: integer
       enum:
         - 1
@@ -1517,11 +1507,9 @@ components:
             type: integer
             format: int64
     HashAlgo:
-      description: |
-        Hash algorithems
-        Possible enum values:
-         * 1 = Sha1
-         * 2 = Md5
+      x-enum-varnames:
+        - Sha1
+        - Md5
       type: integer
       enum:
         - 1
@@ -1790,13 +1778,11 @@ components:
           type: string
           format: uri
     ModLoaderInstallMethod:
-      description: |
-        ModLoaderInstallMethod
-        Possible enum values:
-         * 1 = ForgeInstaller
-         * 2 = ForgeJarInstall
-         * 3 = ForgeInstaller_v2
-         * 4 = FabricInstaller
+      x-enum-varnames:
+        - ForgeInstaller
+        - ForgeJarInstall
+        - ForgeInstallerV2
+        - FabricInstaller
       type: integer
       enum:
         - 1
@@ -1804,16 +1790,14 @@ components:
         - 3
         - 4
     ModLoaderType:
-      description: |
-        ModLoaderType
-        Possible enum values:
-         * 0 = Any
-         * 1 = Forge
-         * 2 = Cauldron
-         * 3 = LiteLoader
-         * 4 = Fabric
-         * 5 = Quilt
-         * 6 = NeoForge
+      x-enum-varnames:
+        - Any
+        - Forge
+        - Cauldron
+        - LiteLoader
+        - Fabric
+        - Quilt
+        - NeoForge
       type: integer
       enum:
         - 0
@@ -1824,16 +1808,15 @@ components:
         - 5
         - 6
     ModsSearchSortField:
-      description: |
-        Possible enum values:
-         * 1 = Featured
-         * 2 = Popularity
-         * 3 = LastUpdated
-         * 4 = Name
-         * 5 = Author
-         * 6 = TotalDownloads
-         * 7 = Category
-         * 8 = GameVersion
+      x-enum-varnames:
+        - Featured
+        - Popularity
+        - LastUpdated
+        - Name
+        - Author
+        - TotalDownloads
+        - Category
+        - GameVersion
       type: integer
       enum:
         - 1
@@ -1845,19 +1828,17 @@ components:
         - 7
         - 8
     ModStatus:
-      description: |
-        Current mod status
-        Possible enum values:
-         * 1 = New
-         * 2 = ChangesRequired
-         * 3 = UnderSoftReview
-         * 4 = Approved
-         * 5 = Rejected
-         * 6 = ChangesMade
-         * 7 = Inactive
-         * 8 = Abandoned
-         * 9 = Deleted
-         * 10 = UnderReview
+      x-enum-varnames:
+        - New
+        - ChangesRequired
+        - UnderSoftReview
+        - Approved
+        - Rejected
+        - ChangesMade
+        - Inactive
+        - Abandoned
+        - Deleted
+        - UnderReview
       type: integer
       enum:
         - 1
@@ -1924,10 +1905,6 @@ components:
           nullable: true
           description: Game version type id
     SortOrder:
-      description: |
-        Possible enum values:
-         * asc = Ascending
-         * desc = Descending
       type: string
       enum:
         - asc
