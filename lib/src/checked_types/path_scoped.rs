@@ -17,34 +17,27 @@ pub enum PathScopeError {
 }
 
 /// A [`PathBuf`] wrapper that is guaranteed to be relative without directly
-/// referencing an outer scope.
+/// referencing an outer scope. Leading [`./`] will be stripped and the path
+/// partially normalized as described by [`Path::components`]
+///
+/// [`./`]: std::path::Component::CurDir
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(try_from = "PathBuf")]
 pub struct PathScoped(PathBuf);
 
 impl PathScoped {
-    /// UNSAFE - CRATE INTERNAL
-    ///
-    /// Directly creates a new [`PathScoped`] from the `path` parameter
-    /// without validating it
-    pub(crate) unsafe fn new_unchecked(path: impl Into<PathBuf>) -> Self {
-        Self(path.into())
-    }
-
     /// # Errors
     ///
     /// This function will return an error if `path` is either absolute or it
     /// points at a parent scope
-    pub fn new<T>(path: T) -> Result<Self, PathScopeError>
-    where
-        T: Into<PathBuf> + AsRef<Path>,
-    {
-        let pr: &Path = path.as_ref();
-        if pr.has_root() {
+    pub fn new(path: impl AsRef<Path>) -> Result<Self, PathScopeError> {
+        use std::path::Component::*;
+
+        let path: &Path = path.as_ref();
+        if path.has_root() {
             return Err(PathScopeError::NonRelative);
         }
-        let depth_check = pr.components().try_fold(0, |depth, c| {
-            use std::path::Component::*;
+        let depth_check = path.components().try_fold(0, |depth, c| {
             let depth = depth
                 + match c {
                     ParentDir => -1,
@@ -58,11 +51,10 @@ impl PathScoped {
                 Ok(depth)
             }
         });
-        let path = path.into();
         if depth_check.is_ok() {
-            Ok(Self(path))
+            Ok(Self(path.components().skip_while(|c| matches!(c, CurDir)).collect()))
         } else {
-            Err(PathScopeError::Scoping(path))
+            Err(PathScopeError::Scoping(path.into()))
         }
     }
 
