@@ -60,7 +60,7 @@ macro_rules! svc_id_impl {
             svc_id_impl!(@fn Github -> $G);
         }
         ::paste::paste! {
-            pub type [<$name SvcType>] = dyn crate::client::service_id::ServiceId<ForgeT = $F, ModrinthT = $M, GithubT = $G>;
+            pub type [<$name SvcType>] = dyn crate::client::service_id::ServiceId<ForgeT = $F, ModrinthT = $M, GithubT = $G> + Send + Sync;
         }
     };
 }

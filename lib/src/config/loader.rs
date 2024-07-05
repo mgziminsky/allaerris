@@ -1,21 +1,22 @@
 #![allow(missing_docs)]
 
-use std::{borrow::Cow, convert::Infallible, fmt::Display, str::FromStr};
+use std::{borrow::Borrow, convert::Infallible, fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ModLoader {
-    #[default]
-    Unknown,
-
     Forge,
     Cauldron,
     LiteLoader,
     Fabric,
     Quilt,
     NeoForge,
+
+    #[default]
+    #[serde(other)]
+    Unknown,
 }
 
 impl ModLoader {
@@ -60,12 +61,8 @@ impl FromStr for ModLoader {
     }
 }
 
-impl<'de> Deserialize<'de> for ModLoader {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let val: Cow<'de, str> = Deserialize::deserialize(deserializer)?;
-        Self::from_str(&val).map_err(serde::de::Error::custom)
+impl Borrow<str> for ModLoader {
+    fn borrow(&self) -> &str {
+        self.as_str()
     }
 }

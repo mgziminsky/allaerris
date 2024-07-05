@@ -84,9 +84,9 @@ pub enum SubCommand {
         /// List of project IDs or case-insensitive names of mods to remove
         mod_names: Vec<String>,
     },
-    /// Download and install the latest compatible version of your mods
-    #[command(visible_aliases = ["download", "install"])]
-    Upgrade,
+    /// Download and install everything configured in the current profile
+    #[command(visible_aliases = ["download"])]
+    Install,
 }
 
 #[derive(Subcommand)]

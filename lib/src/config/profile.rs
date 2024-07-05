@@ -21,13 +21,7 @@ fn name_lowercase(m: &Mod) -> String {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub(super) name: String,
-
-    /// The [path](Path) to the root of this profile.
-    ///
-    /// This path is where mods/modpacks will be installed, and where the
-    /// [profile data](ProfileData) is stored in a file named
-    #[doc = concat!('`', data::consts!(FILENAME), '`')]
-    pub path: PathAbsolute,
+    pub(super) path: PathAbsolute,
 
     #[serde(skip)]
     data: OnceCell<ProfileData>,
@@ -51,6 +45,15 @@ impl Profile {
             path,
             data: data.into(),
         }
+    }
+
+    /// The [path](std::path::Path) to the root of this profile.
+    ///
+    /// This path is where mods/modpacks will be installed, and where the
+    /// [profile data](ProfileData) is stored in a file named
+    #[doc = concat!('`', data::consts!(FILENAME), '`')]
+    pub fn path(&self) -> &PathAbsolute {
+        &self.path
     }
 
     /// The profile name
@@ -124,22 +127,22 @@ mod tests {
     fn save_sort() {
         let unsorted = [
             Mod {
-                id: ProjectId::Forge(3),
+                id: ProjectId::Forge(3).into(),
                 slug: "test-3".to_owned(),
                 name: "Test 3".to_owned(),
             },
             Mod {
-                id: ProjectId::Forge(1),
+                id: ProjectId::Forge(1).into(),
                 slug: "test-1".to_owned(),
                 name: "test 1".to_owned(),
             },
             Mod {
-                id: ProjectId::Forge(2),
+                id: ProjectId::Forge(2).into(),
                 slug: "test-2".to_owned(),
                 name: "Test 2".to_owned(),
             },
             Mod {
-                id: ProjectId::Forge(0),
+                id: ProjectId::Forge(0).into(),
                 slug: "test-0".to_owned(),
                 name: "test 0".to_owned(),
             },

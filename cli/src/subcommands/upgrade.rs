@@ -1,10 +1,9 @@
 // Allow `expect()`s for mutex poisons
 #![allow(clippy::expect_used)]
 
-use std::{
-    fs::read_dir,
-    sync::{Arc, Mutex},
-    time::Duration,
+use crate::{
+    download::{clean, download},
+    tui::{CROSS, STYLE_NO, TICK_GREEN, TICK_YELLOW},
 };
 
 use anyhow::{anyhow, bail, Result};
@@ -13,7 +12,8 @@ use ferinth::Ferinth;
 use furse::Furse;
 use indicatif::ProgressBar;
 use libium::{
-    config::structs::{ModLoader, Profile},
+    client::Client,
+    config::Profile,
     upgrade::{
         mod_downloadable::{self, get_latest_compatible_downloadable},
         Downloadable,
@@ -32,21 +32,17 @@ use crate::{
 /// If an error occurs with a resolving task, instead of failing immediately,
 /// resolution will continue and the error return flag is set to true.
 pub async fn get_platform_downloadables(
-    modrinth: Ferinth,
-    curseforge: Furse,
-    github: Octocrab,
+    client: Client,
     profile: &Profile,
 ) -> Result<(Vec<Downloadable>, bool)> {
-    let to_download = Arc::new(Mutex::new(Vec::new()));
-    let progress_bar = Arc::new(Mutex::new(ProgressBar::new(profile.mods.len() as u64).with_style(STYLE_NO.clone())));
+    let to_download = Mutex::new(Vec::new());
+    let progress_bar =
+        Mutex::new(ProgressBar::new(profile.mods.len() as u64).with_style(STYLE_NO.clone()));
     let mut tasks = JoinSet::new();
-    let profile = Arc::new(profile.clone());
-    let curseforge = Arc::new(curseforge);
-    let modrinth = Arc::new(modrinth);
-    let github = Arc::new(github);
+    let profile = profile.clone();
 
     println!("{}\n", "Determining the Latest Compatible Versions".bold());
-    let semaphore = Arc::new(Semaphore::new(75));
+    let semaphore = Semaphore::new(75);
     progress_bar
         .lock()
         .expect("Mutex poisoned")
@@ -56,10 +52,7 @@ pub async fn get_platform_downloadables(
         let permit = semaphore.clone().acquire_owned().await?;
         let to_download = to_download.clone();
         let progress_bar = progress_bar.clone();
-        let curseforge = curseforge.clone();
-        let modrinth = modrinth.clone();
         let profile = profile.clone();
-        let github = github.clone();
         let mod_ = mod_.clone();
         tasks.spawn(async move {
             let _permit = permit;
@@ -71,7 +64,11 @@ pub async fn get_platform_downloadables(
                 Ok((downloadable, qf_flag)) => {
                     progress_bar.println(format!(
                         "{} {:pad_len$}  {}",
-                        if qf_flag { YELLOW_TICK.clone() } else { TICK.clone() },
+                        if qf_flag {
+                            TICK_YELLOW.clone()
+                        } else {
+                            TICK_GREEN.clone()
+                        },
                         mod_.name,
                         downloadable.filename().dimmed()
                     ));
@@ -115,8 +112,8 @@ pub async fn get_platform_downloadables(
     ))
 }
 
-pub async fn upgrade(modrinth: Ferinth, curseforge: Furse, github: Octocrab, profile: &Profile) -> Result<()> {
-    let (mut to_download, error) = get_platform_downloadables(modrinth, curseforge, github, profile).await?;
+pub async fn upgrade(client: Client, profile: &Profile) -> Result<()> {
+    let (mut to_download, error) = get_platform_downloadables(client, profile).await?;
     let mut to_install = Vec::new();
     if profile.output_dir.join("user").exists() && profile.mod_loader != ModLoader::Quilt {
         for file in read_dir(profile.output_dir.join("user"))? {

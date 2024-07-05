@@ -10,7 +10,7 @@ pub mod schema;
 
 use std::collections::BTreeSet;
 
-use self::schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version};
+use self::schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType};
 pub use self::service_id::ServiceId;
 use crate::{config::ModLoader, Result};
 
@@ -117,6 +117,20 @@ api! {
     /// Get all available Minecraft [versions](schema::GameVersion)
     /// in descending order by release date
     ++pub get_game_versions() -> BTreeSet<GameVersion>;
+
+    /// Get multiple [versions](Version) details by their `ids`
+    ++pub get_versions(ids: &[&VersionIdSvcType]) -> Vec<Version>;
+
+    /// Get the latest [versions](Version) of the project with `id`
+    ///
+    /// # Errors
+    ///
+    /// [[`ErrorKind::WrongService`]]: if `id` does not belong to the backing [client](Client)
+    ///
+    /// Any network or api errors from the backing client
+    ///
+    /// [`ErrorKind::WrongService`]: crate::ErrorKind::WrongService
+    pub get_latest(id: &ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Version;
 }
 
 /// The main [`Client`] for accessing the various modding APIs
@@ -125,7 +139,7 @@ api! {
 /// or a slice of them. When created from a slice of multiple clients, all
 /// operations will be attempted on each client in order and the first
 /// successful result will be returned. If **all** clients fail the operation,
-/// then only the first [error](Error) encountered will be returned. For
+/// then only the first [error](crate::Error) encountered will be returned. For
 /// convenience, the supported clients are re-exported as: [`ForgeClient`],
 /// [`ModrinthClient`], [`GithubClient`]
 ///
@@ -190,3 +204,18 @@ as_inner! {
     Forge,
     Github,
 }
+
+/// The default latest impl since I can't figure out how to allow bodies in the
+/// api macro
+macro_rules! get_latest {
+    () => {
+        async fn get_latest(&self, id: &ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Result<Version> {
+            self.get_project_versions(id, game_version, loader)
+                .await?
+                .into_iter()
+                .max_by(|a, b| a.date.cmp(&b.date))
+                .ok_or(crate::error::ErrorKind::DoesNotExist.into())
+        }
+    };
+}
+use get_latest;

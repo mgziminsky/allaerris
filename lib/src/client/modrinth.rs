@@ -3,18 +3,20 @@ use std::collections::BTreeSet;
 use modrinth::{
     apis::{
         projects_api::{GetProjectParams, GetProjectsParams},
-        versions_api::GetProjectVersionsParams,
+        versions_api::{GetProjectVersionsParams, GetVersionsParams},
     },
     models::{game_version_tag::VersionType, Project as ApiProject},
 };
 
 use super::{
-    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version},
+    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ModrinthClient,
 };
 use crate::{config::ModLoader, Result};
 
 impl ApiOps for ModrinthClient {
+    super::get_latest!();
+
     async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
         fetch_project(self, id).await?.try_into()
     }
@@ -73,6 +75,24 @@ impl ApiOps for ModrinthClient {
             .map(Into::into)
             .collect())
     }
+
+    async fn get_versions(&self, ids: &[&VersionIdSvcType]) -> Result<Vec<Version>> {
+        let versions = self
+            .versions()
+            .get_versions(&GetVersionsParams {
+                ids: &ids
+                    .iter()
+                    .filter_map(|id| id.as_modrinth().ok())
+                    .map(String::as_str)
+                    .collect::<Vec<_>>(),
+            })
+            .await?
+            .into_iter()
+            .map(Into::into)
+            .collect();
+
+        Ok(versions)
+    }
 }
 
 #[inline]
@@ -102,6 +122,7 @@ mod from {
             schema::{self, Author, GameVersion, ProjectId, VersionId},
             Client, ClientInner, ModrinthClient,
         },
+        config::ModLoader,
         ErrorKind,
     };
 
@@ -185,11 +206,24 @@ mod from {
                 project_id: ProjectId::Modrinth(value.project_id),
                 title: value.name,
                 download_url: Some(file.url),
-                filename: file.filename,
+                filename: file
+                    .filename
+                    .try_into()
+                    .expect("Modrinth API should always return a proper relative file"),
                 length: file.size as _,
                 date: value.date_published,
                 sha1: Some(file.hashes.sha1),
                 deps: value.dependencies.into_iter().filter_map(|d| d.try_into().ok()).collect(),
+                game_versions: value.game_versions,
+                loaders: value
+                    .loaders
+                    .into_iter()
+                    .filter_map(|l| match l.parse::<ModLoader>() {
+                        Ok(ModLoader::Unknown) => None,
+                        Ok(l) => Some(l),
+                        Err(_) => unreachable!(),
+                    })
+                    .collect(),
             }
         }
     }

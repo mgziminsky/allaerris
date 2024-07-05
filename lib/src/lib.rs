@@ -7,6 +7,7 @@ pub mod client;
 pub mod config;
 mod error;
 mod fs_util;
+pub mod mgmt;
 
 use std::env;
 pub use std::error::Error as StdError;
@@ -37,7 +38,7 @@ pub static CONF_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
 static CACHE_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
     dirs::cache_dir()
         .expect("system cache directory should be known")
-        .join(env!("CARGO_PKG_NAME"))
+        .join(concat!(env!("CARGO_PKG_NAME"), "-cache"))
         .try_into()
         .unwrap()
 });

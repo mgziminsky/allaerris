@@ -108,8 +108,8 @@ fn id_tag(id: &ProjectId) -> String {
 }
 
 pub fn mod_single_line(m: &Mod) -> String {
-    let id = id_tag(&m.id);
-    let name = match &m.id {
+    let id = id_tag(m.id());
+    let name = match m.id() {
         ProjectId::Forge(_) | ProjectId::Modrinth(_) => m.name.bold().to_string(),
         ProjectId::Github((owner, repo)) => format!("{}/{}", owner.dimmed(), repo.bold()),
     };
@@ -164,7 +164,7 @@ pub async fn print_profile(profile: &Profile, active: bool) {
             }
             name
         },
-        profile.path.display().to_string().blue().underline(),
+        profile.path().display().to_string().blue().underline(),
         game_version,
         loader,
         mods,
@@ -257,7 +257,7 @@ _{}_
 
 pub fn fmt_profile_simple(p: &Profile, max_width: usize) -> String {
     let name = p.name();
-    let path = p.path.display().to_string();
+    let path = p.path().display().to_string();
     let (name_width, path_width) = prop_widths(name.len(), path.len(), max_width);
     format!("{} • {}", ellipsize!(^name, name_width), ellipsize!(^path, path_width),)
 }

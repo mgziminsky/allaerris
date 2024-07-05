@@ -21,7 +21,6 @@ keywords = [
 ]
 
 [dependencies]
-async-scoped = { version = "0.9", features = ["use-tokio"] }
 async_zip = { version = "0.0.17", default-features = false, features = [
     "deflate",
     "tokio",
@@ -32,11 +31,13 @@ sha1 = "0.10"
 thiserror = "1.0"
 
 anyhow.workspace = true
+async-scoped.workspace = true
 dirs.workspace = true
 once_cell.workspace = true
-reqwest = { workspace = true, features = ["rustls-tls"] }
+reqwest = { workspace = true, features = ["rustls-tls", "stream"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
+serde-value = "0.7.0"
 tokio = { workspace = true, features = ["fs"] }
 url = { workspace = true, features = ["serde"] }
 

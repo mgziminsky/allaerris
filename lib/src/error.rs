@@ -2,7 +2,10 @@
 
 use std::fmt::Display;
 
+use crate::client::schema::ProjectId;
+
 pub type Result<T> = std::result::Result<T, Error>;
+pub type StdResult<T, E> = std::result::Result<T, E>;
 
 #[derive(Debug)]
 pub struct Error {
@@ -36,8 +39,6 @@ impl<E: Into<ErrorKind>> From<E> for Error {
 #[non_exhaustive]
 pub enum ErrorKind {
     // Api Errors
-    #[error("The developer of project has denied third party applications from downloading it")]
-    DistributionDenied,
     #[error("The project does not exist")]
     DoesNotExist,
     #[error("The project is not compatible")]
@@ -60,6 +61,14 @@ pub enum ErrorKind {
     UnknownProfile,
     #[error("Profile path must be non-empty and absolute")]
     PathInvalid,
+
+    // Management
+    #[error("The developer of `{0} — {1}` has denied third party applications from downloading it")]
+    DistributionDenied(ProjectId, String),
+    #[error("No compatible version found for project `{0}`")]
+    MissingVersion(ProjectId),
+    #[error("Failed to download file for project `{0}`: {1}")]
+    DownloadFailed(ProjectId, url::Url),
 
     // External API
     Modrinth(modrinth::Error),

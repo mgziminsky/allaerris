@@ -1,7 +1,7 @@
 // Allow `expect()`s for mutex poisons
 #![allow(clippy::expect_used)]
 
-use crate::{STYLE_BYTE, TICK};
+use crate::tui::{STYLE_BYTE, TICK_GREEN};
 use anyhow::{anyhow, bail, Error, Result};
 use colored::Colorize;
 use fs_extra::{
@@ -143,7 +143,7 @@ pub async fn download(
                 .expect("Mutex poisoned")
                 .println(format!(
                     "{} Downloaded  {:>7}  {}",
-                    &*TICK,
+                    &*TICK_GREEN,
                     Size::from_bytes(length)
                         .format()
                         .with_base(size::Base::Base10)
@@ -172,7 +172,7 @@ pub async fn download(
         }
         println!(
             "{} Installed          {}",
-            &*TICK,
+            &*TICK_GREEN,
             name.to_string_lossy().dimmed()
         );
     }

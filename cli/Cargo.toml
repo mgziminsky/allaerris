@@ -36,6 +36,7 @@ rfd = { version = "0.14", default-features = false, optional = true, features = 
 ] }
 
 anyhow.workspace = true
+async-scoped.workspace = true
 dirs.workspace = true
 once_cell.workspace = true
 reqwest = { workspace = true, features = ["rustls-tls"] }

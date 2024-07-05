@@ -1,5 +1,7 @@
 use std::{
+    borrow::Borrow,
     ffi::{OsStr, OsString},
+    ops::Deref,
     path::{Path, PathBuf},
     str::FromStr,
 };
@@ -24,73 +26,62 @@ pub enum PathScopeError {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(try_from = "PathBuf")]
 pub struct PathScoped(PathBuf);
-
 impl PathScoped {
     /// # Errors
     ///
     /// This function will return an error if `path` is either absolute or it
     /// points at a parent scope
     pub fn new(path: impl AsRef<Path>) -> Result<Self, PathScopeError> {
-        use std::path::Component::*;
-
-        let path: &Path = path.as_ref();
-        if path.has_root() {
-            return Err(PathScopeError::NonRelative);
-        }
-        let depth_check = path.components().try_fold(0, |depth, c| {
-            let depth = depth
-                + match c {
-                    ParentDir => -1,
-                    CurDir => 0,
-                    Normal(_) => 1,
-                    _ => unreachable!(),
-                };
-            if depth < 0 {
-                Err(())
-            } else {
-                Ok(depth)
-            }
-        });
-        if depth_check.is_ok() {
-            Ok(Self(path.components().skip_while(|c| matches!(c, CurDir)).collect()))
-        } else {
-            Err(PathScopeError::Scoping(path.into()))
-        }
-    }
-
-    /// Joining with another [`PathScoped`] will always produce a valid scoped
-    /// path
-    pub fn join<P: AsRef<Self>>(&self, path: P) -> Self {
-        Self(self.0.join(path.as_ref()))
+        let path = validate_path(path.as_ref())?;
+        Ok(PathScoped(path.components().collect()))
     }
 }
 
-impl std::ops::Deref for PathScoped {
-    type Target = Path;
+impl Deref for PathScoped {
+    type Target = PathScopedRef;
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &self.0
+        unsafe { PathScopedRef::cast(&self.0) }
     }
 }
 impl AsRef<PathScoped> for PathScoped {
     #[inline]
-    fn as_ref(&self) -> &PathScoped {
+    fn as_ref(&self) -> &Self {
         self
     }
 }
 impl AsRef<Path> for PathScoped {
     #[inline]
     fn as_ref(&self) -> &Path {
+        &self.0
+    }
+}
+impl AsRef<PathScopedRef> for PathScoped {
+    #[inline]
+    fn as_ref(&self) -> &PathScopedRef {
         self
+    }
+}
+impl Borrow<PathScopedRef> for PathScoped {
+    #[inline]
+    fn borrow(&self) -> &PathScopedRef {
+        self.deref()
     }
 }
 
 impl FromStr for PathScoped {
     type Err = PathScopeError;
 
+    #[inline]
     fn from_str(path: &str) -> Result<Self, Self::Err> {
         Self::new(path)
+    }
+}
+impl From<PathScoped> for PathBuf {
+    #[inline]
+    fn from(path: PathScoped) -> Self {
+        path.0
     }
 }
 macro_rules! try_from {
@@ -114,49 +105,148 @@ try_from! {
     &OsStr,
 }
 
-impl From<PathScoped> for PathBuf {
-    fn from(path: PathScoped) -> Self {
-        path.0
+/// Reference version of [`PathScoped`]. Equivalent to what [`Path`] is to
+/// [`PathBuf`].
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[repr(transparent)]
+pub struct PathScopedRef(Path);
+impl PathScopedRef {
+    /// Private to ensure only created from a valid path
+    #[inline]
+    unsafe fn cast<P: AsRef<Path> + ?Sized>(s: &P) -> &Self {
+        // Copied from Path::new
+        &*(s.as_ref() as *const Path as *const Self)
+    }
+
+    /// Creates a [`PathScopedRef`] directly referencing `path` without
+    /// allocating
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if `path` is either absolute or it
+    /// points at a parent scope
+    pub fn new<P: AsRef<Path> + ?Sized>(path: &P) -> Result<&Self, PathScopeError> {
+        let path = validate_path(path.as_ref())?;
+        Ok(unsafe { Self::cast(path) })
+    }
+
+    /// Joining with another [`PathScoped`] will always produce a valid scoped
+    /// path
+    #[inline]
+    pub fn join<P: AsRef<Self>>(&self, path: P) -> PathScoped {
+        PathScoped(self.0.join(path.as_ref()))
+    }
+
+    /// Non-erroring version of [`Path::strip_prefix`] that will return `self`
+    /// instead of an error when prefix does not match
+    #[inline]
+    pub fn remove_prefix(&self, base: impl AsRef<Path>) -> &Self {
+        self.0.strip_prefix(base).map_or(self, |p| unsafe { Self::cast(p) })
     }
 }
 
+impl Deref for PathScopedRef {
+    type Target = Path;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl AsRef<PathScopedRef> for PathScopedRef {
+    #[inline]
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+impl AsRef<Path> for PathScopedRef {
+    #[inline]
+    fn as_ref(&self) -> &Path {
+        &self.0
+    }
+}
+impl ToOwned for PathScopedRef {
+    type Owned = PathScoped;
+
+    #[inline]
+    fn to_owned(&self) -> Self::Owned {
+        PathScoped(self.0.to_path_buf())
+    }
+}
+
+
+/// Validate the path and return a reference to the portion starting at the
+/// first normal component
+fn validate_path(path: &Path) -> Result<&Path, PathScopeError> {
+    check_scope(path)?;
+    let mut comps = path.components();
+    let mut clean = comps.clone();
+    while let Some(std::path::Component::CurDir) = comps.next() {
+        clean = comps.clone();
+    }
+    Ok(clean.as_path())
+}
+fn check_scope(path: &Path) -> Result<i32, PathScopeError> {
+    use std::path::Component::*;
+    path.components().try_fold(0, |depth, c| {
+        let depth = depth
+            + match c {
+                ParentDir => -1,
+                CurDir => 0,
+                Normal(_) => 1,
+                RootDir | Prefix(_) => return Err(PathScopeError::NonRelative),
+            };
+        if depth < 0 {
+            Err(PathScopeError::Scoping(path.into()))
+        } else {
+            Ok(depth)
+        }
+    })
+}
+
 #[cfg(test)]
-mod test {
+mod test_check_scope {
     use super::*;
 
     #[test]
     fn valid_normal() {
-        let val: Result<PathScoped, _> = "a/b/c".try_into();
-        assert!(val.is_ok());
+        let val = check_scope("a/b/c".as_ref());
+        assert_eq!(3, val.unwrap());
     }
 
     #[test]
     fn valid_parent() {
-        let val: Result<PathScoped, _> = "a/../c".try_into();
-        assert!(val.is_ok());
+        let val = check_scope("a/../c".as_ref());
+        assert_eq!(1, val.unwrap());
     }
 
     #[test]
     fn valid_dot() {
-        let val: Result<PathScoped, _> = "./a/./c".try_into();
-        assert!(val.is_ok());
+        let val = check_scope("./a/./c".as_ref());
+        assert_eq!(2, val.unwrap());
     }
 
     #[test]
     fn invalid_absolute() {
-        let val: Result<PathScoped, _> = "/a/b/c".try_into();
-        assert!(val.is_err());
+        let val = check_scope("/a/b/c".as_ref());
+        assert!(matches!(val, Err(PathScopeError::NonRelative)), "absolute path should be an error");
     }
 
     #[test]
     fn invalid_parent_start() {
-        let val: Result<PathScoped, _> = "../a/b/c".try_into();
-        assert!(val.is_err());
+        let val = check_scope("../a/b/c".as_ref());
+        assert!(
+            matches!(val, Err(PathScopeError::Scoping(_))),
+            "leading .. should produce scoping error"
+        );
     }
 
     #[test]
     fn invalid_parent_end() {
-        let val: Result<PathScoped, _> = "/a/b/../../..".try_into();
-        assert!(val.is_err());
+        let val = check_scope("./a/b/../../..".as_ref());
+        assert!(
+            matches!(val, Err(PathScopeError::Scoping(_))),
+            "more parent than subs should produce scoping error"
+        );
     }
 }

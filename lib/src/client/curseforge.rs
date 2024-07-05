@@ -2,20 +2,22 @@ use std::collections::BTreeSet;
 
 use curseforge::{
     apis::{
-        files_api::GetModFilesParams,
+        files_api::{GetFilesParams, GetModFilesParams},
         minecraft_api::GetMinecraftVersionsParams,
         mods_api::{GetModParams, GetModsParams},
     },
-    models::GetModsByIdsListRequestBody,
+    models::{GetModFilesRequestBody, GetModsByIdsListRequestBody},
 };
 
 use super::{
-    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version},
+    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ForgeClient,
 };
 use crate::{config::ModLoader, Result};
 
 impl ApiOps for ForgeClient {
+    super::get_latest!();
+
     async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
         fetch_mod(self, id).await?.try_into()
     }
@@ -78,6 +80,23 @@ impl ApiOps for ForgeClient {
             .into_iter()
             .map(Into::into)
             .collect())
+    }
+
+    async fn get_versions(&self, ids: &[&VersionIdSvcType]) -> Result<Vec<Version>> {
+        let versions = self
+            .files()
+            .get_files(&GetFilesParams {
+                get_mod_files_request_body: &GetModFilesRequestBody {
+                    file_ids: ids.iter().filter_map(|id| id.as_forge().ok()).copied().collect(),
+                },
+            })
+            .await?
+            .data
+            .into_iter()
+            .map(Into::into)
+            .collect();
+
+        Ok(versions)
     }
 }
 
@@ -192,18 +211,35 @@ mod from {
         }
     }
 
+    const VERSION_TYPE_ID: u64 = 75125;
+    const LOADER_TYPE_ID: u64 = 68441;
     impl From<File> for Version {
         fn from(file: File) -> Self {
+            let (game_versions, loaders) = file.sortable_game_versions.into_iter().fold((vec![], vec![]), |mut acc, version| {
+                let (gv, l) = &mut acc;
+                match version.game_version_type_id {
+                    Some(VERSION_TYPE_ID) => gv.push(version.game_version),
+                    Some(LOADER_TYPE_ID) => match version.game_version_name.parse() {
+                        Ok(ModLoader::Unknown) => { /* Skip Unknown Loaders */ },
+                        Ok(loader) => l.push(loader),
+                        Err(_) => unreachable!(),
+                    },
+                    _ => { /* Skip other types */ },
+                }
+                acc
+            });
             Self {
                 id: VersionId::Forge(file.id),
                 project_id: ProjectId::Forge(file.mod_id),
                 title: file.display_name,
                 download_url: file.download_url,
-                filename: file.file_name,
+                filename: file.file_name.try_into().expect("Curseforge API should always return a proper relative file"),
                 length: file.file_length as _,
                 date: file.file_date,
                 sha1: file.hashes.into_iter().find(|h| matches!(h.algo, HashAlgo::Sha1)).map(|h| h.value),
                 deps: file.dependencies.into_iter().map(Into::into).collect(),
+                game_versions,
+                loaders,
             }
         }
     }

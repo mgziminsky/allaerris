@@ -12,13 +12,14 @@ use std::{
     process::ExitCode,
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{CommandFactory, Parser};
 use colored::Colorize;
 use relibium::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
     config::{Config, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
+    mgmt,
 };
 use tokio::runtime;
 
@@ -186,12 +187,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 );
             }
         },
-        SubCommand::Upgrade => {
-            todo!();
-            // let profile = get_active_profile(&mut config).await?;
-            // check_empty_profile(profile)?;
-            // subcommands::upgrade(modrinth, curseforge, github,
-            // profile).await?;
+        SubCommand::Install => {
+            let (_, errors) = mgmt::install(&client, helpers::get_active_profile(&mut config)?).await?;
+            for error in errors {
+                eprintln!("{:?}", anyhow!(error));
+            }
         },
     };
 

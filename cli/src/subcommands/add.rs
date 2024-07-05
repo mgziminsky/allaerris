@@ -32,7 +32,7 @@ pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>) ->
     });
     // Show not found
     ids.into_iter()
-        .filter(|id| !mods.iter().any(|m| &m.slug == id || m.id == id))
+        .filter(|id| !mods.iter().any(|m| &m.slug == id || m.id() == id))
         .for_each(|id| println!("{}\t{} — Not Found", *CROSS_RED, id.italic().bold()));
 
     Ok(())

@@ -4,12 +4,14 @@ use async_scoped::TokioScope;
 use github::models::repos::Asset;
 
 use super::{
-    schema::{AsProjectId, GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId},
+    schema::{AsProjectId, GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
     ApiOps, GithubClient,
 };
 use crate::{config::ModLoader, ErrorKind, Result};
 
 impl ApiOps for GithubClient {
+    super::get_latest!();
+
     async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
         fetch_repo(self, id).await.map(Mod)
     }
@@ -20,6 +22,36 @@ impl ApiOps for GithubClient {
     }
 
     async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
+        // let repos = ids
+        //     .iter()
+        //     .filter_map(|id| id.try_as_github().ok())
+        //     .format_with(" ", |(own, repo), f| f(&format_args!("repo:{own}/{repo}")))
+        //     .to_string();
+        // let query = format!(
+        //     "query($q:String!){{\
+        //         search(type:REPOSITORY,query:$q,first:100){{\
+        //             ... on Repository{{\
+        //                 owner:owner.login \
+        //                 name \
+        //                 slug:full_name \
+        //                 created:created_at \
+        //                 updated:updated_at \
+        //                 authors:topics \
+        //                 website:url \
+        //                 source_url:url \
+        //                 license{{\
+        //                     name \
+        //                     spdx_id \
+        //                     url:html_url \
+        //                 }\
+        //             }\
+        //         }\
+        //     }\
+        //     variables{}",
+        //     json!({"q": repos})
+        // );
+        // let resp = self.graphql(&HashMap::from([("query", query)])).await?;
+
         // FIXME: Rate limiting
         let ((), mods) = TokioScope::scope_and_block(|s| {
             for id in ids {
@@ -63,11 +95,13 @@ impl ApiOps for GithubClient {
                         project_id: ProjectId::Github(id.clone()),
                         title: a.label.unwrap_or_default(),
                         download_url: Some(a.url),
-                        filename: a.name,
+                        filename: a.name.try_into().expect("Github API should always return a proper relative file"),
                         length: a.size as _,
                         date: a.updated_at.to_rfc3339(),
                         sha1: None,
                         deps: vec![],
+                        game_versions: game_version.iter().map(ToString::to_string).collect(),
+                        loaders: loader.iter().copied().collect(),
                     })
                 } else {
                     None
@@ -79,6 +113,11 @@ impl ApiOps for GithubClient {
     }
 
     async fn get_game_versions(&self) -> Result<BTreeSet<GameVersion>> {
+        Err(ErrorKind::Unsupported.into())
+    }
+
+    async fn get_versions(&self, _ids: &[&VersionIdSvcType]) -> Result<Vec<Version>> {
+        // Rest API doesn't support getting arbitrary assets by id. Needs GraphQL
         Err(ErrorKind::Unsupported.into())
     }
 }

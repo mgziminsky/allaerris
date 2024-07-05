@@ -78,7 +78,7 @@ pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], fil
             eprintln!("No profiles found that matched `{filter}`");
             profiles_prompt(msg, profiles)?
         },
-        1 => found.first().map(|p| &p.path),
+        1 => found.first().map(|p| p.path()),
         _ => {
             if !filter.is_empty() {
                 eprintln!("Found multiple profiles matching `{filter}`");
@@ -92,7 +92,7 @@ pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], fil
 
 /// Allow loose matching of profiles by either an exact name, or by path suffix
 fn cmp_profile(profile: &Profile, name: &str) -> bool {
-    profile.name() == name || profile.path.ends_with(name)
+    profile.name() == name || profile.path().ends_with(name)
 }
 
 fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Result<Option<&'p PathAbsolute>> {
@@ -103,7 +103,7 @@ fn profiles_prompt<'p>(msg: impl Into<String>, profiles: &[&'p Profile]) -> Resu
     }
     prompt
         .interact_opt()
-        .map(|choice| choice.map(|i| &profiles[i].path))
+        .map(|choice| choice.map(|i| profiles[i].path()))
         .map_err(Into::into)
 }
 

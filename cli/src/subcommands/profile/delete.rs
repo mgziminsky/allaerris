@@ -18,7 +18,7 @@ pub fn delete(config: &mut Config, name: Option<String>, switch_to: Option<Strin
     // If the currently selected profile is being removed
     if profiles.len() > 2 && config.active().is_some_and(|a| a == &selected) {
         eprintln!("Switching active profile before deletion...");
-        let others: Vec<_> = profiles.iter().filter(|p| p.path != selected).map(Deref::deref).collect();
+        let others: Vec<_> = profiles.iter().filter(|p| p.path() != &selected).map(Deref::deref).collect();
         switch_profile!(config, others, switch_to);
     }
 

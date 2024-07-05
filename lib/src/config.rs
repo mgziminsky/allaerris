@@ -3,10 +3,11 @@
 mod loader;
 mod modpack;
 mod mods;
+mod project_with_version;
 mod serde;
 
 // Use attribute with newlines so mod docs aren't merged on the same line
-#[doc = "Types relating to [profile data](ProfileData)\n\n"]
+#[doc = "Types relating to [profile data](profile::ProfileData)\n\n"]
 pub mod profile;
 
 use std::{collections::BTreeSet, path::Path};
@@ -17,7 +18,7 @@ use once_cell::sync::Lazy;
 #[doc(inline)]
 pub use self::profile::Profile;
 use self::profile::ProfileByPath;
-pub use self::{loader::*, modpack::*, mods::*};
+pub use self::{loader::*, modpack::*, mods::*, project_with_version::ProjectWithVersion};
 use crate::{
     fs_util::{FsUtil, FsUtils},
     ErrorKind, PathAbsolute, Result, CONF_DIR,
@@ -73,18 +74,19 @@ impl Config {
 
     /// Returns `true` if an [active profile](Self::active_profile) is set
     ///
-    /// Will only be `false` when [profiles](Config::profiles) is empty
+    /// Will only be `false` when [profiles](Config::get_profiles) is empty
     pub fn has_active(&self) -> bool {
         self.active.is_some()
     }
 
     /// Sets the [active profile] to `path` and returns the previous
-    /// [profile data](ProfileData) if it was loaded and `path` changed.
+    /// [profile data] if it was loaded and `path` changed.
     ///
-    /// The current [active profile] should be [saved](ProfileMut::save) before
+    /// The current [active profile] should be [saved](Profile::save) before
     /// changing, otherwise any modifications will be lost
     ///
     /// [active profile]: Self::active_profile
+    /// [profile data]: profile::ProfileData
     /// # Errors
     ///
     /// [`ErrorKind::UnknownProfile`]: if `path` is not present in list of known
@@ -126,7 +128,7 @@ impl Config {
     /// [`ErrorKind::UnknownProfile`] if `path` is not present in list of
     /// known [profiles]
     ///
-    /// [profiles]: Self::profiles
+    /// [profiles]: Self::get_profiles
     pub fn profile(&self, path: impl AsRef<Path>) -> Result<&Profile> {
         self.profiles
             .get(path.as_ref())
@@ -211,7 +213,7 @@ impl Config {
     /// at the [default config path]
     ///
     ///
-    /// [profile]: profile::ProfileBase::save
+    /// [profile]: profile::ProfileData::save_to
     /// [default config path]: DEFAULT_CONFIG_PATH
     /// # Errors
     ///

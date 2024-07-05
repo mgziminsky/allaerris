@@ -29,7 +29,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                 let mut profiles = config.get_profiles();
                 profiles.sort_by_cached_key(|p| p.name().to_lowercase());
                 for p in profiles {
-                    tui::print_profile(p, p.path == *active).await;
+                    tui::print_profile(p, p.path() == active).await;
                 }
             }
         },
@@ -59,7 +59,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                 );
             }
             if let Err(prof) = config.add_profile(Profile::new(name, path.clone())) {
-                let existing = config.profile(prof.path).expect("Profile should already exist");
+                let existing = config.profile(prof.path()).expect("Profile should already exist");
                 bail!("Profile already present in config: {}", fmt_profile_simple(existing, 80).bold())
             }
             let _ = config

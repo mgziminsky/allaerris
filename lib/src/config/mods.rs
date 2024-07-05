@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::client::schema::{self, Project, ProjectId};
+use super::ProjectWithVersion;
+use crate::client::schema::{self, Project, ProjectId, VersionId};
 
 /// The basic data needed to lookup and install a particular mod from one of the
 /// [supported clients](crate::client)
@@ -8,7 +9,7 @@ use crate::client::schema::{self, Project, ProjectId};
 pub struct Mod {
     /// The [client](crate::client) specific id of the mod
     #[serde(flatten)]
-    pub id: ProjectId,
+    pub id: ProjectWithVersion,
 
     /// The project slug for this mod as typically seen in the URL
     pub slug: String,
@@ -16,6 +17,18 @@ pub struct Mod {
     /// The local name of this mod. May not match actual project name from the
     /// [client](crate::Client)
     pub name: String,
+}
+
+impl Mod {
+    /// The [project id](ProjectId) of this mod
+    pub fn id(&self) -> &ProjectId {
+        self.id.project()
+    }
+
+    /// The [version id](VersionId) of this mod if present
+    pub fn version(&self) -> Option<&VersionId> {
+        self.id.version()
+    }
 }
 
 impl Eq for Mod {}
@@ -27,7 +40,7 @@ impl PartialEq for Mod {
 
 impl std::hash::Hash for Mod {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.id.hash(state);
+        self.id.project.hash(state);
     }
 }
 
@@ -39,7 +52,7 @@ impl From<schema::Mod> for Mod {
 impl From<Project> for Mod {
     fn from(proj: Project) -> Self {
         Self {
-            id: proj.id,
+            id: proj.id.into(),
             slug: proj.slug,
             name: proj.name,
         }

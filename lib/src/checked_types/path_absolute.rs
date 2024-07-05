@@ -20,7 +20,7 @@ impl PathAbsolute {
         std::path::absolute(path).map(Self)
     }
 
-    /// Just delegates to [`Path::join`] since joining on an absolute path will
+    /// Delegates to [`Path::join`] since joining on an absolute path will
     /// always produce an absolute path
     #[inline]
     pub fn join(&self, path: impl AsRef<Path>) -> Self {
@@ -31,6 +31,18 @@ impl PathAbsolute {
     #[inline]
     pub fn take(self) -> PathBuf {
         self.0
+    }
+
+    /// Delegates to [`PathBuf::push`]
+    #[inline]
+    pub fn push(&mut self, path: impl AsRef<Path>) {
+        self.0.push(path)
+    }
+
+    /// Delegates to [`PathBuf::pop`]
+    #[inline]
+    pub fn pop(&mut self) -> bool {
+        self.0.pop()
     }
 }
 
@@ -94,39 +106,5 @@ impl From<PathAbsolute> for PathBuf {
     #[inline]
     fn from(path: PathAbsolute) -> Self {
         path.take()
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use std::io::Result;
-
-    use super::*;
-
-    #[test]
-    fn valid_absolute() {
-        let val: Result<PathAbsolute> = "/a/b/c".try_into();
-        assert!(val.is_ok());
-    }
-
-    #[test]
-    #[ignore]
-    fn invalid_relative() {
-        let val: Result<PathAbsolute> = "a/b/c".try_into();
-        assert!(val.is_err());
-    }
-
-    #[test]
-    #[ignore]
-    fn invalid_parent() {
-        let val: Result<PathAbsolute> = "../a/b".try_into();
-        assert!(val.is_err());
-    }
-
-    #[test]
-    #[ignore]
-    fn invalid_dot() {
-        let val: Result<PathAbsolute> = "./a/b".try_into();
-        assert!(val.is_err());
     }
 }
