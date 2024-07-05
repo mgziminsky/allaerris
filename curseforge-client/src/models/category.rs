@@ -26,18 +26,18 @@ pub struct Category {
     pub icon_url: ::url::Url,
     #[serde(rename = "dateModified")]
     pub date_modified: String,
-    #[serde(rename = "isClass")]
-    pub is_class: bool,
-    #[serde(rename = "classId")]
-    pub class_id: u64,
-    #[serde(rename = "parentCategoryId")]
-    pub parent_category_id: u64,
-    #[serde(rename = "displayIndex")]
-    pub display_index: u64,
+    #[serde(rename = "isClass", skip_serializing_if = "Option::is_none")]
+    pub is_class: Option<bool>,
+    #[serde(rename = "classId", skip_serializing_if = "Option::is_none")]
+    pub class_id: Option<u64>,
+    #[serde(rename = "parentCategoryId", skip_serializing_if = "Option::is_none")]
+    pub parent_category_id: Option<u64>,
+    #[serde(rename = "displayIndex", skip_serializing_if = "Option::is_none")]
+    pub display_index: Option<u64>,
 }
 
 impl Category {
-    pub fn new(id: u64, game_id: u64, name: String, slug: String, url: ::url::Url, icon_url: ::url::Url, date_modified: String, is_class: bool, class_id: u64, parent_category_id: u64, display_index: u64) -> Self {
+    pub fn new(id: u64, game_id: u64, name: String, slug: String, url: ::url::Url, icon_url: ::url::Url, date_modified: String) -> Self {
         Self {
             id,
             game_id,
@@ -46,10 +46,10 @@ impl Category {
             url,
             icon_url,
             date_modified,
-            is_class,
-            class_id,
-            parent_category_id,
-            display_index,
+            is_class: None,
+            class_id: None,
+            parent_category_id: None,
+            display_index: None,
         }
     }
 }

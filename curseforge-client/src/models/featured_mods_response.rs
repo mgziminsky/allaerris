@@ -12,11 +12,11 @@ use crate::models;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeaturedModsResponse {
-    #[serde(rename = "featured")]
+    #[serde(rename = "featured", default)]
     pub featured: Vec<models::Mod>,
-    #[serde(rename = "popular")]
+    #[serde(rename = "popular", default)]
     pub popular: Vec<models::Mod>,
-    #[serde(rename = "recentlyUpdated")]
+    #[serde(rename = "recentlyUpdated", default)]
     pub recently_updated: Vec<models::Mod>,
 }
 

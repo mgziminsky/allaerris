@@ -13,7 +13,7 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetModFilesResponse {
     /// The response data
-    #[serde(rename = "data")]
+    #[serde(rename = "data", default)]
     pub data: Vec<models::File>,
     #[serde(rename = "pagination")]
     pub pagination: models::Pagination,

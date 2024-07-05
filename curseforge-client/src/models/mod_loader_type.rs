@@ -10,23 +10,18 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum ModLoaderType {
     #[default]
-    #[serde(rename = "0")]
-    Any,
-    #[serde(rename = "1")]
-    Forge,
-    #[serde(rename = "2")]
-    Cauldron,
-    #[serde(rename = "3")]
-    LiteLoader,
-    #[serde(rename = "4")]
-    Fabric,
-    #[serde(rename = "5")]
-    Quilt,
-    #[serde(rename = "6")]
-    NeoForge,
+    Any = 0,
+    Forge = 1,
+    Cauldron = 2,
+    LiteLoader = 3,
+    Fabric = 4,
+    Quilt = 5,
+    NeoForge = 6,
 }
 
 impl std::fmt::Display for ModLoaderType {

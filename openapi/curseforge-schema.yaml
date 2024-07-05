@@ -933,15 +933,19 @@ components:
           format: date-time
         isClass:
           type: boolean
+          nullable: true
         classId:
           type: integer
           format: int64
+          nullable: true
         parentCategoryId:
           type: integer
           format: int64
+          nullable: true
         displayIndex:
           type: integer
           format: int64
+          nullable: true
     CoreApiStatus:
       x-enum-varnames:
         - Private

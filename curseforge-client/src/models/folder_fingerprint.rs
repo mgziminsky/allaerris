@@ -14,7 +14,7 @@ use crate::models;
 pub struct FolderFingerprint {
     #[serde(rename = "foldername")]
     pub foldername: String,
-    #[serde(rename = "fingerprints")]
+    #[serde(rename = "fingerprints", default)]
     pub fingerprints: Vec<u64>,
 }
 

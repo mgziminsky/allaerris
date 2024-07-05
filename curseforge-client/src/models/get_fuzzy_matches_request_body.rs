@@ -14,7 +14,7 @@ use crate::models;
 pub struct GetFuzzyMatchesRequestBody {
     #[serde(rename = "gameId")]
     pub game_id: u64,
-    #[serde(rename = "fingerprints")]
+    #[serde(rename = "fingerprints", default)]
     pub fingerprints: Vec<models::FolderFingerprint>,
 }
 

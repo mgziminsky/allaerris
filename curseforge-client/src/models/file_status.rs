@@ -10,39 +10,26 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum FileStatus {
     #[default]
-    #[serde(rename = "1")]
-    Processing,
-    #[serde(rename = "2")]
-    ChangesRequired,
-    #[serde(rename = "3")]
-    UnderReview,
-    #[serde(rename = "4")]
-    Approved,
-    #[serde(rename = "5")]
-    Rejected,
-    #[serde(rename = "6")]
-    MalwareDetected,
-    #[serde(rename = "7")]
-    Deleted,
-    #[serde(rename = "8")]
-    Archived,
-    #[serde(rename = "9")]
-    Testing,
-    #[serde(rename = "10")]
-    Released,
-    #[serde(rename = "11")]
-    ReadyForReview,
-    #[serde(rename = "12")]
-    Deprecated,
-    #[serde(rename = "13")]
-    Baking,
-    #[serde(rename = "14")]
-    AwaitingPublishing,
-    #[serde(rename = "15")]
-    FailedPublishing,
+    Processing = 1,
+    ChangesRequired = 2,
+    UnderReview = 3,
+    Approved = 4,
+    Rejected = 5,
+    MalwareDetected = 6,
+    Deleted = 7,
+    Archived = 8,
+    Testing = 9,
+    Released = 10,
+    ReadyForReview = 11,
+    Deprecated = 12,
+    Baking = 13,
+    AwaitingPublishing = 14,
+    FailedPublishing = 15,
 }
 
 impl std::fmt::Display for FileStatus {

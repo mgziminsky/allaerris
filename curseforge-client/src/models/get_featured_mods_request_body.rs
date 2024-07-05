@@ -14,7 +14,7 @@ use crate::models;
 pub struct GetFeaturedModsRequestBody {
     #[serde(rename = "gameId")]
     pub game_id: u64,
-    #[serde(rename = "excludedModIds")]
+    #[serde(rename = "excludedModIds", default)]
     pub excluded_mod_ids: Vec<u64>,
     #[serde(rename = "gameVersionTypeId", skip_serializing_if = "Option::is_none")]
     pub game_version_type_id: Option<u64>,

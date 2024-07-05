@@ -8,7 +8,14 @@ use crate::models;
 {{/description}}
 {{!-- for enum schemas --}}
 {{#isEnum}}
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+{{#isString}}
+#[derive(Serialize, Deserialize)]
+{{/isString}}
+{{^isString}}
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
+{{/isString}}
 {{#isDeprecated}}
 #[deprecated]
 {{/isDeprecated}}
@@ -19,8 +26,10 @@ pub enum {{{classname}}} {
     {{#deprecated}}
     #[deprecated]
     {{/deprecated}}
+    {{#isString}}
     #[serde(rename = "{{{value}}}")]
-    {{{name}}},
+    {{/isString}}
+    {{{name}}}{{^isString}} = {{{value}}}{{/isString}},
 {{/enumVars}}
 {{/allowableValues}}
 }
@@ -97,7 +106,7 @@ pub struct {{{classname}}} {
     {{#deprecated}}
     #[deprecated]
     {{/deprecated}}
-    #[serde(rename = "{{{baseName}}}"{{#isNullable}}, skip_serializing_if = "Option::is_none"{{/isNullable}})]
+    #[serde(rename = "{{{baseName}}}"{{#isArray}}, default{{/isArray}}{{#isNullable}}, skip_serializing_if = "Option::is_none"{{/isNullable}})]
     pub {{{name}}}: {{#isNullable}}Option<{{/isNullable}}{{#isEnum}}{{#isArray}}{{#uniqueItems}}std::collections::HashSet<{{/uniqueItems}}{{^uniqueItems}}Vec<{{/uniqueItems}}{{/isArray}}{{{enumName}}}{{#isArray}}>{{/isArray}}{{/isEnum}}{{^isEnum}}{{#isModel}}{{^avoidBoxedModels}}Box<{{/avoidBoxedModels}}{{{dataType}}}{{^avoidBoxedModels}}>{{/avoidBoxedModels}}{{/isModel}}{{^isModel}}{{{dataType}}}{{/isModel}}{{/isEnum}}{{#isNullable}}>{{/isNullable}},
 {{/vars}}
 }
@@ -153,7 +162,14 @@ pub enum {{classname}} {
 {{#description}}
 /// {{{.}}}
 {{/description}}
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+{{#isString}}
+#[derive(Serialize, Deserialize)]
+{{/isString}}
+{{^isString}}
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
+{{/isString}}
 {{#isDeprecated}}
 #[deprecated]
 {{/isDeprecated}}
@@ -164,8 +180,10 @@ pub enum {{{enumName}}} {
     {{#deprecated}}
     #[deprecated]
     {{/deprecated}}
+    {{#isString}}
     #[serde(rename = "{{{value}}}")]
-    {{{name}}},
+    {{/isString}}
+    {{{name}}}{{^isString}} = {{{value}}}{{/isString}},
 {{/enumVars}}
 {{/allowableValues}}
 }

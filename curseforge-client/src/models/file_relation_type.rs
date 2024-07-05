@@ -10,21 +10,17 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum FileRelationType {
     #[default]
-    #[serde(rename = "1")]
-    EmbeddedLibrary,
-    #[serde(rename = "2")]
-    OptionalDependency,
-    #[serde(rename = "3")]
-    RequiredDependency,
-    #[serde(rename = "4")]
-    Tool,
-    #[serde(rename = "5")]
-    Incompatible,
-    #[serde(rename = "6")]
-    Include,
+    EmbeddedLibrary = 1,
+    OptionalDependency = 2,
+    RequiredDependency = 3,
+    Tool = 4,
+    Incompatible = 5,
+    Include = 6,
 }
 
 impl std::fmt::Display for FileRelationType {

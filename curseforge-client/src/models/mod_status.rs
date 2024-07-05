@@ -10,29 +10,21 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum ModStatus {
     #[default]
-    #[serde(rename = "1")]
-    New,
-    #[serde(rename = "2")]
-    ChangesRequired,
-    #[serde(rename = "3")]
-    UnderSoftReview,
-    #[serde(rename = "4")]
-    Approved,
-    #[serde(rename = "5")]
-    Rejected,
-    #[serde(rename = "6")]
-    ChangesMade,
-    #[serde(rename = "7")]
-    Inactive,
-    #[serde(rename = "8")]
-    Abandoned,
-    #[serde(rename = "9")]
-    Deleted,
-    #[serde(rename = "10")]
-    UnderReview,
+    New = 1,
+    ChangesRequired = 2,
+    UnderSoftReview = 3,
+    Approved = 4,
+    Rejected = 5,
+    ChangesMade = 6,
+    Inactive = 7,
+    Abandoned = 8,
+    Deleted = 9,
+    UnderReview = 10,
 }
 
 impl std::fmt::Display for ModStatus {

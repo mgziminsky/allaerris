@@ -10,21 +10,17 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum CoreStatus {
     #[default]
-    #[serde(rename = "1")]
-    Draft,
-    #[serde(rename = "2")]
-    Test,
-    #[serde(rename = "3")]
-    PendingReview,
-    #[serde(rename = "4")]
-    Rejected,
-    #[serde(rename = "5")]
-    Approved,
-    #[serde(rename = "6")]
-    Live,
+    Draft = 1,
+    Test = 2,
+    PendingReview = 3,
+    Rejected = 4,
+    Approved = 5,
+    Live = 6,
 }
 
 impl std::fmt::Display for CoreStatus {

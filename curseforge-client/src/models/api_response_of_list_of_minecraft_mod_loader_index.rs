@@ -12,7 +12,7 @@ use crate::models;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiResponseOfListOfMinecraftModLoaderIndex {
-    #[serde(rename = "data")]
+    #[serde(rename = "data", default)]
     pub data: Vec<models::MinecraftModLoaderIndex>,
 }
 

@@ -10,13 +10,13 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum CoreApiStatus {
     #[default]
-    #[serde(rename = "1")]
-    Private,
-    #[serde(rename = "2")]
-    Public,
+    Private = 1,
+    Public = 2,
 }
 
 impl std::fmt::Display for CoreApiStatus {

@@ -16,7 +16,7 @@ pub struct FingerprintMatch {
     pub id: u64,
     #[serde(rename = "file")]
     pub file: models::File,
-    #[serde(rename = "latestFiles")]
+    #[serde(rename = "latestFiles", default)]
     pub latest_files: Vec<models::File>,
 }
 

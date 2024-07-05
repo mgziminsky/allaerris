@@ -12,7 +12,7 @@ use crate::models;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FingerprintFuzzyMatchResult {
-    #[serde(rename = "fuzzyMatches")]
+    #[serde(rename = "fuzzyMatches", default)]
     pub fuzzy_matches: Vec<models::FingerprintFuzzyMatch>,
 }
 

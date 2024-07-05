@@ -35,7 +35,7 @@ pub struct File {
     #[serde(rename = "fileStatus")]
     pub file_status: models::FileStatus,
     /// The file hash (i.e. md5 or sha1)
-    #[serde(rename = "hashes")]
+    #[serde(rename = "hashes", default)]
     pub hashes: Vec<models::FileHash>,
     /// The file timestamp
     #[serde(rename = "fileDate")]
@@ -49,13 +49,13 @@ pub struct File {
     #[serde(rename = "downloadUrl", skip_serializing_if = "Option::is_none")]
     pub download_url: Option<::url::Url>,
     /// List of game versions this file is relevant for
-    #[serde(rename = "gameVersions")]
+    #[serde(rename = "gameVersions", default)]
     pub game_versions: Vec<String>,
     /// Metadata used for sorting by game versions
-    #[serde(rename = "sortableGameVersions")]
+    #[serde(rename = "sortableGameVersions", default)]
     pub sortable_game_versions: Vec<models::SortableGameVersion>,
     /// List of dependencies files
-    #[serde(rename = "dependencies")]
+    #[serde(rename = "dependencies", default)]
     pub dependencies: Vec<models::FileDependency>,
     #[serde(rename = "exposeAsAlternative", skip_serializing_if = "Option::is_none")]
     pub expose_as_alternative: Option<bool>,
@@ -73,7 +73,7 @@ pub struct File {
     pub early_access_end_date: Option<String>,
     #[serde(rename = "fileFingerprint")]
     pub file_fingerprint: u64,
-    #[serde(rename = "modules")]
+    #[serde(rename = "modules", default)]
     pub modules: Vec<models::FileModule>,
 }
 

@@ -12,7 +12,7 @@ use crate::models;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetModFilesRequestBody {
-    #[serde(rename = "fileIds")]
+    #[serde(rename = "fileIds", default)]
     pub file_ids: Vec<u64>,
 }
 

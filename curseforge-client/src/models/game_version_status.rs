@@ -10,15 +10,14 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum GameVersionStatus {
     #[default]
-    #[serde(rename = "1")]
-    Approved,
-    #[serde(rename = "2")]
-    Deleted,
-    #[serde(rename = "3")]
-    New,
+    Approved = 1,
+    Deleted = 2,
+    New = 3,
 }
 
 impl std::fmt::Display for GameVersionStatus {

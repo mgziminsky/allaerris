@@ -10,15 +10,14 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum FileReleaseType {
     #[default]
-    #[serde(rename = "1")]
-    Release,
-    #[serde(rename = "2")]
-    Beta,
-    #[serde(rename = "3")]
-    Alpha,
+    Release = 1,
+    Beta = 2,
+    Alpha = 3,
 }
 
 impl std::fmt::Display for FileReleaseType {

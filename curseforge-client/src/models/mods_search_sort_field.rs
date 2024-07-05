@@ -10,25 +10,19 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum ModsSearchSortField {
     #[default]
-    #[serde(rename = "1")]
-    Featured,
-    #[serde(rename = "2")]
-    Popularity,
-    #[serde(rename = "3")]
-    LastUpdated,
-    #[serde(rename = "4")]
-    Name,
-    #[serde(rename = "5")]
-    Author,
-    #[serde(rename = "6")]
-    TotalDownloads,
-    #[serde(rename = "7")]
-    Category,
-    #[serde(rename = "8")]
-    GameVersion,
+    Featured = 1,
+    Popularity = 2,
+    LastUpdated = 3,
+    Name = 4,
+    Author = 5,
+    TotalDownloads = 6,
+    Category = 7,
+    GameVersion = 8,
 }
 
 impl std::fmt::Display for ModsSearchSortField {

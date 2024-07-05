@@ -12,7 +12,7 @@ use crate::models;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetModsResponse {
-    #[serde(rename = "data")]
+    #[serde(rename = "data", default)]
     pub data: Vec<models::Mod>,
 }
 

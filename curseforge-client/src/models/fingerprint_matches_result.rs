@@ -14,19 +14,19 @@ use crate::models;
 pub struct FingerprintMatchesResult {
     #[serde(rename = "isCacheBuilt")]
     pub is_cache_built: bool,
-    #[serde(rename = "exactMatches")]
+    #[serde(rename = "exactMatches", default)]
     pub exact_matches: Vec<models::FingerprintMatch>,
-    #[serde(rename = "exactFingerprints")]
+    #[serde(rename = "exactFingerprints", default)]
     pub exact_fingerprints: Vec<u64>,
-    #[serde(rename = "partialMatches")]
+    #[serde(rename = "partialMatches", default)]
     pub partial_matches: Vec<models::FingerprintMatch>,
     #[serde(rename = "partialMatchFingerprints")]
     pub partial_match_fingerprints: serde_json::Value,
-    #[serde(rename = "additionalProperties")]
+    #[serde(rename = "additionalProperties", default)]
     pub additional_properties: Vec<u64>,
-    #[serde(rename = "installedFingerprints")]
+    #[serde(rename = "installedFingerprints", default)]
     pub installed_fingerprints: Vec<u64>,
-    #[serde(rename = "unmatchedFingerprints")]
+    #[serde(rename = "unmatchedFingerprints", default)]
     pub unmatched_fingerprints: Vec<u64>,
 }
 

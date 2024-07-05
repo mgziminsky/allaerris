@@ -13,7 +13,7 @@ use crate::models;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetFingerprintMatchesRequestBody {
     /// list of murmur2 hashes with seed 1
-    #[serde(rename = "fingerprints")]
+    #[serde(rename = "fingerprints", default)]
     pub fingerprints: Vec<u64>,
 }
 

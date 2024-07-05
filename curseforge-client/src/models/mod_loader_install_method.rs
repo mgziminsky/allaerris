@@ -10,17 +10,15 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum ModLoaderInstallMethod {
     #[default]
-    #[serde(rename = "1")]
-    ForgeInstaller,
-    #[serde(rename = "2")]
-    ForgeJarInstall,
-    #[serde(rename = "3")]
-    ForgeInstallerV2,
-    #[serde(rename = "4")]
-    FabricInstaller,
+    ForgeInstaller = 1,
+    ForgeJarInstall = 2,
+    ForgeInstallerV2 = 3,
+    FabricInstaller = 4,
 }
 
 impl std::fmt::Display for ModLoaderInstallMethod {

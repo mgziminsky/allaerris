@@ -10,13 +10,13 @@
 
 use crate::models;
 
-#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+#[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
+#[repr(u8)]
 pub enum GameVersionTypeStatus {
     #[default]
-    #[serde(rename = "1")]
-    Normal,
-    #[serde(rename = "2")]
-    Deleted,
+    Normal = 1,
+    Deleted = 2,
 }
 
 impl std::fmt::Display for GameVersionTypeStatus {

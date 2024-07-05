@@ -41,27 +41,27 @@ pub struct Mod {
     #[serde(rename = "primaryCategoryId")]
     pub primary_category_id: u64,
     /// List of categories that this mod is related to
-    #[serde(rename = "categories")]
+    #[serde(rename = "categories", default)]
     pub categories: Vec<models::Category>,
     /// The class id this mod belongs to
     #[serde(rename = "classId", skip_serializing_if = "Option::is_none")]
     pub class_id: Option<u64>,
     /// List of the mod's authors
-    #[serde(rename = "authors")]
+    #[serde(rename = "authors", default)]
     pub authors: Vec<models::ModAuthor>,
     #[serde(rename = "logo")]
     pub logo: models::ModAsset,
     /// List of screenshots assets
-    #[serde(rename = "screenshots")]
+    #[serde(rename = "screenshots", default)]
     pub screenshots: Vec<models::ModAsset>,
     /// The id of the main file of the mod
     #[serde(rename = "mainFileId")]
     pub main_file_id: u64,
     /// List of latest files of the mod
-    #[serde(rename = "latestFiles")]
+    #[serde(rename = "latestFiles", default)]
     pub latest_files: Vec<models::File>,
     /// List of file related details for the latest files of the mod
-    #[serde(rename = "latestFileIndexes")]
+    #[serde(rename = "latestFileIndexes", default)]
     pub latest_file_indexes: Vec<models::FileIndex>,
     /// The creation date of the mod
     #[serde(rename = "dateCreated")]

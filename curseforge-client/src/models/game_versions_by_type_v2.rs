@@ -14,7 +14,7 @@ use crate::models;
 pub struct GameVersionsByTypeV2 {
     #[serde(rename = "type")]
     pub r#type: u32,
-    #[serde(rename = "versions")]
+    #[serde(rename = "versions", default)]
     pub versions: Vec<models::GameVersion>,
 }
 
