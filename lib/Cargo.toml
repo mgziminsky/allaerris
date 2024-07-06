@@ -33,6 +33,7 @@ thiserror = "1.0"
 anyhow.workspace = true
 async-scoped.workspace = true
 dirs.workspace = true
+itertools.workspace = true
 once_cell.workspace = true
 reqwest = { workspace = true, features = ["rustls-tls", "stream"] }
 serde = { workspace = true, features = ["derive"] }

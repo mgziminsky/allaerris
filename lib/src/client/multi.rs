@@ -4,27 +4,27 @@ use super::{Client, ClientInner};
 use crate::{Error, ErrorKind, Result};
 
 /// Call `func` for each [client](Client) in order and return the first
-/// successful result, or the first error if all calls fail
+/// successful result, or all of the errors if all calls fail
 pub(super) async fn proxy<'c, Ret, F, FRet>(clients: &'c [Client], func: F) -> Result<Ret>
 where
     F: Fn(&'c Client) -> FRet,
     FRet: Future<Output = Result<Ret>>,
 {
-    let mut err = None;
+    let mut err = vec![];
     for client in clients {
         // Need pin for recursive async calls [E0733]
         let res = Box::pin(func(client)).await;
-        if res.is_ok() {
+        if let Err(e) = res {
+            err.push(e)
+        } else {
             return res;
-        } else if err.is_none() {
-            err = res.err();
         }
     }
-    Err(err.unwrap_or(ErrorKind::DoesNotExist.into()))
+    Err(ErrorKind::Multi(err).into())
 }
 
 /// Call `func` for each [client](Client) in order and return their combined
-/// results, or the first error if all calls fail.
+/// results, or all of the errors if all calls fail
 ///
 /// An empty result is still considered success
 pub(super) async fn combined<'c, Ret, Item, F, FRet>(clients: &'c [Client], func: F) -> Result<Ret>
@@ -33,26 +33,24 @@ where
     F: Fn(&'c Client) -> FRet,
     FRet: Future<Output = Result<Ret>>,
 {
-    let mut ret = None;
+    let mut ret: Option<Ret> = None;
+    let mut errs = vec![];
     for client in clients {
         // Need pin for recursive async calls [E0733]
-        let res = Box::pin(func(client)).await;
-        if ret.is_none() {
-            // First response, keep as-is
-            ret = Some(res);
-        } else if let Ok(res) = res {
-            // Only the first response can be an error
-            // After that we only care about successes
-            if let Some(Ok(ret)) = ret.borrow_mut() {
-                // Extend results from previous success
-                ret.extend(res);
-            } else {
-                // Otherwise replace error with success result
-                ret = Some(Ok(res));
-            }
+        match Box::pin(func(client)).await {
+            Err(e) => errs.push(e),
+            Ok(res) => {
+                if let Some(ret) = ret.borrow_mut() {
+                    // Extend results from previous success
+                    ret.extend(res);
+                } else {
+                    // Otherwise replace error with success result
+                    ret = Some(res);
+                }
+            },
         }
     }
-    ret.unwrap_or(Err(ErrorKind::DoesNotExist.into()))
+    ret.ok_or_else(|| ErrorKind::Multi(errs).into())
 }
 
 impl TryFrom<Vec<Client>> for Client {

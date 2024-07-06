@@ -28,7 +28,6 @@ clap_complete = "4.5"
 colored = "2.1"
 dialoguer = "0.11"
 indicatif = "0.17"
-itertools = "0.13"
 relibium = { version = "2", path = "../lib" }
 rfd = { version = "0.14", default-features = false, optional = true, features = [
     "xdg-portal",
@@ -38,6 +37,7 @@ rfd = { version = "0.14", default-features = false, optional = true, features = 
 anyhow.workspace = true
 async-scoped.workspace = true
 dirs.workspace = true
+itertools.workspace = true
 once_cell.workspace = true
 reqwest = { workspace = true, features = ["rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }

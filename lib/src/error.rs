@@ -2,6 +2,8 @@
 
 use std::fmt::Display;
 
+use itertools::Itertools;
+
 use crate::client::schema::ProjectId;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -53,6 +55,8 @@ pub enum ErrorKind {
     WrongService,
     #[error("Operation not supported by this API")]
     Unsupported,
+    #[error("All clients in the Multi client failed operation:\n\t{}", .0.iter().join("\n\t"))]
+    Multi(Vec<Error>),
 
     // Config
     #[error("No profiles have been registered")]
