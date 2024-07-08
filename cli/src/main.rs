@@ -6,20 +6,27 @@ mod subcommands;
 mod tui;
 
 use std::{
+    collections::HashMap,
     env::{var, var_os},
     ffi::OsStr,
     path::Path,
     process::ExitCode,
+    sync::mpsc,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::{CommandFactory, Parser};
 use colored::Colorize;
+use dialoguer::console::style;
+use indicatif::{MultiProgress, ProgressBar};
 use relibium::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
     config::{Config, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
-    mgmt,
+    mgmt::{
+        events::{DownloadProgress, ProgressEvent, ProjectIdHash},
+        ProfileManager,
+    },
 };
 use tokio::runtime;
 
@@ -27,7 +34,7 @@ use self::{
     cli::{Ferium, ModpackSubCommand, ProfileSubCommand, SubCommand},
     helpers::{consts, APP_NAME},
     subcommands::{list, modpack, profile},
-    tui::print_mods,
+    tui::{print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, TICK_GREEN, TICK_YELLOW},
 };
 
 const USER_AGENT: &str = concat!(consts!(APP_NAME), "/", env!("CARGO_PKG_VERSION"), " (Github: mgziminsky)");
@@ -188,14 +195,65 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             }
         },
         SubCommand::Install => {
-            let (_, errors) = mgmt::install(&client, helpers::get_active_profile(&mut config)?).await?;
-            for error in errors {
-                eprintln!("{:?}", anyhow!(error));
-            }
+            let (sender, handle) = progress_hander();
+            ProfileManager::with_channel(sender)
+                .install(&client, helpers::get_active_profile(&mut config)?)
+                .await?;
+            let _ = handle.await;
         },
     };
 
     config.save_to(config_path).await?;
 
     Ok(())
+}
+
+pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandle<()>) {
+    let (sender, receiver) = mpsc::channel();
+    (
+        sender,
+        tokio::task::spawn_blocking(move || {
+            let progress = MultiProgress::new();
+            let mut bars = HashMap::new();
+            while let Ok(evt) = receiver.recv() {
+                match evt {
+                    ProgressEvent::Status(msg) => eprintln!("{msg}"),
+                    ProgressEvent::Download(evt) => handle_dl(evt, &mut bars, &progress),
+                    ProgressEvent::Installed { file, is_new } => {
+                        let _ = progress.println(format!("{} {}", if is_new { &*TICK_GREEN } else { &*TICK_YELLOW }, file.display()));
+                    },
+                    ProgressEvent::Error(err) => eprintln!("{}", style(err.to_string()).red()),
+                }
+            }
+        }),
+    )
+}
+
+fn handle_dl(evt: DownloadProgress, bars: &mut HashMap<ProjectIdHash, ProgressBar>, progress: &MultiProgress) {
+    use DownloadProgress::*;
+    match evt {
+        Start { project, title, length } => {
+            let bar = progress.add(ProgressBar::new(length).with_message(title).with_style(PROG_BYTES.clone()));
+            bars.insert(project, bar);
+        },
+        Progress(id, len) => {
+            if let Some(bar) = bars.get(&id) {
+                bar.inc(len);
+            }
+        },
+        Success(id) => {
+            if let Some(bar) = bars.remove(&id) {
+                bar.with_style(PROG_DONE.clone())
+                    .with_prefix(TICK_GREEN.to_string())
+                    .finish_using_style();
+            }
+        },
+        Fail(id, err) => {
+            if let Some(bar) = bars.remove(&id) {
+                bar.with_style(PROG_DONE.clone())
+                    .with_prefix(CROSS_RED.to_string())
+                    .abandon_with_message(err.to_string());
+            }
+        },
+    }
 }

@@ -25,7 +25,7 @@ pub use exports::*;
 
 use self::checked_types::PathAbsolute;
 #[doc(inline)]
-pub use self::{client::Client, config::Config, error::*};
+pub use self::{client::Client, config::Config, error::*, mgmt::ProfileManager};
 
 /// Default directory where global config files will be stored
 pub static CONF_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
