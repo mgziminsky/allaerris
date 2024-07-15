@@ -21,14 +21,10 @@ keywords = [
 ]
 
 [dependencies]
-async_zip = { version = "0.0.17", default-features = false, features = [
-    "deflate",
-    "tokio",
-    "tokio-fs",
-] }
 paste = "1"
 sha1 = "0.10"
 thiserror = "1.0"
+zip = { version = "2.1", default-features = false, features = ["deflate"]}
 
 anyhow.workspace = true
 async-scoped.workspace = true

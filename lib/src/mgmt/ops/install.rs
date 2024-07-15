@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     collections::{HashMap, HashSet},
     convert::identity,
     fmt::Write,
@@ -10,20 +11,25 @@ use async_scoped::TokioScope;
 use once_cell::sync::Lazy;
 
 use crate::{
-    checked_types::{PathScoped, PathScopedRef},
+    checked_types::{PathAbsolute, PathScoped, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
-    config::{profile::ProfileData, Profile},
+    config::{profile::ProfileData, Mod, Profile},
     mgmt::{
+        cache,
         events::{EventSouce, ProgressEvent},
         hash::verify_sha1,
         lockfile::{LockFile, LockedId, LockedMod},
+        modpack::ModpackData,
+        version::VersionSet,
         ProfileManager,
     },
-    Client, ErrorKind, Result,
+    Client, ErrorKind, Result, StdResult,
 };
 
-static MODS_PATH: Lazy<&PathScopedRef> = Lazy::new(|| PathScopedRef::new("mods").unwrap());
+type Downloads = Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::JoinError>>;
 
+
+static MODS_PATH: Lazy<&PathScopedRef> = Lazy::new(|| PathScopedRef::new("mods").unwrap());
 
 impl ProfileManager {
     /// Attempt to download and install all mods defined in
@@ -52,12 +58,28 @@ impl ProfileManager {
         lockfile.game_version = data.game_version.clone();
         lockfile.loader = data.loader;
 
-        self.send(ProgressEvent::Status("Resolving mod versions...".to_string()));
+        let mut pack = match &data.modpack {
+            Some(modpack) => {
+                self.send(ProgressEvent::Status("Fetch and read modpack...".to_string()));
+                match self.load_modpack(client, modpack, data).await {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        self.send_err(e);
+                        None
+                    },
+                }
+            },
+            _ => None,
+        };
 
-        let (mut versioned, mut unversioned) = profile_mods(data);
-        // TODO: Load mod list from modpack
-        let (mut installed, locked_versions, delete) =
-            merge_locked(lockfile.mods, &mut versioned, &mut unversioned, profile.path(), reset).await;
+        self.send(ProgressEvent::Status("Resolving mod versions...".to_string()));
+        let ResolvedMods {
+            versioned,
+            unversioned,
+            mut installed,
+            mut pending,
+            delete,
+        } = merge_sources(&data.mods, &lockfile.mods, pack.as_mut(), profile.path(), reset).await;
         installed
             .iter()
             .map(|m| ProgressEvent::Installed {
@@ -65,54 +87,43 @@ impl ProfileManager {
                 is_new: false,
             })
             .for_each(|e| self.send(e));
+        self.fetch_versions(client, data, &unversioned, &versioned)
+            .await
+            .into_iter()
+            .for_each(|v| {
+                pending.replace(v.into());
+            });
 
-        let pending = self.fetch_versions(client, data, unversioned, &locked_versions, &versioned).await;
-
-        let mut unversioned = versioned.into_keys().chain(locked_versions.keys()).collect::<HashSet<_>>();
+        let mut unversioned = versioned.into_keys().collect::<HashSet<_>>();
         for v in pending.iter() {
             unversioned.remove(&v.project_id);
         }
         for id in unversioned {
-            self.send_err(ErrorKind::MissingVersion(id.clone()).into());
+            self.send_err(ErrorKind::MissingVersion(id.into_owned()).into());
         }
 
         self.send(ProgressEvent::Status("Downloading...".to_string()));
         let ((), downloads) = TokioScope::scope_and_block(|scope| {
+            let sub = PathScopedRef::new("mods").ok();
             for v in pending {
-                scope.spawn(self.dl_version(v));
+                let save_path = cache::version_path(&v, v.filename.parent().and_then(|p| p.file_name_path()).or(sub));
+                scope.spawn(async { self.dl_version(v.into(), &save_path).await.map(|v| (v, save_path)) });
             }
         });
+
+        // Start deleting old files while new ones install
+        let delete_job = self.spawn_delete_files(&delete, profile.path());
+
         self.send(ProgressEvent::Status("Installing...".to_string()));
-        for dl in downloads {
-            match dl {
-                Ok(Some((v, cached))) => match install_version(profile.path(), v, &cached).await {
-                    Ok(lm) => {
-                        self.send(ProgressEvent::Installed {
-                            file: lm.file.clone(),
-                            is_new: true,
-                        });
-                        installed.push(lm);
-                    },
-                    Err(e) => self.send_err(e),
-                },
-                Ok(None) => { /* Download failed. Error already sent to channel */ },
-                Err(e) => self.send_err(anyhow!(e).into()),
-            }
-        }
+        installed.extend(self.install_downloaded(downloads, profile.path()).await.into_iter().map(Into::into));
 
-        let delete_job = spawn_delete_files(&delete, profile.path());
-
-        lockfile.mods = installed;
+        lockfile.mods = installed.into_iter().map(Cow::into_owned).collect();
         lockfile.mods.sort_unstable_by(|a, b| a.file.cmp(&b.file));
         if let Err(e) = lockfile.save(profile.path()).await {
             self.send_err(e);
         };
 
-        if let Ok(errs) = delete_job.await {
-            for e in errs {
-                self.send_err(e);
-            }
-        } else {
+        if delete_job.await.is_err() {
             let mut files = String::with_capacity(2 * delete.len() + delete.iter().map(|p| p.as_os_str().len()).sum::<usize>());
             for file in delete {
                 files.push_str("\n\t");
@@ -131,14 +142,13 @@ impl ProfileManager {
         &self,
         client: &Client,
         data: &ProfileData,
-        unversioned: HashSet<&ProjectId>,
-        locked_versions: &HashMap<ProjectId, VersionId>,
-        versioned: &HashMap<&ProjectId, &VersionId>,
+        unversioned: &HashSet<Cow<'_, ProjectId>>,
+        versioned: &HashMap<Cow<'_, ProjectId>, Cow<'_, VersionId>>,
     ) -> Vec<Version> {
         // Get the latest version of all unversioned projects
         let ((), pending) = TokioScope::scope_and_block(|scope| {
             for id in unversioned {
-                scope.spawn(client.get_latest(id, Some(&data.game_version), Some(data.loader)));
+                scope.spawn(client.get_latest(id.as_ref(), Some(&data.game_version), Some(data.loader)));
             }
         });
         let mut pending = pending.into_iter().fold(vec![], |mut versions, res| {
@@ -152,13 +162,7 @@ impl ProfileManager {
 
         // Fetch version details for all versioned projects
         let versions = client
-            .get_versions(
-                &locked_versions
-                    .values()
-                    .chain(versioned.values().copied())
-                    .map(|v| v as _)
-                    .collect::<Vec<_>>(),
-            )
+            .get_versions(&versioned.values().map(|v| v.as_ref() as _).collect::<Vec<_>>())
             .await;
         match versions {
             Ok(versions) => pending.extend(versions),
@@ -167,53 +171,128 @@ impl ProfileManager {
 
         pending
     }
+
+    async fn install_downloaded(&self, downloads: Downloads, profile_path: &Path) -> Vec<LockedMod> {
+        let mut installed = Vec::with_capacity(downloads.len());
+        for dl in downloads {
+            match dl {
+                Ok(Some((v, file_path))) => match install_version(profile_path, v, &file_path).await {
+                    Ok(lm) => {
+                        self.send(ProgressEvent::Installed {
+                            file: lm.file.clone(),
+                            is_new: true,
+                        });
+                        installed.push(lm);
+                    },
+                    Err(e) => self.send_err(e),
+                },
+                Ok(None) => { /* Download failed. Error already sent to channel */ },
+                Err(e) => self.send_err(anyhow!(e).into()),
+            }
+        }
+        installed
+    }
+
+    fn spawn_delete_files(&self, delete: &[PathScoped], profile_path: &Path) -> tokio::task::JoinHandle<()> {
+        let delete = delete.iter().map(|p| (p.to_owned(), profile_path.join(p))).collect::<Vec<_>>();
+        let channel = self.channel.clone();
+        tokio::task::spawn_blocking(move || {
+            for (p, file) in delete {
+                match std::fs::remove_file(file).with_context(|| format!("Failed to delete file `{}`", p.display())) {
+                    Ok(()) => channel.send(ProgressEvent::Deleted(p)),
+                    Err(e) => channel.send(ProgressEvent::Error(e.into())),
+                }
+            }
+        })
+    }
 }
 
-fn profile_mods(data: &ProfileData) -> (HashMap<&ProjectId, &VersionId>, HashSet<&ProjectId>) {
-    let mut versioned = HashMap::new();
-    let mut unversioned = HashSet::new();
-    for m in &data.mods {
-        if let Some(v) = m.id.version() {
-            versioned.insert(m.id.project(), v);
-        } else {
-            unversioned.insert(m.id.project());
+async fn merge_sources<'a>(
+    profile: &'a Vec<Mod>,
+    locked: &'a Vec<LockedMod>,
+    pack: Option<&'a mut ModpackData>,
+    profile_path: &'a Path,
+    reset: bool,
+) -> ResolvedMods<'a> {
+    let mut resolved = ResolvedMods {
+        installed: Vec::with_capacity(locked.len()),
+        ..Default::default()
+    };
+    let ResolvedMods {
+        versioned,
+        unversioned,
+        installed,
+        pending,
+        delete,
+    } = &mut resolved;
+
+    // Modpack first as base set of mods
+    use crate::mgmt::modpack::PackMods::*;
+    match pack.map(|p| &mut p.mods) {
+        Some(Modrinth { known, .. }) => std::mem::swap(pending, known),
+        Some(Forge(mods)) => std::mem::swap(versioned, &mut mods.iter().map(|(k, v)| (k.into(), v.into())).collect()),
+        None => {},
+    }
+
+    // Then mods from the profile
+    for m in profile {
+        let pid = m.id();
+        match (pending.get(pid), m.version()) {
+            (None, None) => {
+                unversioned.insert(pid.into());
+            },
+            (None, Some(v)) => {
+                versioned.insert(pid.into(), v.into());
+            },
+            (Some(mpv), Some(v)) if &mpv.id != v => {
+                versioned.insert(pid.into(), v.into());
+                pending.remove(pid);
+            },
+            (Some(_), Some(_)) => { /* Versions match - Keep modpack version */ },
+            (Some(_), None) => { /* Keep modpack version */ },
         }
     }
-    (versioned, unversioned)
-}
 
-async fn merge_locked(
-    locked_mods: Vec<LockedMod>,
-    versioned: &mut HashMap<&ProjectId, &VersionId>,
-    unversioned: &mut HashSet<&ProjectId>,
-    profile_path: &Path,
-    reset: bool,
-) -> (Vec<LockedMod>, HashMap<ProjectId, VersionId>, Vec<PathScoped>) {
-    let mut installed = Vec::with_capacity(versioned.len() + unversioned.len());
-    let mut locked_versions = HashMap::new();
-    let mut delete = vec![];
-    for m in locked_mods {
+    // Last, check against mods in the lock file
+    for m in locked {
+        let pid = m.project();
+        let vid = m.version();
+
         // If locked mod isn't in profile or it has a different version, delete it
-        if (reset || !unversioned.remove(&m.id.project)) && versioned.get(&m.id.project).into_iter().all(|pv| **pv != m.id.version) {
-            delete.push(m.file);
-            continue;
+        {
+            let ver = versioned.get(pid);
+            let pen = pending.get(pid);
+            if reset
+                || (!unversioned.remove(pid) && ver.is_none() && pen.is_none())
+                || ver.into_iter().any(|pv| pv.as_ref() != vid)
+                || pen.into_iter().any(|pv| &pv.id != vid)
+            {
+                delete.push(m.file.clone());
+                continue;
+            }
         }
         let path = profile_path.join(&m.file);
         if path.exists() && verify_sha1(&m.sha1, &path).await.is_ok_and(identity) {
-            versioned.remove(&m.id.project);
-            installed.push(m);
+            versioned.remove(pid);
+            pending.remove(pid);
+            installed.push(m.into());
         } else {
-            locked_versions.insert(m.id.project, m.id.version);
+            versioned.insert(pid.into(), vid.into());
         }
     }
-    (installed, locked_versions, delete)
+    resolved
 }
 
 async fn install_version(profile_path: &Path, v: Version, cached: &Path) -> Result<LockedMod> {
+    // put in mods subdir if not specified
+    let file = match v.filename.parent() {
+        Some(p) if !p.as_os_str().is_empty() => v.filename,
+        _ => MODS_PATH.join(v.filename),
+    };
     let lm = LockedMod {
         id: LockedId::new(v.project_id, v.id)?,
-        file: MODS_PATH.join(v.filename.remove_prefix(*MODS_PATH)),
         sha1: v.sha1.expect("downloaded mod should always have a sha1"),
+        file,
     };
     let dest = profile_path.join(&lm.file);
     let _ = tokio::fs::create_dir_all(dest.parent().expect("dest directory should always be valid")).await;
@@ -223,14 +302,11 @@ async fn install_version(profile_path: &Path, v: Version, cached: &Path) -> Resu
     Ok(lm)
 }
 
-#[must_use]
-fn spawn_delete_files(delete: &[PathScoped], profile_path: &Path) -> tokio::task::JoinHandle<Vec<crate::Error>> {
-    let delete = delete.iter().map(|p| profile_path.join(p)).collect::<Vec<_>>();
-    tokio::task::spawn_blocking(|| {
-        delete
-            .into_iter()
-            .filter_map(|file| std::fs::remove_file(file).err())
-            .map(Into::into)
-            .collect::<Vec<_>>()
-    })
+#[derive(Debug, Default)]
+struct ResolvedMods<'a> {
+    versioned: HashMap<Cow<'a, ProjectId>, Cow<'a, VersionId>>,
+    unversioned: HashSet<Cow<'a, ProjectId>>,
+    installed: Vec<Cow<'a, LockedMod>>,
+    pending: VersionSet,
+    delete: Vec<PathScoped>,
 }

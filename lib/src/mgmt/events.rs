@@ -14,6 +14,7 @@ pub enum ProgressEvent {
     Status(String),
     Download(DownloadProgress),
     Installed { file: PathScoped, is_new: bool },
+    Deleted(PathScoped),
     Error(crate::Error),
 }
 

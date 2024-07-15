@@ -10,7 +10,7 @@ use super::Profile;
 /// This class should only be used from config as the type inside the
 /// [profiles](crate::Config::profiles) set/map
 #[derive(Debug, Clone)]
-pub(crate) struct ProfileByPath(RefCell<Profile>);
+pub(in crate::config) struct ProfileByPath(RefCell<Profile>);
 
 impl ProfileByPath {
     pub fn as_path(&self) -> &Path {

@@ -62,6 +62,16 @@ pub struct LockedMod {
     pub sha1: String,
 }
 
+impl LockedMod {
+    pub fn project(&self) -> &ProjectId {
+        self.id.project()
+    }
+
+    pub fn version(&self) -> &VersionId {
+        self.id.version()
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(try_from = "ProjectWithVersion", into = "ProjectWithVersion")]
 pub struct LockedId {
@@ -73,6 +83,14 @@ impl LockedId {
     #[inline]
     pub fn new(project: ProjectId, version: VersionId) -> StdResult<Self, anyhow::Error> {
         ProjectWithVersion::new(project, Some(version))?.try_into()
+    }
+
+    fn project(&self) -> &ProjectId {
+        &self.project
+    }
+
+    fn version(&self) -> &VersionId {
+        &self.version
     }
 }
 
@@ -98,3 +116,5 @@ impl From<LockedId> for ProjectWithVersion {
         }
     }
 }
+
+crate::cow::cow!(LockedMod);

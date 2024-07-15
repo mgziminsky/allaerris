@@ -143,6 +143,21 @@ impl PathScopedRef {
     pub fn remove_prefix(&self, base: impl AsRef<Path>) -> &Self {
         self.0.strip_prefix(base).map_or(self, |p| unsafe { Self::cast(p) })
     }
+
+    /// Delegates to [`Path::parent`]
+    pub fn parent(&self) -> Option<&Self> {
+        self.0.parent().map(|p| unsafe { Self::cast(p) })
+    }
+
+    /// Delegates to [`Path::file_name`]
+    pub fn file_name_path(&self) -> Option<&Self> {
+        self.0.file_name().map(|p| unsafe { Self::cast(p) })
+    }
+
+    /// Delegates to [`Path::file_stem`]
+    pub fn file_stem_path(&self) -> Option<&Self> {
+        self.0.file_stem().map(|p| unsafe { Self::cast(p) })
+    }
 }
 
 impl Deref for PathScopedRef {
@@ -173,7 +188,11 @@ impl ToOwned for PathScopedRef {
         PathScoped(self.0.to_path_buf())
     }
 }
-
+impl Default for &PathScopedRef {
+    fn default() -> Self {
+        unsafe { PathScopedRef::cast("") }
+    }
+}
 
 /// Validate the path and return a reference to the portion starting at the
 /// first normal component
@@ -207,6 +226,12 @@ fn check_scope(path: &Path) -> Result<i32, PathScopeError> {
 #[cfg(test)]
 mod test_check_scope {
     use super::*;
+
+    #[test]
+    fn valid_empty() {
+        let val = check_scope("".as_ref());
+        assert_eq!(0, val.unwrap());
+    }
 
     #[test]
     fn valid_normal() {

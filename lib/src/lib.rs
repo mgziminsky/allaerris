@@ -5,6 +5,7 @@
 pub mod checked_types;
 pub mod client;
 pub mod config;
+pub(crate) mod cow;
 mod error;
 mod fs_util;
 pub mod mgmt;
@@ -32,13 +33,6 @@ pub static CONF_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
     dirs::config_local_dir()
         .expect("system config directory should be known")
         .join(env!("CARGO_PKG_NAME"))
-        .try_into()
-        .unwrap()
-});
-static CACHE_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
-    dirs::cache_dir()
-        .expect("system cache directory should be known")
-        .join(concat!(env!("CARGO_PKG_NAME"), "-cache"))
         .try_into()
         .unwrap()
 });

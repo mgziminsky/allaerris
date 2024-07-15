@@ -6,7 +6,7 @@ use std::io;
 use serde::{Deserialize, Serialize};
 use tokio::sync::OnceCell;
 
-pub(crate) use self::by_path::ProfileByPath;
+pub(super) use self::by_path::ProfileByPath;
 pub use self::data::*;
 use crate::{config::Mod, ErrorKind, PathAbsolute, Result};
 

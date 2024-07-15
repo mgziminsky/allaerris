@@ -14,7 +14,7 @@ use std::{
     sync::mpsc,
 };
 
-use anyhow::{bail, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use clap::{CommandFactory, Parser};
 use colored::Colorize;
 use dialoguer::console::style;
@@ -217,12 +217,13 @@ pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandl
             let mut bars = HashMap::new();
             while let Ok(evt) = receiver.recv() {
                 match evt {
-                    ProgressEvent::Status(msg) => eprintln!("{msg}"),
+                    ProgressEvent::Status(msg) => println!("{msg}"),
                     ProgressEvent::Download(evt) => handle_dl(evt, &mut bars, &progress),
                     ProgressEvent::Installed { file, is_new } => {
-                        let _ = progress.println(format!("{} {}", if is_new { &*TICK_GREEN } else { &*TICK_YELLOW }, file.display()));
+                        let _ = progress.println(format!("{} Installed: {}", if is_new { &*TICK_GREEN } else { &*TICK_YELLOW }, file.display()));
                     },
-                    ProgressEvent::Error(err) => eprintln!("{}", style(err.to_string()).red()),
+                    ProgressEvent::Deleted(file) => println!("{}   Deleted: {}", &*TICK_YELLOW, file.display()),
+                    ProgressEvent::Error(err) => eprintln!("{}", style(format!("{:?}", anyhow!(err))).red()),
                 }
             }
         }),

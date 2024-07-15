@@ -1,10 +1,13 @@
 //! Profile and system management operations related to the actual downloading
 //! and installing of mods and resources
 
+mod cache;
 pub mod events;
 mod hash;
 mod lockfile;
+mod modpack;
 mod ops;
+mod version;
 
 use std::sync::mpsc::{self, Sender};
 
