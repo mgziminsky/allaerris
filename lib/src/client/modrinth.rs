@@ -3,13 +3,13 @@ use std::collections::BTreeSet;
 use modrinth::{
     apis::{
         projects_api::{GetProjectParams, GetProjectsParams},
-        versions_api::{GetProjectVersionsParams, GetVersionsParams},
+        versions_api::{GetProjectVersionsParams, GetVersionParams, GetVersionsParams},
     },
     models::{game_version_tag::VersionType, Project as ApiProject},
 };
 
 use super::{
-    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
+    schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ModrinthClient,
 };
 use crate::{config::ModLoader, Result};
@@ -17,22 +17,22 @@ use crate::{config::ModLoader, Result};
 impl ApiOps for ModrinthClient {
     super::get_latest!();
 
-    async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
-        fetch_project(self, id).await?.try_into()
+    async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
+        fetch_project(self, id.get_modrinth()?).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: &impl AsProjectId) -> Result<Modpack> {
-        fetch_project(self, id).await?.try_into()
+    async fn get_modpack(&self, id: &impl ProjectIdSvcType) -> Result<Modpack> {
+        fetch_project(self, id.get_modrinth()?).await?.try_into()
     }
 
-    async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
-        let ids: Vec<_> = ids.iter().filter_map(|id| id.try_as_modrinth().ok()).collect();
+    async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
+        let ids: &Vec<_> = &ids.iter().filter_map(|id| id.get_modrinth().ok()).collect();
         if ids.is_empty() {
             return Ok(vec![]);
         }
         let projects = self
             .projects()
-            .get_projects(&GetProjectsParams { ids: &ids })
+            .get_projects(&GetProjectsParams { ids })
             .await?
             .into_iter()
             .filter_map(|p| p.try_into().ok())
@@ -43,11 +43,11 @@ impl ApiOps for ModrinthClient {
 
     async fn get_project_versions(
         &self,
-        id: &ProjectIdSvcType,
+        id: &impl ProjectIdSvcType,
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let mod_id = id.as_modrinth()?;
+        let mod_id = id.get_modrinth()?;
         let versions = self
             .versions()
             .get_project_versions(&GetProjectVersionsParams {
@@ -76,16 +76,14 @@ impl ApiOps for ModrinthClient {
             .collect())
     }
 
-    async fn get_versions(&self, ids: &[&VersionIdSvcType]) -> Result<Vec<Version>> {
+    async fn get_versions(&self, ids: &[&dyn VersionIdSvcType]) -> Result<Vec<Version>> {
+        let ids: &Vec<_> = &ids.iter().filter_map(|id| id.get_modrinth().ok()).collect();
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
         let versions = self
             .versions()
-            .get_versions(&GetVersionsParams {
-                ids: &ids
-                    .iter()
-                    .filter_map(|id| id.as_modrinth().ok())
-                    .map(String::as_str)
-                    .collect::<Vec<_>>(),
-            })
+            .get_versions(&GetVersionsParams { ids })
             .await?
             .into_iter()
             .map(Into::into)
@@ -96,8 +94,7 @@ impl ApiOps for ModrinthClient {
 }
 
 #[inline]
-async fn fetch_project(client: &ModrinthClient, id: impl AsProjectId) -> Result<ApiProject> {
-    let mod_id = id.try_as_modrinth()?;
+async fn fetch_project(client: &ModrinthClient, mod_id: &str) -> Result<ApiProject> {
     client
         .projects()
         .get_project(&GetProjectParams { mod_id })

@@ -1,5 +1,3 @@
-use crate::Result;
-
 /// Use with [`svc_id_impl`] to set any of the clients as not available for the
 /// defined type
 #[allow(unused)]
@@ -12,39 +10,33 @@ pub trait ServiceId: super::Sealed {
     type ForgeT;
     type ModrinthT;
     type GithubT;
-
-    fn as_forge(&self) -> Result<&Self::ForgeT>;
-    fn as_modrinth(&self) -> Result<&Self::ModrinthT>;
-    fn as_github(&self) -> Result<&Self::GithubT>;
 }
-macro_rules! svc_id_impl {
-    (@fn $name:ident -> Unsupported) => {
+macro_rules! svc_id_type {
+    (@def $name:ident -> $ty:ty) => {
+        svc_id_type!(@def $name -> $ty = $ty);
+    };
+    (@def $name:ident -> $ty:ty = $rty:ty) => {
         ::paste::paste! {
-            type [<$name:camel T>] = Unsupported;
-            fn [<as_ $name:lower>](&self) -> crate::Result<&Self::[<$name:camel T>]> {
-                Err(crate::Error::Unsupported)
+            fn [<get_ $name:lower>](&self) -> crate::Result<$rty>;
+        }
+    };
+    (@impl $name:ident -> $ty:ty) => {
+        svc_id_type!(@impl $name -> $ty = $ty);
+    };
+    (@impl $name:ident -> $ty:ty = $rty:ty) => {
+        ::paste::paste! {
+            #[inline]
+            fn [<get_ $name:lower>](&self) -> crate::Result<$rty> {
+                T::[<get_ $name:lower>](self)
             }
         }
     };
-    (@fn $name:ident -> $ty:ty) => {
-        ::paste::paste! {
-            type [<$name:camel T>] = $ty;
-            fn [<as_ $name:lower>](&self) -> crate::Result<&Self::[<$name:camel T>]> {
-                if let Self::[<$name:camel>](v) = self {
-                    Ok(v)
-                } else {
-                    Err(crate::ErrorKind::WrongService)?
-                }
-            }
-        }
-    };
-
     (
         $(#[$attr:meta])*
         $vis:vis enum $name:ident {
-            Forge($F:ty),
-            Modrinth($M:ty),
-            Github($G:ty)$(,)?
+            Forge($F:ty $(= $FR:ty)?),
+            Modrinth($M:ty $(= $MR:ty)?),
+            Github($G:ty $(= $GR:ty)?)$(,)?
         }
     ) => {
         $(#[$attr])*
@@ -55,13 +47,23 @@ macro_rules! svc_id_impl {
         }
         impl crate::client::Sealed for $name {}
         impl crate::client::ServiceId for $name {
-            svc_id_impl!(@fn Forge -> $F);
-            svc_id_impl!(@fn Modrinth -> $M);
-            svc_id_impl!(@fn Github -> $G);
+            type ForgeT = $F;
+            type ModrinthT = $M;
+            type GithubT = $G;
         }
         ::paste::paste! {
-            pub type [<$name SvcType>] = dyn crate::client::service_id::ServiceId<ForgeT = $F, ModrinthT = $M, GithubT = $G> + Send + Sync;
+            pub trait [<$name SvcType>]: Sync {
+                svc_id_type!(@def Forge -> $F $(= $FR)?);
+                svc_id_type!(@def Modrinth -> $M $(= $MR)?);
+                svc_id_type!(@def Github -> $G $(= $GR)?);
+            }
+
+            impl<T: [<$name SvcType>] + ?Sized> [<$name SvcType>] for &T {
+                svc_id_type!(@impl Forge -> $F $(= $FR)?);
+                svc_id_type!(@impl Modrinth -> $M $(= $MR)?);
+                svc_id_type!(@impl Github -> $G $(= $GR)?);
+            }
         }
     };
 }
-pub(super) use svc_id_impl;
+pub(super) use svc_id_type;

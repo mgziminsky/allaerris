@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use colored::Colorize;
 use once_cell::sync::Lazy;
 use relibium::{
-    client::schema::{AsProjectId, Author, ProjectId},
+    client::schema::{Author, ProjectId, ProjectIdSvcType},
     config::{Mod, Profile},
     modrinth::apis::teams_api::GetTeamsParams,
     Client,
@@ -38,7 +38,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
 
     let data = profile.data().await?;
     let mut projects = client
-        .get_mods(&data.mods.iter().map(Mod::id).collect::<Vec<_>>())
+        .get_mods(&data.mods.iter().map(Mod::id).map(|id| id as _).collect::<Vec<_>>())
         .await
         .context("Failed to load mod details")?;
 
@@ -87,7 +87,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
     // FIXME: Rate Limiting
     if let Some(gh_client) = client.as_github() {
         for proj in projects.iter_mut() {
-            if let Ok((own, repo)) = proj.id.try_as_github() {
+            if let Ok((own, repo)) = proj.id.get_github() {
                 let mut page = gh_client.repos(own, repo).releases().list().per_page(100).send().await?;
                 loop {
                     let sum: u64 = page.items.into_iter().flat_map(|i| i.assets).map(|a| a.download_count as u64).sum();

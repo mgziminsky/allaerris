@@ -4,7 +4,7 @@ use async_scoped::TokioScope;
 use github::models::repos::Asset;
 
 use super::{
-    schema::{AsProjectId, GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
+    schema::{GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
     ApiOps, GithubClient,
 };
 use crate::{config::ModLoader, ErrorKind, Result};
@@ -12,19 +12,19 @@ use crate::{config::ModLoader, ErrorKind, Result};
 impl ApiOps for GithubClient {
     super::get_latest!();
 
-    async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
-        fetch_repo(self, id).await.map(Mod)
+    async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
+        fetch_repo(self, id.get_github()?).await.map(Mod)
     }
 
     // No distinction between mods and modpacks for github
-    async fn get_modpack(&self, id: &impl AsProjectId) -> Result<Modpack> {
-        fetch_repo(self, id).await.map(Modpack)
+    async fn get_modpack(&self, id: &impl ProjectIdSvcType) -> Result<Modpack> {
+        fetch_repo(self, id.get_github()?).await.map(Modpack)
     }
 
-    async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
+    async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
         // let repos = ids
         //     .iter()
-        //     .filter_map(|id| id.try_as_github().ok())
+        //     .filter_map(|id| id.get_github().ok())
         //     .format_with(" ", |(own, repo), f| f(&format_args!("repo:{own}/{repo}")))
         //     .to_string();
         // let query = format!(
@@ -64,69 +64,72 @@ impl ApiOps for GithubClient {
 
     async fn get_project_versions(
         &self,
-        id: &ProjectIdSvcType,
+        id: &impl ProjectIdSvcType,
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let id = id.as_github()?;
-        let (owner, repo) = id;
+        async fn _get_project_versions(
+            this: &GithubClient,
+            (owner, repo): (&str, &str),
+            game_version: Option<&str>,
+            loader: Option<ModLoader>,
+        ) -> Result<Vec<Version>> {
+            let filter = [game_version.unwrap_or_default(), loader.map(ModLoader::as_str).unwrap_or_default()];
+            let check = |a: &Asset| {
+                filter.iter().all(|f| a.name.contains(f))
+                    && (a.name.ends_with(".jar") || a.name.ends_with(".zip"))
+                    && !a.name.ends_with("-sources.jar")
+                    && !a.label.as_ref().is_some_and(|l| l == "Source code")
+            };
 
-        let filter = [game_version.unwrap_or_default(), loader.map(ModLoader::as_str).unwrap_or_default()];
-        let check = |a: &Asset| {
-            filter.iter().all(|f| a.name.contains(f))
-                && (a.name.ends_with(".jar") || a.name.ends_with(".zip"))
-                && !a.name.ends_with("-sources.jar")
-                && !a.label.as_ref().is_some_and(|l| l == "Source code")
-        };
+            let files = this
+                .repos(owner, repo)
+                .releases()
+                .list()
+                .send()
+                .await?
+                .items
+                .into_iter()
+                .flat_map(|r| r.assets)
+                .filter_map(|a| {
+                    if check(&a) {
+                        Some(Version {
+                            id: VersionId::Github(a.id),
+                            project_id: ProjectId::Github((owner.to_owned(), repo.to_owned())),
+                            title: a.label.unwrap_or_default(),
+                            download_url: Some(a.url),
+                            filename: a.name.try_into().expect("Github API should always return a proper relative file"),
+                            length: a.size as _,
+                            date: a.updated_at.to_rfc3339(),
+                            sha1: None,
+                            deps: vec![],
+                            game_versions: game_version.iter().map(ToString::to_string).collect(),
+                            loaders: loader.iter().copied().collect(),
+                        })
+                    } else {
+                        None
+                    }
+                })
+                .collect();
 
-        let files = self
-            .repos(owner, repo)
-            .releases()
-            .list()
-            .send()
-            .await?
-            .items
-            .into_iter()
-            .flat_map(|r| r.assets)
-            .filter_map(|a| {
-                if check(&a) {
-                    Some(Version {
-                        id: VersionId::Github(a.id),
-                        project_id: ProjectId::Github(id.clone()),
-                        title: a.label.unwrap_or_default(),
-                        download_url: Some(a.url),
-                        filename: a.name.try_into().expect("Github API should always return a proper relative file"),
-                        length: a.size as _,
-                        date: a.updated_at.to_rfc3339(),
-                        sha1: None,
-                        deps: vec![],
-                        game_versions: game_version.iter().map(ToString::to_string).collect(),
-                        loaders: loader.iter().copied().collect(),
-                    })
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        Ok(files)
+            Ok(files)
+        }
+        _get_project_versions(self, id.get_github()?, game_version, loader).await
     }
 
     async fn get_game_versions(&self) -> Result<BTreeSet<GameVersion>> {
         Err(ErrorKind::Unsupported.into())
     }
 
-    async fn get_versions(&self, _ids: &[&VersionIdSvcType]) -> Result<Vec<Version>> {
+    async fn get_versions(&self, _ids: &[&dyn VersionIdSvcType]) -> Result<Vec<Version>> {
         // Rest API doesn't support getting arbitrary assets by id. Needs GraphQL
         Err(ErrorKind::Unsupported.into())
     }
 }
 
 #[inline]
-async fn fetch_repo(client: &GithubClient, id: impl AsProjectId) -> Result<Project> {
-    let (owner, name) = id.try_as_github()?;
-    let repo = client.repos(owner, name).get().await?;
-    Ok(repo.into())
+async fn fetch_repo(client: &GithubClient, (owner, name): (&str, &str)) -> Result<Project> {
+    Ok(client.repos(owner, name).get().await?.into())
 }
 
 

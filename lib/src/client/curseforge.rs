@@ -10,7 +10,7 @@ use curseforge::{
 };
 
 use super::{
-    schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
+    schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ForgeClient,
 };
 use crate::{config::ModLoader, Result};
@@ -18,16 +18,16 @@ use crate::{config::ModLoader, Result};
 impl ApiOps for ForgeClient {
     super::get_latest!();
 
-    async fn get_mod(&self, id: &impl AsProjectId) -> Result<Mod> {
+    async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
         fetch_mod(self, id).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: &impl AsProjectId) -> Result<Modpack> {
+    async fn get_modpack(&self, id: &impl ProjectIdSvcType) -> Result<Modpack> {
         fetch_mod(self, id).await?.try_into()
     }
 
-    async fn get_mods(&self, ids: &[impl AsProjectId]) -> Result<Vec<Mod>> {
-        let mod_ids: Vec<_> = ids.iter().filter_map(|i| i.try_as_forge().ok()).collect();
+    async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
+        let mod_ids: Vec<_> = ids.iter().filter_map(|i| i.get_forge().ok()).collect();
         if mod_ids.is_empty() {
             return Ok(vec![]);
         }
@@ -47,11 +47,11 @@ impl ApiOps for ForgeClient {
 
     async fn get_project_versions(
         &self,
-        id: &ProjectIdSvcType,
+        id: &impl ProjectIdSvcType,
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        let mod_id = *id.as_forge()?;
+        let mod_id = id.get_forge()?;
         let files = self
             .files()
             .get_mod_files(&GetModFilesParams {
@@ -82,13 +82,15 @@ impl ApiOps for ForgeClient {
             .collect())
     }
 
-    async fn get_versions(&self, ids: &[&VersionIdSvcType]) -> Result<Vec<Version>> {
+    async fn get_versions(&self, ids: &[&dyn VersionIdSvcType]) -> Result<Vec<Version>> {
+        let file_ids: Vec<_> = ids.iter().filter_map(|i| i.get_forge().ok()).collect();
+        if file_ids.is_empty() {
+            return Ok(vec![]);
+        }
         let versions = self
             .files()
             .get_files(&GetFilesParams {
-                get_mod_files_request_body: &GetModFilesRequestBody {
-                    file_ids: ids.iter().filter_map(|id| id.as_forge().ok()).copied().collect(),
-                },
+                get_mod_files_request_body: &GetModFilesRequestBody { file_ids },
             })
             .await?
             .data
@@ -101,8 +103,8 @@ impl ApiOps for ForgeClient {
 }
 
 #[inline]
-async fn fetch_mod(client: &ForgeClient, id: impl AsProjectId) -> Result<curseforge::models::Mod> {
-    let mod_id = id.try_as_forge()?;
+async fn fetch_mod(client: &ForgeClient, id: impl ProjectIdSvcType) -> Result<curseforge::models::Mod> {
+    let mod_id = id.get_forge()?;
     Ok(client.mods().get_mod(&GetModParams { mod_id }).await?.data)
 }
 
@@ -233,7 +235,10 @@ mod from {
                 project_id: ProjectId::Forge(file.mod_id),
                 title: file.display_name,
                 download_url: file.download_url,
-                filename: file.file_name.try_into().expect("Curseforge API should always return a proper relative file"),
+                filename: file
+                    .file_name
+                    .try_into()
+                    .expect("Curseforge API should always return a proper relative file"),
                 length: file.file_length as _,
                 date: file.file_date,
                 sha1: file.hashes.into_iter().find(|h| matches!(h.algo, HashAlgo::Sha1)).map(|h| h.value),

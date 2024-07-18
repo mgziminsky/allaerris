@@ -5,14 +5,20 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use super::ProjectId;
-use crate::{checked_types::PathScoped, client::service_id::svc_id_impl, config::ModLoader};
+use crate::{
+    checked_types::PathScoped,
+    client::{service_id::svc_id_type, ServiceId},
+    config::ModLoader,
+    ErrorKind, Result,
+};
 
-svc_id_impl! {
+
+svc_id_type! {
     #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Hash)]
     #[serde(rename_all = "lowercase")]
     pub enum VersionId {
         Forge(u64),
-        Modrinth(String),
+        Modrinth(String = &str),
         Github(AssetId),
     }
 }
@@ -55,5 +61,103 @@ impl Display for VersionId {
             Self::Github(id) => id,
         };
         write!(f, "{val}")
+    }
+}
+
+
+impl VersionIdSvcType for VersionId {
+    #[inline]
+    fn get_forge(&self) -> Result<<VersionId as ServiceId>::ForgeT> {
+        if let Self::Forge(v) = self {
+            Ok(*v)
+        } else {
+            Err(crate::ErrorKind::WrongService)?
+        }
+    }
+
+    #[inline]
+    fn get_modrinth(&self) -> Result<&str> {
+        if let Self::Modrinth(v) = self {
+            Ok(v)
+        } else {
+            Err(crate::ErrorKind::WrongService)?
+        }
+    }
+
+    #[inline]
+    fn get_github(&self) -> Result<<VersionId as ServiceId>::GithubT> {
+        if let Self::Github(v) = self {
+            Ok(*v)
+        } else {
+            Err(crate::ErrorKind::WrongService)?
+        }
+    }
+}
+
+impl VersionIdSvcType for u64 {
+    #[inline]
+    fn get_forge(&self) -> Result<<VersionId as ServiceId>::ForgeT> {
+        Ok(*self)
+    }
+
+    #[inline]
+    fn get_modrinth(&self) -> Result<&str> {
+        Err(ErrorKind::InvalidIdentifier.into())
+    }
+
+    #[inline]
+    fn get_github(&self) -> Result<<VersionId as ServiceId>::GithubT> {
+        Err(ErrorKind::InvalidIdentifier.into())
+    }
+}
+
+impl VersionIdSvcType for <VersionId as ServiceId>::GithubT {
+    #[inline]
+    fn get_forge(&self) -> Result<<VersionId as ServiceId>::ForgeT> {
+        Err(ErrorKind::InvalidIdentifier.into())
+    }
+
+    #[inline]
+    fn get_modrinth(&self) -> Result<&str> {
+        Err(ErrorKind::InvalidIdentifier.into())
+    }
+
+    #[inline]
+    fn get_github(&self) -> Result<<VersionId as ServiceId>::GithubT> {
+        Ok(*self)
+    }
+}
+
+impl VersionIdSvcType for str {
+    #[inline]
+    fn get_forge(&self) -> Result<<VersionId as ServiceId>::ForgeT> {
+        self.parse().map_err(|_| ErrorKind::InvalidIdentifier.into())
+    }
+
+    #[inline]
+    fn get_modrinth(&self) -> Result<&str> {
+        Ok(self)
+    }
+
+    #[inline]
+    fn get_github(&self) -> Result<<VersionId as ServiceId>::GithubT> {
+        self.parse::<u64>().map(Into::into).map_err(|_| ErrorKind::InvalidIdentifier.into())
+    }
+}
+
+impl VersionIdSvcType for String {
+    #[inline]
+    fn get_forge(&self) -> Result<<VersionId as ServiceId>::ForgeT> {
+        self.as_str().get_forge()
+    }
+
+    #[inline]
+    fn get_modrinth(&self) -> Result<&str> {
+        self.as_str().get_modrinth()
+    }
+
+    #[inline]
+    fn get_github(&self) -> Result<<VersionId as ServiceId>::GithubT> {
+        self.as_str().get_github()
     }
 }

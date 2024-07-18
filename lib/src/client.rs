@@ -10,7 +10,7 @@ pub mod schema;
 
 use std::collections::BTreeSet;
 
-use self::schema::{AsProjectId, GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType};
+use self::schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType};
 pub use self::service_id::ServiceId;
 use crate::{config::ModLoader, Result};
 
@@ -71,7 +71,7 @@ api! {
     ///
     /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
     /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
-    pub get_mod(id: &impl AsProjectId) -> Mod;
+    pub get_mod(id: &impl ProjectIdSvcType) -> Mod;
 
     /// Get the [modpack](Modpack) with `id`
     ///
@@ -86,7 +86,7 @@ api! {
     ///
     /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
     /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
-    pub get_modpack(id: &impl AsProjectId) -> Modpack;
+    pub get_modpack(id: &impl ProjectIdSvcType) -> Modpack;
 
     /// Get all [mods](Mod) listed in `ids`
     ///
@@ -97,7 +97,7 @@ api! {
     /// # Errors
     ///
     /// Any network or api errors from the backing client
-    ++pub get_mods(ids: &[impl AsProjectId]) -> Vec<Mod>;
+    ++pub get_mods(ids: &[&dyn ProjectIdSvcType]) -> Vec<Mod>;
 
     /// Get all [versions](Version) of the project with `id`
     ///
@@ -112,14 +112,15 @@ api! {
     /// Any network or api errors from the backing client
     ///
     /// [ErrorKind::WrongService]: crate::ErrorKind::WrongService
-    ++pub get_project_versions(id: &ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Vec<Version>;
+    ++pub get_project_versions(id: &impl ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Vec<Version>;
 
     /// Get all available Minecraft [versions](schema::GameVersion)
     /// in descending order by release date
     ++pub get_game_versions() -> BTreeSet<GameVersion>;
 
     /// Get multiple [versions](Version) details by their `ids`
-    ++pub get_versions(ids: &[&VersionIdSvcType]) -> Vec<Version>;
+    ++pub get_versions(ids: &[&dyn VersionIdSvcType]) -> Vec<Version>;
+
 
     /// Get the latest [versions](Version) of the project with `id`
     ///
@@ -130,7 +131,7 @@ api! {
     /// Any network or api errors from the backing client
     ///
     /// [`ErrorKind::WrongService`]: crate::ErrorKind::WrongService
-    pub get_latest(id: &ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Version;
+    pub get_latest(id: &impl ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Version;
 }
 
 /// The main [`Client`] for accessing the various modding APIs
@@ -209,7 +210,7 @@ as_inner! {
 /// api macro
 macro_rules! get_latest {
     () => {
-        async fn get_latest(&self, id: &ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Result<Version> {
+        async fn get_latest(&self, id: &impl ProjectIdSvcType, game_version: Option<&str>, loader: Option<ModLoader>) -> Result<Version> {
             self.get_project_versions(id, game_version, loader)
                 .await?
                 .into_iter()

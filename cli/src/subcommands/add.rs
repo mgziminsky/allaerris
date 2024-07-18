@@ -12,7 +12,7 @@ pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>) ->
         println!("{}\t{}", *TICK_GREEN, m.name.bold());
         vec![m]
     } else {
-        let ids = ids.iter().map(String::as_str).collect::<Vec<_>>();
+        let ids = ids.iter().map(|id| id as _).collect::<Vec<_>>();
         let mods = client.get_mods(&ids).await?;
         eprintln!("{}", *TICK_GREEN);
         mods
