@@ -41,26 +41,24 @@ pub async fn configure(profile: &mut Profile, game_version: Option<String>, load
                 .items(&items)
                 .default(0)
                 .interact_opt()?;
-
-            if let Some(index) = selection {
-                let data = profile.data_mut().await?;
-                match index {
-                    0 => data.game_version = pick_minecraft_version(Some(&data.game_version)).await?,
-                    1 => data.loader = pick_mod_loader(Some(data.loader))?,
-                    2 => {
-                        let name = Input::with_theme(&*THEME)
-                            .with_prompt("Change the profile's name")
-                            .default(profile.name().to_owned())
-                            .interact_text()?;
-                        profile.set_name(&name);
-                    },
-                    3 => break,
-                    _ => unreachable!(),
-                }
-                println!();
-            } else {
+            let Some(index) = selection else {
                 break;
+            };
+            let data = profile.data_mut().await?;
+            match index {
+                0 => data.game_version = pick_minecraft_version(Some(&data.game_version)).await?,
+                1 => data.loader = pick_mod_loader(Some(data.loader))?,
+                2 => {
+                    let name = Input::with_theme(&*THEME)
+                        .with_prompt("Change the profile's name")
+                        .default(profile.name().to_owned())
+                        .interact_text()?;
+                    profile.set_name(&name);
+                },
+                3 => break,
+                _ => unreachable!(),
             }
+            println!();
         }
     }
 

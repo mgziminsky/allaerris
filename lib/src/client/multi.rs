@@ -14,11 +14,10 @@ where
     for client in clients {
         // Need pin for recursive async calls [E0733]
         let res = Box::pin(func(client)).await;
-        if let Err(e) = res {
-            err.push(e)
-        } else {
+        let Err(e) = res else {
             return res;
-        }
+        };
+        err.push(e)
     }
     Err(ErrorKind::Multi(err).into())
 }

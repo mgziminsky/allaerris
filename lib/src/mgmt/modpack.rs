@@ -110,27 +110,26 @@ impl ProfileManager {
                             continue;
                         },
                     };
-                    if let Ok((pid, vid)) = f.index_version() {
-                        versions.insert(
-                            Version {
-                                id: vid,
-                                project_id: pid,
-                                title: format!("{pack_name} - {}", path.display()),
-                                download_url: f.downloads.first().cloned(),
-                                filename: path.to_owned(),
-                                length: f.file_size,
-                                date: Default::default(),
-                                sha1: Some(f.hashes.sha1.clone()),
-                                deps: Default::default(),
-                                game_versions: game_version.iter().cloned().collect(),
-                                loaders: loaders.clone(),
-                            }
-                            .into(),
-                        );
-                    } else {
+                    let Ok((pid, vid)) = f.index_version() else {
                         pending.push(f);
                         continue;
                     };
+                    versions.insert(
+                        Version {
+                            id: vid,
+                            project_id: pid,
+                            title: format!("{pack_name} - {}", path.display()),
+                            download_url: f.downloads.first().cloned(),
+                            filename: path.to_owned(),
+                            length: f.file_size,
+                            date: Default::default(),
+                            sha1: Some(f.hashes.sha1.clone()),
+                            deps: Default::default(),
+                            game_versions: game_version.iter().cloned().collect(),
+                            loaders: loaders.clone(),
+                        }
+                        .into(),
+                    );
                 }
                 let fetched = client
                     .version_files()

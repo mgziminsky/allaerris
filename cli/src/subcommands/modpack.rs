@@ -27,17 +27,16 @@ pub async fn process(subcommand: ModpackSubCommand, config: &mut Config, client:
         },
         ModpackSubCommand::Remove { force } => {
             let profile = get_active_profile(config)?.data_mut().await?;
-            if let Some(ref modpack) = profile.modpack {
-                if force
-                    || Confirm::with_theme(&*THEME)
-                        .default(true)
-                        .with_prompt(format!("Remove modpack `{}` from active profile?", mod_single_line(modpack)))
-                        .interact()?
-                {
-                    profile.modpack = None;
-                }
-            } else {
-                bail!(MSG_NO_PACK)
+            let Some(ref modpack) = profile.modpack else {
+                bail!(MSG_NO_PACK);
+            };
+            if force
+                || Confirm::with_theme(&*THEME)
+                    .default(true)
+                    .with_prompt(format!("Remove modpack `{}` from active profile?", mod_single_line(modpack)))
+                    .interact()?
+            {
+                profile.modpack = None;
             }
         },
         ModpackSubCommand::Configure { install_overrides } => {

@@ -92,11 +92,10 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
                 loop {
                     let sum: u64 = page.items.into_iter().flat_map(|i| i.assets).map(|a| a.download_count as u64).sum();
                     proj.downloads += sum;
-                    if let Some(p) = gh_client.get_page(&page.next).await? {
-                        page = p;
-                    } else {
+                    let Some(p) = gh_client.get_page(&page.next).await? else {
                         break;
-                    }
+                    };
+                    page = p;
                 }
             }
         }
