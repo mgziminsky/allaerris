@@ -23,6 +23,7 @@ impl PathAbsolute {
     /// Delegates to [`Path::join`] since joining on an absolute path will
     /// always produce an absolute path
     #[inline]
+    #[must_use]
     pub fn join(&self, path: impl AsRef<Path>) -> Self {
         Self(self.0.join(path))
     }
@@ -36,7 +37,7 @@ impl PathAbsolute {
     /// Delegates to [`PathBuf::push`]
     #[inline]
     pub fn push(&mut self, path: impl AsRef<Path>) {
-        self.0.push(path)
+        self.0.push(path);
     }
 
     /// Delegates to [`PathBuf::pop`]

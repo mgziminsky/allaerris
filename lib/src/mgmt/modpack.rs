@@ -84,7 +84,7 @@ impl ProfileManager {
             (PackMods::Modrinth { known, unknown }, PathScoped::new("overrides").unwrap())
         });
         parse!(|manifest = "manifest.json"| {
-            let (mods, prefix) = parse_forge(read_json!(manifest))?;
+            let (mods, prefix) = parse_forge(read_json!(manifest));
             (PackMods::Forge(mods), prefix)
         });
 
@@ -114,7 +114,7 @@ impl ProfileManager {
                 let mut versions = VersionSet::new();
                 let mut pending = vec![];
 
-                for f in files.iter() {
+                for f in &files {
                     let path = match f.path_scoped() {
                         Ok(p) => p,
                         Err(e) => {
@@ -168,15 +168,15 @@ impl ProfileManager {
     }
 }
 
-fn parse_forge(manifest: ModpackManifest) -> Result<(HashMap<ProjectId, VersionId>, PathScoped)> {
+fn parse_forge(manifest: ModpackManifest) -> (HashMap<ProjectId, VersionId>, PathScoped) {
     match manifest {
-        ModpackManifest::V1 { files, overrides, .. } => Ok((
+        ModpackManifest::V1 { files, overrides, .. } => (
             files
                 .into_iter()
                 .map(|f| (ProjectId::Forge(f.project_id), VersionId::Forge(f.file_id)))
                 .collect(),
             overrides,
-        )),
+        ),
     }
 }
 

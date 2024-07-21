@@ -56,7 +56,7 @@ impl ProfileManager {
         self.send(ProgressEvent::Status("Loading lockfile...".to_string()));
         let mut lockfile = LockFile::load(profile.path()).await?;
         let reset = lockfile.game_version != data.game_version || lockfile.loader != data.loader;
-        lockfile.game_version = data.game_version.clone();
+        lockfile.game_version.clone_from(&data.game_version);
         lockfile.loader = data.loader;
 
         // This will be passed to other local methods which will add to it any files
@@ -96,7 +96,7 @@ impl ProfileManager {
                     file: m.file.clone(),
                     is_new: false,
                     typ: InstallType::Mod,
-                })
+                });
             })
             .map(Cow::into_owned)
             .collect();
@@ -108,7 +108,7 @@ impl ProfileManager {
                 files.push_str("\n\t");
                 let _ = write!(&mut files, "{}", file.display());
             }
-            self.send_err(anyhow!("Unexpected error deleting old files. The following may need deleted manually:{files}",).into())
+            self.send_err(anyhow!("Unexpected error deleting old files. The following may need deleted manually:{files}",).into());
         }
 
         if let Some(pack) = pack {
@@ -147,17 +147,19 @@ impl ProfileManager {
                 };
             }
 
-            use std::{fs, io};
-            target.parent().map(fs::create_dir_all);
-            let sha1 = fs::File::create(target).and_then(|target| {
-                let mut target = Sha1Writer::new(target);
-                io::copy(&mut file, &mut target)?;
-                target.finalize_str()
-            });
+            let sha1 = {
+                use std::{fs, io};
+                target.parent().map(fs::create_dir_all);
+                fs::File::create(target).and_then(|target| {
+                    let mut target = Sha1Writer::new(target);
+                    io::copy(&mut file, &mut target)?;
+                    target.finalize_str()
+                })
+            };
             match sha1 {
                 Ok(sha1) => {
                     overrides.insert(path.to_owned(), sha1);
-                    self.send(event!(true))
+                    self.send(event!(true));
                 },
                 Err(e) => self.send_err(e.into()),
             }
@@ -250,7 +252,7 @@ impl ProfileManager {
     ) {
         // Get the latest version of all unversioned projects
         let ((), pending) = TokioScope::scope_and_block(|scope| {
-            for id in unversioned.iter() {
+            for id in &unversioned {
                 scope.spawn(client.get_latest(id.as_ref(), Some(&data.game_version), Some(data.loader)));
             }
         });
@@ -343,13 +345,14 @@ async fn merge_sources<'a>(
     } = &mut resolved;
 
     // Modpack first as base set of mods
-    use crate::mgmt::modpack::PackMods::*;
-    match pack.map(|p| &mut p.mods) {
-        Some(Modrinth { known, .. }) => std::mem::swap(pending, known),
-        Some(Forge(mods)) => std::mem::swap(versioned, &mut mods.iter().map(|(k, v)| (k.into(), v.into())).collect()),
-        None => {},
+    {
+        use crate::mgmt::modpack::PackMods::*;
+        match pack.map(|p| &mut p.mods) {
+            Some(Modrinth { known, .. }) => std::mem::swap(pending, known),
+            Some(Forge(mods)) => std::mem::swap(versioned, &mut mods.iter().map(|(k, v)| (k.into(), v.into())).collect()),
+            None => {},
+        }
     }
-
     // Then mods from the profile
     for m in profile {
         let pid = m.project();
@@ -364,8 +367,7 @@ async fn merge_sources<'a>(
                 versioned.insert(pid.into(), v.into());
                 pending.remove(pid);
             },
-            (Some(_), Some(_)) => { /* Versions match - Keep modpack version */ },
-            (Some(_), None) => { /* Keep modpack version */ },
+            (Some(_), Some(_) | None) => { /* Keep modpack version */ },
         }
     }
 

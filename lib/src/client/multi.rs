@@ -17,7 +17,7 @@ where
         let Err(e) = res else {
             return res;
         };
-        err.push(e)
+        err.push(e);
     }
     Err(ErrorKind::Multi(err).into())
 }

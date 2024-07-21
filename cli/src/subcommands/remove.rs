@@ -7,7 +7,7 @@ use crate::tui::{mod_single_line, THEME};
 /// If `to_remove` is empty, display a list of projects in the profile to select
 /// from and remove the selected ones. Otherwise, search the given strings with
 /// the projects' name and IDs and remove them
-pub fn remove(profile: &mut ProfileData, to_remove: Vec<String>) -> Result<Vec<Mod>> {
+pub fn remove(profile: &mut ProfileData, to_remove: &[String]) -> Result<Vec<Mod>> {
     Ok(if to_remove.is_empty() {
         let indices = prompt(&profile.mods)?;
         profile.remove_mods_at(indices)

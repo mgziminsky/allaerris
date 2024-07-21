@@ -86,10 +86,11 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
     // Calculate Github downloads count from releases
     // FIXME: Rate Limiting
     if let Some(gh_client) = client.as_github() {
-        for proj in projects.iter_mut() {
+        for proj in &mut projects {
             if let Ok((own, repo)) = proj.id.get_github() {
                 let mut page = gh_client.repos(own, repo).releases().list().per_page(100).send().await?;
                 loop {
+                    #[allow(clippy::cast_sign_loss)]
                     let sum: u64 = page.items.into_iter().flat_map(|i| i.assets).map(|a| a.download_count as u64).sum();
                     proj.downloads += sum;
                     let Some(p) = gh_client.get_page(&page.next).await? else {

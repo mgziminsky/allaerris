@@ -1,3 +1,5 @@
+#![allow(unused_imports)] // Detection broken by cfg...
+
 use std::path::Path;
 
 use anyhow::{anyhow, Context};

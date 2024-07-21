@@ -66,7 +66,7 @@ impl AsRef<PathScopedRef> for PathScoped {
 impl Borrow<PathScopedRef> for PathScoped {
     #[inline]
     fn borrow(&self) -> &PathScopedRef {
-        self.deref()
+        self
     }
 }
 
@@ -115,6 +115,7 @@ impl PathScopedRef {
     #[inline]
     unsafe fn cast<P: AsRef<Path> + ?Sized>(s: &P) -> &Self {
         // Copied from Path::new
+        #[allow(clippy::ref_as_ptr)]
         &*(s.as_ref() as *const Path as *const Self)
     }
 

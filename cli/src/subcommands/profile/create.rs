@@ -33,7 +33,7 @@ pub async fn create(
                     .with_prompt("Would you like to specify a custom profile directory?")
                     .interact()?
             {
-                pick_folder(&*DEFAULT_MINECRAFT_DIR, "Pick a profile directory")
+                Ok(pick_folder(&*DEFAULT_MINECRAFT_DIR, "Pick a profile directory"))
             } else {
                 Ok(DEFAULT_MINECRAFT_DIR.to_path_buf())
             }
@@ -92,7 +92,7 @@ pub async fn create(
         .set_active(path)
         .context("Failed to switch to newly created profile")
         .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()))
-        .inspect(|_| println!("The newly created profile is now active"));
+        .inspect(|()| println!("The newly created profile is now active"));
 
     Ok(())
 }

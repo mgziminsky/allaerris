@@ -1,6 +1,5 @@
 use std::path::{Path, PathBuf};
 
-use anyhow::Result;
 use once_cell::sync::Lazy;
 
 static HOME: Lazy<PathBuf> = Lazy::new(|| dirs::home_dir().expect("should be able to determine home dir"));
@@ -29,7 +28,7 @@ fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathB
 
 /// Pick a folder using the terminal or system file picker (depending on the
 /// features flag `gui`)
-pub fn pick_folder(default: impl AsRef<Path>, prompt: &str) -> Result<PathBuf> {
+pub fn pick_folder(default: impl AsRef<Path>, prompt: &str) -> PathBuf {
     let default = default.as_ref();
     let path = show_folder_picker(default, prompt).unwrap_or_else(|| default.to_owned());
 
@@ -48,5 +47,5 @@ pub fn pick_folder(default: impl AsRef<Path>, prompt: &str) -> Result<PathBuf> {
         )
         .map_or_else(PathBuf::new, |p| p.join(parts.as_path()));
 
-    Ok(path)
+    path
 }

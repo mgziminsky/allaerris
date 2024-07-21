@@ -66,7 +66,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                 .set_active(path)
                 .context("Failed to switch to imported profile")
                 .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()))
-                .inspect(|_| println!("The imported profile is now active"));
+                .inspect(|()| println!("The imported profile is now active"));
         },
         ProfileSubCommand::Remove { profile_name, switch_to } => {
             let removed = delete(config, profile_name, switch_to)?;

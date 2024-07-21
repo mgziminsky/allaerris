@@ -89,6 +89,7 @@ impl Profile {
     }
 
     /// See [`data`](Self::data)
+    #[allow(clippy::missing_panics_doc)]
     pub async fn data_mut(&mut self) -> Result<&mut ProfileData> {
         self.data().await?; // Ensure data is initialized
         Ok(self.data.get_mut().expect("data should always have been initialized by here"))

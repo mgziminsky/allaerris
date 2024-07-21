@@ -83,7 +83,7 @@ impl ProfileManager {
         let sha_bytes = sha1.and_then(|s| hex_decode(s).ok());
         if sha_bytes.is_none() || sha_bytes.unwrap().as_ref() == &*computed {
             tokio::fs::rename(temp_path, out_path).await?;
-            Ok(format!("{:x}", computed))
+            Ok(format!("{computed:x}"))
         } else {
             Err(anyhow!(
                 "Incorrect hash for downloaded file:\n\tExpected: {}\n\t  Actual: {computed:x}",

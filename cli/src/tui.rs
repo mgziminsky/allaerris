@@ -184,14 +184,13 @@ pub fn print_project_verbose(proj: &Project) {
 ",
         proj.name.trim().bold(),
         proj.description.trim().italic(),
-        proj.website.as_ref().map(|u| u.as_str()).unwrap_or_default().blue().underline(),
+        proj.website.as_ref().map(url::Url::as_str).unwrap_or_default().blue().underline(),
         id_tag(&proj.id).dimmed(),
         proj.source_url
             .as_ref()
-            .map(|u| u.as_str())
+            .map(url::Url::as_str)
             .map(|u| format!("{} {}", *TICK_GREEN, u.blue().underline()).into())
-            .map(Cow::Owned)
-            .unwrap_or(Cow::Borrowed(&*CROSS_RED)),
+            .map_or(Cow::Borrowed(&*CROSS_RED), Cow::Owned),
         proj.downloads.to_string().yellow(),
         proj.authors.iter().format_with(", ", |a, fmt| fmt(&a.name.cyan())),
         proj.categories.iter().format_with(", ", |c, fmt| fmt(&c.magenta())),
@@ -224,7 +223,7 @@ _{}_
 | Categories  | {} |
 ",
         proj.name.trim(),
-        proj.website.as_ref().map(|u| u.as_str()).unwrap_or_default(),
+        proj.website.as_ref().map(url::Url::as_str).unwrap_or_default(),
         proj.description.trim(),
         format_args!(
             "{} `{}`",
@@ -237,9 +236,8 @@ _{}_
         ),
         proj.source_url
             .as_ref()
-            .map(|u| u.as_str())
-            .map(|u| format!("[YES]({u})").into())
-            .unwrap_or(Cow::Borrowed("NO")),
+            .map(url::Url::as_str)
+            .map_or(Cow::Borrowed("NO"), |u| format!("[YES]({u})").into()),
         proj.authors.iter().format_with(", ", |a, fmt| {
             if let Some(url) = a.url.as_ref() {
                 fmt(&format_args!("[{}]({})", a.name, url))

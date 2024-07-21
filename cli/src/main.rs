@@ -66,6 +66,7 @@ fn main() -> ExitCode {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 async fn actual_main(mut cli_app: Ferium) -> Result<()> {
     // The complete command should not require a config.
     // See [#139](https://github.com/gorilla-devs/ferium/issues/139) for why this might be a problem.
@@ -150,7 +151,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommand::Remove { mod_names } => {
             let profile = helpers::get_active_profile(&mut config)?;
             helpers::check_empty_profile(profile).await?;
-            let removed = subcommands::remove(profile.data_mut().await?, mod_names)?;
+            let removed = subcommands::remove(profile.data_mut().await?, &mod_names)?;
             if !removed.is_empty() {
                 print_mods(
                     format_args!("Removed {} Mods", format!("{}", removed.len()).yellow().bold()),

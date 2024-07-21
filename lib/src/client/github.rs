@@ -1,3 +1,5 @@
+#![allow(clippy::cast_sign_loss)]
+
 use std::collections::BTreeSet;
 
 use async_scoped::TokioScope;
@@ -78,8 +80,15 @@ impl ApiOps for GithubClient {
         ) -> Result<Vec<Version>> {
             let filter = [game_version.unwrap_or_default(), loader.map(ModLoader::as_str).unwrap_or_default()];
             let check = |a: &Asset| {
+                macro_rules! check_ext {
+                    ($ext:literal) => {
+                        std::path::Path::new(&a.name)
+                            .extension()
+                            .map_or(false, |ext| ext.eq_ignore_ascii_case($ext))
+                    };
+                }
                 filter.iter().all(|f| a.name.contains(f))
-                    && (a.name.ends_with(".jar") || a.name.ends_with(".zip"))
+                    && (check_ext!(".jar") || check_ext!(".zip"))
                     && !a.name.ends_with("-sources.jar")
                     && !a.label.as_ref().is_some_and(|l| l == "Source code")
             };

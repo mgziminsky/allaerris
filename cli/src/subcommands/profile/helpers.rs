@@ -23,6 +23,7 @@ pub fn pick_mod_loader(default: Option<ModLoader>) -> Result<ModLoader> {
         "Cauldron",
     ]);
 
+    #[allow(clippy::match_wildcard_for_single_variants)]
     if let Some(default) = default {
         picker = picker.default(match default {
             ModLoader::Fabric => 0,
@@ -60,7 +61,7 @@ pub async fn pick_minecraft_version(default: Option<&str>) -> Result<String> {
             .map(|i| versions[i].clone())?,
         err => {
             let err = err.context("Failed to load minecraft versions".bold()).unwrap_err();
-            eprintln!("{}", format!("{:#}", err).red());
+            eprintln!("{}", format!("{err:#}").red());
             Input::with_theme(&*THEME)
                 .with_prompt("Enter Minecraft version for the profile:")
                 .with_initial_text(default.unwrap_or(DEFAULT_GAME_VERSION))

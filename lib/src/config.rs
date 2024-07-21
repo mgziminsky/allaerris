@@ -291,7 +291,7 @@ mod tests {
         Config {
             active: Some(PATHS[2].clone()),
             profiles: zip(NAMES, &*PATHS)
-                .map(|(name, path)| Profile::new(name.to_string(), path.clone()))
+                .map(|(name, path)| Profile::new((*name).to_string(), path.clone()))
                 .map(Into::into)
                 .collect(),
         }
