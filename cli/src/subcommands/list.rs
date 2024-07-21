@@ -5,7 +5,7 @@ use colored::Colorize;
 use once_cell::sync::Lazy;
 use relibium::{
     client::schema::{Author, ProjectId, ProjectIdSvcType},
-    config::{Mod, Profile},
+    config::{Mod, Profile, VersionedProject},
     modrinth::apis::teams_api::GetTeamsParams,
     Client,
 };
@@ -38,7 +38,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
 
     let data = profile.data().await?;
     let mut projects = client
-        .get_mods(&data.mods.iter().map(Mod::id).map(|id| id as _).collect::<Vec<_>>())
+        .get_mods(&data.mods.iter().map(Mod::project).map(|id| id as _).collect::<Vec<_>>())
         .await
         .context("Failed to load mod details")?;
 

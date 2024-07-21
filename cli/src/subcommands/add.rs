@@ -1,6 +1,6 @@
 use anyhow::Result;
 use colored::Colorize;
-use relibium::{config::profile::ProfileData, Client};
+use relibium::{config::{profile::ProfileData, VersionedProject}, Client};
 
 use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 
@@ -32,7 +32,7 @@ pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>) ->
     });
     // Show not found
     ids.into_iter()
-        .filter(|id| !mods.iter().any(|m| &m.slug == id || m.id() == id))
+        .filter(|id| !mods.iter().any(|m| &m.slug == id || m.project() == id))
         .for_each(|id| println!("{}\t{} — Not Found", *CROSS_RED, id.italic().bold()));
 
     Ok(())

@@ -12,6 +12,8 @@ use crate::{config::ModLoader, ErrorKind, Result};
 impl ApiOps for GithubClient {
     super::get_latest!();
 
+    super::get_version!();
+
     async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
         fetch_repo(self, id.get_github()?).await.map(Mod)
     }

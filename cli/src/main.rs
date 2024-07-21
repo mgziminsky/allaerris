@@ -24,7 +24,7 @@ use relibium::{
     config::{Config, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
     mgmt::{
-        events::{DownloadProgress, ProgressEvent, ProjectIdHash},
+        events::{DownloadId, DownloadProgress, ProgressEvent},
         ProfileManager,
     },
 };
@@ -197,7 +197,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommand::Install => {
             let (sender, handle) = progress_hander();
             ProfileManager::with_channel(sender)
-                .install(&client, helpers::get_active_profile(&mut config)?)
+                .apply(&client, helpers::get_active_profile(&mut config)?)
                 .await?;
             let _ = handle.await;
         },
@@ -217,20 +217,36 @@ pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandl
             let mut bars = HashMap::new();
             while let Ok(evt) = receiver.recv() {
                 match evt {
-                    ProgressEvent::Status(msg) => println!("{msg}"),
-                    ProgressEvent::Download(evt) => handle_dl(evt, &mut bars, &progress),
-                    ProgressEvent::Installed { file, is_new } => {
-                        let _ = progress.println(format!("{} Installed: {}", if is_new { &*TICK_GREEN } else { &*TICK_YELLOW }, file.display()));
+                    ProgressEvent::Status(msg) => {
+                        let _ = progress.println(msg);
                     },
-                    ProgressEvent::Deleted(file) => println!("{}   Deleted: {}", &*TICK_YELLOW, file.display()),
-                    ProgressEvent::Error(err) => eprintln!("{}", style(format!("{:?}", anyhow!(err))).red()),
+                    ProgressEvent::Download(evt) => handle_dl(evt, &mut bars, &progress),
+                    ProgressEvent::Installed { file, is_new, typ } => {
+                        use relibium::mgmt::events::InstallType::*;
+                        let _ = progress.println(format!(
+                            "{} {:>9}: {}",
+                            if is_new { &*TICK_GREEN } else { &*TICK_YELLOW },
+                            match typ {
+                                Mod => "Installed",
+                                Override => "Override",
+                                Other => "Other",
+                            },
+                            file.display()
+                        ));
+                    },
+                    ProgressEvent::Deleted(file) => {
+                        let _ = progress.println(format!("{}   Deleted: {}", &*TICK_GREEN, file.display()));
+                    },
+                    ProgressEvent::Error(err) => {
+                        let _ = progress.println(format!("{}", style(format!("{:?}", anyhow!(err))).red()));
+                    },
                 }
             }
         }),
     )
 }
 
-fn handle_dl(evt: DownloadProgress, bars: &mut HashMap<ProjectIdHash, ProgressBar>, progress: &MultiProgress) {
+fn handle_dl(evt: DownloadProgress, bars: &mut HashMap<DownloadId, ProgressBar>, progress: &MultiProgress) {
     use DownloadProgress::*;
     match evt {
         Start { project, title, length } => {

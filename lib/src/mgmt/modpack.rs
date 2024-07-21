@@ -2,7 +2,7 @@ pub mod forge;
 pub mod modrinth;
 mod version;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, io::Read, path::Path};
 
 use ::modrinth::{
     apis::version_files_api::VersionsFromHashesParams,
@@ -18,33 +18,41 @@ use self::{
 };
 use super::{cache, events::EventSouce, version::VersionSet};
 use crate::{
-    checked_types::PathScopedRef,
+    checked_types::{PathScoped, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
-    config::{profile::ProfileData, ModLoader, Modpack},
+    config::{profile::ProfileData, ModLoader, VersionedProject},
     Client, ProfileManager, Result,
 };
 
 type PackArchive = ZipArchive<std::fs::File>;
 
-#[derive(Debug)]
-pub struct ModpackData {
-    archive: PackArchive,
-    pub mods: PackMods,
-}
-
-#[derive(Debug)]
-pub enum PackMods {
-    Modrinth { known: VersionSet, unknown: Vec<IndexFile> },
-    Forge(HashMap<ProjectId, VersionId>),
-}
 
 impl ProfileManager {
-    pub(super) async fn load_modpack(&self, client: &Client, modpack: &Modpack, data: &ProfileData) -> Result<ModpackData> {
-        let pack_version = client.get_latest(modpack.id(), Some(&data.game_version), Some(data.loader)).await?;
-        let cache_path = cache::version_path(&pack_version, Some(PathScopedRef::new("modpacks").unwrap()));
-        self.dl_version(pack_version, &cache_path).await.unwrap();
+    pub(super) async fn load_modpack(
+        &self,
+        client: &Client,
+        pack: &impl VersionedProject,
+        data: &ProfileData,
+    ) -> Result<(Version, ModpackData)> {
+        let pack_version = if let Some(vid) = pack.version() {
+            client.get_version(vid).await?
+        } else {
+            client
+                .get_latest(pack.project(), Some(&data.game_version), Some(data.loader))
+                .await?
+        };
+        let cache_path = cache::version_path(&pack_version, PathScopedRef::new("modpacks").ok());
+        let version = self
+            .dl_version(pack_version, &cache_path)
+            .await
+            .ok_or(anyhow!("Modpack download failed"))?;
 
-        let mut zip = PackArchive::new(File::open(cache_path).await?.into_std().await).map_err(anyhow::Error::new)?;
+        self.read_pack(client, &cache_path).await.map(|p| (version, p))
+    }
+
+    async fn read_pack(&self, client: &Client, path: &Path) -> Result<ModpackData> {
+        let mut zip = PackArchive::new(File::open(path).await?.into_std().await).map_err(anyhow::Error::new)?;
+
         macro_rules! parse {
             (|$name:ident = $file:literal| $block:expr) => {
                 let pack = if let Ok($name) = zip.by_name($file) {
@@ -54,8 +62,12 @@ impl ProfileManager {
                     None
                 };
                 // Need separate block for return as a workaround for this: https://github.com/rust-lang/rust/issues/92985
-                if let Some(mods) = pack {
-                    return Ok(ModpackData { archive: zip, mods });
+                if let Some((mods, overrides_prefix)) = pack {
+                    return Ok(ModpackData {
+                        archive: zip,
+                        overrides_prefix,
+                        mods,
+                    });
                 }
             };
         }
@@ -69,9 +81,13 @@ impl ProfileManager {
                 client.as_modrinth().ok_or(anyhow!("Modrinth modpack found, but no Modrinth client available"))?,
                 read_json!(index),
             ).await?;
-            PackMods::Modrinth { known, unknown }
+            (PackMods::Modrinth { known, unknown }, PathScoped::new("overrides").unwrap())
         });
-        parse!(|manifest = "manifest.json"| PackMods::Forge(parse_forge(read_json!(manifest))?));
+        parse!(|manifest = "manifest.json"| {
+            let (mods, prefix) = parse_forge(read_json!(manifest))?;
+            (PackMods::Forge(mods), prefix)
+        });
+
         Err(anyhow!("Invalid or unsupported modpack").into())
     }
 
@@ -152,11 +168,61 @@ impl ProfileManager {
     }
 }
 
-fn parse_forge(manifest: ModpackManifest) -> Result<HashMap<ProjectId, VersionId>> {
+fn parse_forge(manifest: ModpackManifest) -> Result<(HashMap<ProjectId, VersionId>, PathScoped)> {
     match manifest {
-        ModpackManifest::V1 { files, .. } => Ok(files
-            .into_iter()
-            .map(|f| (ProjectId::Forge(f.project_id), VersionId::Forge(f.file_id)))
-            .collect()),
+        ModpackManifest::V1 { files, overrides, .. } => Ok((
+            files
+                .into_iter()
+                .map(|f| (ProjectId::Forge(f.project_id), VersionId::Forge(f.file_id)))
+                .collect(),
+            overrides,
+        )),
+    }
+}
+
+
+#[derive(Debug)]
+pub enum PackMods {
+    Modrinth { known: VersionSet, unknown: Vec<IndexFile> },
+    Forge(HashMap<ProjectId, VersionId>),
+}
+
+#[derive(Debug)]
+pub struct ModpackData {
+    archive: PackArchive,
+    overrides_prefix: PathScoped,
+    pub mods: PackMods,
+}
+
+impl ModpackData {
+    pub fn visit_overrides(&mut self, mut cb: impl FnMut(&PathScopedRef, ZipFile)) {
+        let zip = &mut self.archive;
+        for idx in 0..zip.len() {
+            let Ok(file) = zip.by_index(idx) else {
+                continue;
+            };
+            if !file.is_file() {
+                // Do we need to handle symlinks?
+                continue;
+            }
+            let Some(Ok(path)) = file.enclosed_name().map(PathScoped::new) else {
+                continue;
+            };
+            if !path.starts_with(&self.overrides_prefix) {
+                continue;
+            }
+            let path = path.remove_prefix(path.iter().next().unwrap());
+
+            cb(path, ZipFile(file));
+        }
+    }
+}
+
+/// Unit wrapper around lib `ZipFile` only exposing [`Read`] trait
+pub struct ZipFile<'a>(zip::read::ZipFile<'a>);
+impl<'a> Read for ZipFile<'a> {
+    #[inline]
+    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        self.0.read(buf)
     }
 }

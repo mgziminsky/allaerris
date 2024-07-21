@@ -8,7 +8,7 @@ use url::Url;
 use crate::{
     client::schema::Version,
     mgmt::{
-        events::{DownloadProgress, EventSouce, ProjectIdHash},
+        events::{DownloadProgress, EventSouce, DownloadId},
         hash::{hex_decode, verify_sha1},
         ProfileManager,
     },
@@ -59,7 +59,7 @@ impl ProfileManager {
         }
     }
 
-    async fn dl_verified(&self, phash: ProjectIdHash, out_path: &Path, sha1: Option<&String>, url: Url) -> Result<String> {
+    async fn dl_verified(&self, dlid: DownloadId, out_path: &Path, sha1: Option<&String>, url: Url) -> Result<String> {
         if let Some(parent) = out_path.parent() {
             tokio::fs::create_dir_all(parent).await?;
         }
@@ -74,7 +74,7 @@ impl ProfileManager {
         let mut hasher = Sha1::new();
         while let Some(chunk) = resp.chunk().await? {
             file.write_all(&chunk).await?;
-            self.send(DownloadProgress::Progress(phash, chunk.len() as _).into());
+            self.send(DownloadProgress::Progress(dlid, chunk.len() as _).into());
             hasher.update(&chunk);
         }
         file.flush().await?;

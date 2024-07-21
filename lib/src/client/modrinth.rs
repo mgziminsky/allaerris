@@ -91,6 +91,15 @@ impl ApiOps for ModrinthClient {
 
         Ok(versions)
     }
+
+    async fn get_version(&self, id: &impl VersionIdSvcType) -> Result<Version> {
+        let id = id.get_modrinth()?;
+        self.versions()
+            .get_version(&GetVersionParams { id })
+            .await
+            .map(Into::into)
+            .map_err(Into::into)
+    }
 }
 
 #[inline]

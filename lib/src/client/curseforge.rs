@@ -18,6 +18,8 @@ use crate::{config::ModLoader, Result};
 impl ApiOps for ForgeClient {
     super::get_latest!();
 
+    super::get_version!();
+
     async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
         fetch_mod(self, id).await?.try_into()
     }

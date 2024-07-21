@@ -121,6 +121,8 @@ api! {
     /// Get multiple [versions](Version) details by their `ids`
     ++pub get_versions(ids: &[&dyn VersionIdSvcType]) -> Vec<Version>;
 
+    /// Get multiple [versions](Version) details by their `ids`
+    pub get_version(id: &impl VersionIdSvcType) -> Version;
 
     /// Get the latest [versions](Version) of the project with `id`
     ///
@@ -220,3 +222,14 @@ macro_rules! get_latest {
     };
 }
 use get_latest;
+
+/// The default get_version impl since I can't figure out how to allow bodies in
+/// the api macro
+macro_rules! get_version {
+    () => {
+        async fn get_version(&self, id: &impl VersionIdSvcType) -> Result<Version> {
+            self.get_versions(&[id]).await?.pop().ok_or(crate::error::ErrorKind::DoesNotExist.into())
+        }
+    };
+}
+use get_version;

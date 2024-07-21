@@ -8,7 +8,18 @@ use crate::{
 };
 
 
-/// [Project ID](ProjectId) with and optional [version ID](VersionId) from the
+/// Represents a type that with a [project ID](ProjectId) and an optional
+/// [version ID](VersionId). When both are present, they MUST belong to the same
+/// service
+pub trait VersionedProject {
+    /// The [project id](ProjectId)
+    fn project(&self) -> &ProjectId;
+
+    /// The [version id](VersionId)
+    fn version(&self) -> Option<&VersionId>;
+}
+
+/// [Project ID](ProjectId) with an optional [version ID](VersionId) from the
 /// same service
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProjectWithVersion {
@@ -16,6 +27,8 @@ pub struct ProjectWithVersion {
     pub(crate) version: Option<VersionId>,
 }
 
+/// Error when a [`ProjectWithVersion`] is created with values belonging to
+/// different services
 #[derive(Error, Debug, Copy, Clone)]
 #[error("project and version can not belong to different services")]
 pub struct ServiceMismatchError;
@@ -34,18 +47,6 @@ impl ProjectWithVersion {
             _ => return Err(ServiceMismatchError),
         }
         Ok(Self { project, version })
-    }
-
-    /// The [project id](ProjectId)
-    #[inline]
-    pub fn project(&self) -> &ProjectId {
-        &self.project
-    }
-
-    /// The [version id](VersionId)
-    #[inline]
-    pub fn version(&self) -> Option<&VersionId> {
-        self.version.as_ref()
     }
 }
 impl From<ProjectId> for ProjectWithVersion {

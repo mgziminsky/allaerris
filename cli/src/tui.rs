@@ -7,7 +7,7 @@ use itertools::Itertools;
 use once_cell::sync::Lazy;
 use relibium::{
     client::schema::{Project, ProjectId},
-    config::{Mod, Profile},
+    config::{Mod, Profile, VersionedProject},
 };
 
 static CF: Lazy<ColoredString> = Lazy::new(|| "CF".red());
@@ -104,8 +104,8 @@ fn id_tag(id: &ProjectId) -> String {
 }
 
 pub fn mod_single_line(m: &Mod) -> String {
-    let id = id_tag(m.id());
-    let name = match m.id() {
+    let id = id_tag(m.project());
+    let name = match m.project() {
         ProjectId::Forge(_) | ProjectId::Modrinth(_) => m.name.bold().to_string(),
         ProjectId::Github((owner, repo)) => format!("{}/{}", owner.dimmed(), repo.bold()),
     };

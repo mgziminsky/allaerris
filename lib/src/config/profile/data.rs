@@ -6,7 +6,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{Mod, ModLoader, Modpack},
+    config::{Mod, ModLoader, Modpack, VersionedProject},
     fs_util::{FsUtil, FsUtils},
     PathAbsolute, Result,
 };
@@ -113,7 +113,7 @@ impl ProfileData {
         let idxs = self.mods.iter().enumerate().fold(vec![], |mut found, (idx, m)| {
             if to_remove
                 .iter()
-                .any(|(rm_id, rm_name)| rm_name == &m.name.to_lowercase() || rm_id == &m.id().to_string())
+                .any(|(rm_id, rm_name)| rm_name == &m.name.to_lowercase() || rm_id == &m.project().to_string())
             {
                 found.push(idx);
             }

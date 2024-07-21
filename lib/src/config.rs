@@ -18,7 +18,7 @@ use once_cell::sync::Lazy;
 #[doc(inline)]
 pub use self::profile::Profile;
 use self::profile::ProfileByPath;
-pub use self::{loader::*, modpack::*, mods::*, project_with_version::ProjectWithVersion};
+pub use self::{loader::*, modpack::*, mods::*, project_with_version::*};
 use crate::{
     fs_util::{FsUtil, FsUtils},
     ErrorKind, PathAbsolute, Result, CONF_DIR,

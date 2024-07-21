@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
@@ -6,11 +9,12 @@ use serde::{Deserialize, Serialize};
 use crate::{
     checked_types::PathScoped,
     client::schema::{ProjectId, VersionId},
-    config::{profile, ModLoader, ProjectWithVersion},
+    config::{profile, ModLoader, ProjectWithVersion, VersionedProject},
     fs_util::{FsUtil, FsUtils},
     Result, StdResult,
 };
 
+pub type PathHashes = BTreeMap<PathScoped, String>;
 const FILENAME: &str = concat!(profile::consts!(FILENAME), ".lock");
 
 
@@ -19,11 +23,14 @@ pub struct LockFile {
     pub game_version: String,
     pub loader: ModLoader,
 
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pack: Option<LockedPack>,
+
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mods: Vec<LockedMod>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub overrides: Vec<PathScoped>,
+    #[serde(default, skip_serializing_if = "PathHashes::is_empty")]
+    pub other: PathHashes,
 }
 
 impl LockFile {
@@ -62,15 +69,18 @@ pub struct LockedMod {
     pub sha1: String,
 }
 
-impl LockedMod {
-    pub fn project(&self) -> &ProjectId {
-        self.id.project()
+impl VersionedProject for LockedMod {
+    #[inline]
+    fn project(&self) -> &ProjectId {
+        &self.id.project
     }
 
-    pub fn version(&self) -> &VersionId {
-        self.id.version()
+    #[inline]
+    fn version(&self) -> Option<&VersionId> {
+        Some(&self.id.version)
     }
 }
+
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(try_from = "ProjectWithVersion", into = "ProjectWithVersion")]
@@ -83,14 +93,6 @@ impl LockedId {
     #[inline]
     pub fn new(project: ProjectId, version: VersionId) -> StdResult<Self, anyhow::Error> {
         ProjectWithVersion::new(project, Some(version))?.try_into()
-    }
-
-    fn project(&self) -> &ProjectId {
-        &self.project
-    }
-
-    fn version(&self) -> &VersionId {
-        &self.version
     }
 }
 
@@ -116,5 +118,50 @@ impl From<LockedId> for ProjectWithVersion {
         }
     }
 }
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct LockedPack {
+    #[serde(flatten)]
+    pub data: LockedMod,
+
+    #[serde(default, skip_serializing_if = "PathHashes::is_empty")]
+    pub overrides: PathHashes,
+}
+
+impl LockedPack {
+    pub fn new(data: LockedMod) -> Self {
+        Self {
+            data,
+            overrides: PathHashes::new(),
+        }
+    }
+}
+
+impl VersionedProject for LockedPack {
+    #[inline]
+    fn project(&self) -> &ProjectId {
+        self.data.project()
+    }
+
+    #[inline]
+    fn version(&self) -> Option<&VersionId> {
+        self.data.version()
+    }
+}
+
+impl std::ops::Deref for LockedPack {
+    type Target = LockedMod;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+impl std::ops::DerefMut for LockedPack {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.data
+    }
+}
+
 
 crate::cow::cow!(LockedMod);

@@ -2,6 +2,8 @@
 
 use serde::Deserialize;
 
+use crate::checked_types::PathScoped;
+
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
@@ -15,6 +17,7 @@ pub enum ModpackManifest {
         name: String,
         author: String,
         files: Vec<ManifestFile>,
+        overrides: PathScoped,
     },
 }
 

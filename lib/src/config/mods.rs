@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::ProjectWithVersion;
+use super::{project_with_version::VersionedProject, ProjectWithVersion};
 use crate::client::schema::{self, Project, ProjectId, VersionId};
 
 /// The basic data needed to lookup and install a particular mod from one of the
@@ -19,15 +19,15 @@ pub struct Mod {
     pub name: String,
 }
 
-impl Mod {
-    /// The [project id](ProjectId) of this mod
-    pub fn id(&self) -> &ProjectId {
-        self.id.project()
+impl VersionedProject for Mod {
+    #[inline]
+    fn project(&self) -> &ProjectId {
+        &self.id.project
     }
 
-    /// The [version id](VersionId) of this mod if present
-    pub fn version(&self) -> Option<&VersionId> {
-        self.id.version()
+    #[inline]
+    fn version(&self) -> Option<&VersionId> {
+        self.id.version.as_ref()
     }
 }
 
