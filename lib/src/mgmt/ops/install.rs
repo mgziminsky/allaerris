@@ -392,7 +392,7 @@ async fn merge_sources<'a>(
             versioned.remove(pid);
             pending.remove(pid);
             installed.push(m.into());
-        } else {
+        } else if !pending.contains(pid) {
             versioned.insert(pid.into(), vid.into());
         }
     }

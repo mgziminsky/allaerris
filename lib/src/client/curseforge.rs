@@ -20,11 +20,11 @@ impl ApiOps for ForgeClient {
 
     super::get_version!();
 
-    async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
+    async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
         fetch_mod(self, id).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: &impl ProjectIdSvcType) -> Result<Modpack> {
+    async fn get_modpack(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Modpack> {
         fetch_mod(self, id).await?.try_into()
     }
 
@@ -49,7 +49,7 @@ impl ApiOps for ForgeClient {
 
     async fn get_project_versions(
         &self,
-        id: &impl ProjectIdSvcType,
+        id: &(impl ProjectIdSvcType + ?Sized),
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {

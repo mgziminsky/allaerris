@@ -17,11 +17,11 @@ use crate::{config::ModLoader, Result};
 impl ApiOps for ModrinthClient {
     super::get_latest!();
 
-    async fn get_mod(&self, id: &impl ProjectIdSvcType) -> Result<Mod> {
+    async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
         fetch_project(self, id.get_modrinth()?).await?.try_into()
     }
 
-    async fn get_modpack(&self, id: &impl ProjectIdSvcType) -> Result<Modpack> {
+    async fn get_modpack(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Modpack> {
         fetch_project(self, id.get_modrinth()?).await?.try_into()
     }
 
@@ -43,7 +43,7 @@ impl ApiOps for ModrinthClient {
 
     async fn get_project_versions(
         &self,
-        id: &impl ProjectIdSvcType,
+        id: &(impl ProjectIdSvcType + ?Sized),
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
@@ -92,7 +92,7 @@ impl ApiOps for ModrinthClient {
         Ok(versions)
     }
 
-    async fn get_version(&self, id: &impl VersionIdSvcType) -> Result<Version> {
+    async fn get_version(&self, id: &(impl VersionIdSvcType + ?Sized)) -> Result<Version> {
         let id = id.get_modrinth()?;
         self.versions()
             .get_version(&GetVersionParams { id })
