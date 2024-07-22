@@ -32,6 +32,7 @@ type Downloads = Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::Joi
 
 static MODS_PATH: Lazy<&PathScopedRef> = Lazy::new(|| PathScopedRef::new("mods").unwrap());
 
+// Public interface
 impl ProfileManager {
     /// Attempt to download and install all mods defined in
     /// [`profile`](Profile).
@@ -40,8 +41,7 @@ impl ProfileManager {
     /// deleted. Updated versions of mods will delete the old version after
     /// installing the update.
     ///
-    /// Will return a the list of all successfully installed mods. Progress and
-    /// most errors will be sent to [`channel`]
+    /// Progress and most errors will be sent to [`channel`]
     ///
     /// # Errors
     ///
@@ -74,23 +74,8 @@ impl ProfileManager {
             mut pending,
         } = merge_sources(&data.mods, &lockfile.mods, pack.as_mut(), profile_path, &mut delete, reset).await;
 
-        self.send(ProgressEvent::Status("Fetch version details...".to_string()));
         self.fetch_versions(client, data, unversioned, versioned, &mut pending).await;
-
-        self.send(ProgressEvent::Status("Downloading...".to_string()));
-        let ((), downloads) = TokioScope::scope_and_block(|scope| {
-            let sub = PathScopedRef::new("mods").ok();
-            for v in pending {
-                let save_path = cache::version_path(&v, v.filename.parent().and_then(|p| p.file_name_path()).or(sub));
-                scope.spawn(async move {
-                    self.dl_version(&*v, &save_path).await.map(|sha1| {
-                        let mut v = v.into_inner();
-                        v.sha1.replace(sha1);
-                        (v, save_path)
-                    })
-                });
-            }
-        });
+        let downloads = self.download_files(pending);
 
         // Start deleting old files while new ones install
         let delete_job = self.spawn_delete_files(&delete, profile_path);
@@ -135,81 +120,10 @@ impl ProfileManager {
 
         Ok(())
     }
+}
 
-    fn install_modrinth_unknown(&self, lock: &mut PathHashes, profile_path: &PathAbsolute, unknown: &[IndexFile]) {
-        if !unknown.is_empty() {
-            self.send(ProgressEvent::Status("Installing remaining external pack mods...".into()));
-        }
-        let ((), downloads) = TokioScope::scope_and_block(|scope| {
-            for file in unknown {
-                scope.spawn(async move {
-                    let Ok(path) = file.path_scoped() else {
-                        return None;
-                    };
-                    self.dl_version(file, &profile_path.join(path))
-                        .await
-                        .map(|sha1| (sha1, path.to_owned()))
-                });
-            }
-        });
-        for dl in downloads {
-            match dl {
-                Ok(Some((sha1, path))) => {
-                    self.send(ProgressEvent::Installed {
-                        file: path.clone(),
-                        is_new: lock.insert(path, sha1).is_none(),
-                        typ: InstallType::Other,
-                    });
-                },
-                Ok(None) => { /* Download failed. Error already sent to channel */ },
-                Err(e) => self.send_err(anyhow!(e).into()),
-            }
-        }
-    }
-
-    fn extract_overrides(&self, lockfile: &mut LockFile, mut pack: ModpackData, profile_path: &PathAbsolute) {
-        self.send(ProgressEvent::Status("Modpack Overrides...".to_string()));
-        let Some(LockedPack { ref mut overrides, .. }) = lockfile.pack.as_mut() else {
-            unreachable!("Should have lockfile pack if we have pack data");
-        };
-        pack.visit_overrides(|path, mut file| {
-            macro_rules! event {
-                ($new:literal) => {
-                    ProgressEvent::Installed {
-                        file: path.to_owned(),
-                        is_new: $new,
-                        typ: InstallType::Override,
-                    }
-                };
-            }
-
-            let target = &profile_path.join(path);
-            if let Some(sha1) = overrides.get(path) {
-                if let Ok(true) = verify_sha1_sync(sha1, target) {
-                    self.send(event!(false));
-                    return;
-                };
-            }
-
-            let sha1 = {
-                use std::{fs, io};
-                target.parent().map(fs::create_dir_all);
-                fs::File::create(target).and_then(|target| {
-                    let mut target = Sha1Writer::new(target);
-                    io::copy(&mut file, &mut target)?;
-                    target.finalize_str()
-                })
-            };
-            match sha1 {
-                Ok(sha1) => {
-                    overrides.insert(path.to_owned(), sha1);
-                    self.send(event!(true));
-                },
-                Err(e) => self.send_err(e.into()),
-            }
-        });
-    }
-
+// Internal helpers
+impl ProfileManager {
     /// Fetches and loads the modpack data from the pack index.
     async fn load_pack(
         &self,
@@ -295,6 +209,7 @@ impl ProfileManager {
         versioned: HashMap<Cow<'_, ProjectId>, Cow<'_, VersionId>>,
         out_pending: &mut VersionSet,
     ) {
+        self.send(ProgressEvent::Status("Fetch version details...".to_string()));
         // Get the latest version of all unversioned projects
         let ((), pending) = TokioScope::scope_and_block(|scope| {
             for id in &unversioned {
@@ -334,6 +249,39 @@ impl ProfileManager {
         }
     }
 
+    fn download_files(&self, pending: VersionSet) -> Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::JoinError>> {
+        if !pending.is_empty() {
+            self.send(ProgressEvent::Status("Downloading...".to_string()));
+        }
+        let ((), downloads) = TokioScope::scope_and_block(|scope| {
+            let sub = PathScopedRef::new("mods").ok();
+            for v in pending {
+                let save_path = cache::version_path(&v, v.filename.parent().and_then(|p| p.file_name_path()).or(sub));
+                scope.spawn(async move {
+                    self.download(&*v, &save_path).await.map(|sha1| {
+                        let mut v = v.into_inner();
+                        v.sha1.replace(sha1);
+                        (v, save_path)
+                    })
+                });
+            }
+        });
+        downloads
+    }
+
+    fn spawn_delete_files(&self, delete: &[PathScoped], profile_path: &Path) -> tokio::task::JoinHandle<()> {
+        let delete = delete.iter().map(|p| (p.to_owned(), profile_path.join(p))).collect::<Vec<_>>();
+        let channel = self.channel.clone();
+        tokio::task::spawn_blocking(move || {
+            for (p, file) in delete {
+                match std::fs::remove_file(file).with_context(|| format!("Failed to delete file `{}`", p.display())) {
+                    Ok(()) => channel.send(ProgressEvent::Deleted(p)),
+                    Err(e) => channel.send(ProgressEvent::Error(e.into())),
+                }
+            }
+        })
+    }
+
     async fn install_downloaded(&self, downloads: Downloads, profile_path: &Path) -> Vec<LockedMod> {
         let mut installed = Vec::with_capacity(downloads.len());
         for dl in downloads {
@@ -356,17 +304,78 @@ impl ProfileManager {
         installed
     }
 
-    fn spawn_delete_files(&self, delete: &[PathScoped], profile_path: &Path) -> tokio::task::JoinHandle<()> {
-        let delete = delete.iter().map(|p| (p.to_owned(), profile_path.join(p))).collect::<Vec<_>>();
-        let channel = self.channel.clone();
-        tokio::task::spawn_blocking(move || {
-            for (p, file) in delete {
-                match std::fs::remove_file(file).with_context(|| format!("Failed to delete file `{}`", p.display())) {
-                    Ok(()) => channel.send(ProgressEvent::Deleted(p)),
-                    Err(e) => channel.send(ProgressEvent::Error(e.into())),
-                }
+    fn install_modrinth_unknown(&self, lock: &mut PathHashes, profile_path: &PathAbsolute, unknown: &[IndexFile]) {
+        if !unknown.is_empty() {
+            self.send(ProgressEvent::Status("Installing remaining external pack mods...".into()));
+        }
+        let ((), downloads) = TokioScope::scope_and_block(|scope| {
+            for file in unknown {
+                scope.spawn(async move {
+                    let Ok(path) = file.path_scoped() else {
+                        return None;
+                    };
+                    self.download(file, &profile_path.join(path))
+                        .await
+                        .map(|sha1| (sha1, path.to_owned()))
+                });
             }
-        })
+        });
+        for dl in downloads {
+            match dl {
+                Ok(Some((sha1, path))) => {
+                    self.send(ProgressEvent::Installed {
+                        file: path.clone(),
+                        is_new: lock.insert(path, sha1).is_none(),
+                        typ: InstallType::Other,
+                    });
+                },
+                Ok(None) => { /* Download failed. Error already sent to channel */ },
+                Err(e) => self.send_err(anyhow!(e).into()),
+            }
+        }
+    }
+
+    fn extract_overrides(&self, lockfile: &mut LockFile, mut pack: ModpackData, profile_path: &PathAbsolute) {
+        self.send(ProgressEvent::Status("Modpack Overrides...".to_string()));
+        let Some(LockedPack { ref mut overrides, .. }) = lockfile.pack.as_mut() else {
+            unreachable!("Should have lockfile pack if we have pack data");
+        };
+        pack.visit_overrides(|path, mut file| {
+            macro_rules! event {
+                ($new:literal) => {
+                    ProgressEvent::Installed {
+                        file: path.to_owned(),
+                        is_new: $new,
+                        typ: InstallType::Override,
+                    }
+                };
+            }
+
+            let target = &profile_path.join(path);
+            if let Some(sha1) = overrides.get(path) {
+                if let Ok(true) = verify_sha1_sync(sha1, target) {
+                    self.send(event!(false));
+                    return;
+                };
+            }
+
+            let sha1 = {
+                use std::{fs, io};
+                target.parent().map(fs::create_dir_all);
+                fs::File::create(target).and_then(|target| {
+                    let mut target = Sha1Writer::new(target);
+                    io::copy(&mut file, &mut target)?;
+                    target.finalize_str()
+                })
+            };
+            match sha1 {
+                Ok(sha1) => {
+                    overrides.insert(path.to_owned(), sha1);
+                    self.send(event!(true));
+                },
+                Err(e) => self.send_err(e.into()),
+            }
+        });
     }
 }
 
@@ -464,6 +473,7 @@ async fn install_version(profile_path: &Path, v: Version, cached: &Path) -> Resu
         .with_context(|| format!("Failed to copy downloaded mod into profile: {}", lm.file.display()))?;
     Ok(lm)
 }
+
 
 #[derive(Debug, Default)]
 struct ResolvedMods<'a> {

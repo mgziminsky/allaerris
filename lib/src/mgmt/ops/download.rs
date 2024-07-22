@@ -27,7 +27,7 @@ pub trait Downloadable: Sync {
 
 impl ProfileManager {
     #[inline]
-    pub(in crate::mgmt) async fn dl_version(&self, dl: &dyn Downloadable, save_path: &Path) -> Option<String> {
+    pub(in crate::mgmt) async fn download(&self, dl: &dyn Downloadable, save_path: &Path) -> Option<String> {
         let id = dl.id();
         let title = dl.title();
         self.send(

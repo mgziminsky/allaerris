@@ -42,7 +42,7 @@ impl ProfileManager {
                 .await?
         };
         let cache_path = cache::version_path(&pack_version, PathScopedRef::new("modpacks").ok());
-        let Some(sha1) = self.dl_version(&pack_version, &cache_path).await else {
+        let Some(sha1) = self.download(&pack_version, &cache_path).await else {
             return Err(anyhow!("Modpack download failed").into());
         };
         pack_version.sha1.replace(sha1);
