@@ -159,11 +159,7 @@ mod from {
             Self {
                 id: ProjectId::Forge(value.id),
                 name: value.name,
-                website: value
-                    .class_id
-                    .and_then(class_slug)
-                    .and_then(|class| HOME.join(class).ok())
-                    .and_then(|url| url.join(&value.slug).ok()),
+                website: proj_website(value.class_id, &value.slug),
                 slug: value.slug,
                 description: value.summary,
                 created: Some(value.date_released),
@@ -287,19 +283,57 @@ mod from {
     }
 
 
+    fn proj_website(class_id: Option<u64>, slug: &str) -> Option<Url> {
+        class_id
+            .and_then(class_slug)
+            .and_then(|class| HOME.join(class).ok())
+            .and_then(|url| url.join(slug).ok())
+    }
+
     /// Values taken from the api as of 2024-06
     const fn class_slug(cid: u64) -> Option<&'static str> {
+        // NOTE: No leading slash, and trailing slash are required for url joining to
+        // work properly
         Some(match cid {
-            5 => "bukkit-plugins",
-            6 => "mc-mods",
-            12 => "texture-packs",
-            17 => "worlds",
-            4471 => "modpacks",
-            4546 => "customization",
-            4559 => "mc-addons",
-            6552 => "shaders",
-            6945 => "data-packs",
+            5 => "bukkit-plugins/",
+            6 => "mc-mods/",
+            12 => "texture-packs/",
+            17 => "worlds/",
+            4471 => "modpacks/",
+            4546 => "customization/",
+            4559 => "mc-addons/",
+            6552 => "shaders/",
+            6945 => "data-packs/",
             _ => return None,
         })
+    }
+
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn proj_website_none() {
+            assert_eq!(proj_website(None, "test"), None);
+        }
+
+        #[test]
+        fn proj_website_mod() {
+            const EXPECTED: &str = "/mc-mods/test";
+
+            let site = proj_website(Some(MOD_CLASS_ID), "test").expect("should produce a valid url");
+            let path = site.path();
+            assert_eq!(&path[path.len() - EXPECTED.len()..], EXPECTED);
+        }
+
+        #[test]
+        fn proj_website_pack() {
+            const EXPECTED: &str = "/modpacks/test";
+
+            let site = proj_website(Some(MODPACK_CLASS_ID), "test").expect("should produce a valid url");
+            let path = site.path();
+            assert_eq!(&path[path.len() - EXPECTED.len()..], EXPECTED);
+        }
     }
 }

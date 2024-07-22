@@ -60,7 +60,7 @@ pub enum SubCommand {
         #[arg(value_enum)]
         shell: Shell,
     },
-    /// List all the mods in the profile, and with their metadata if verbose
+    /// List all the mods in the profile, including their metadata if verbose
     #[command(visible_alias = "mods")]
     List {
         /// Show additional information about the mod
@@ -73,7 +73,7 @@ pub enum SubCommand {
         #[arg(long, short, visible_alias = "md")]
         markdown: bool,
     },
-    /// Add, configure, delete, switch, list, or upgrade modpacks
+    /// Add, configure, or delete the current modpack
     Modpack {
         #[command(subcommand)]
         subcommand: Option<ModpackSubCommand>,
@@ -93,7 +93,7 @@ pub enum SubCommand {
         mod_names: Vec<String>,
     },
     /// Download and install everything configured in the current profile
-    #[command(visible_aliases = ["download"])]
+    #[command(visible_aliases = ["apply"])]
     Install,
 }
 
@@ -103,8 +103,7 @@ pub enum ProfileSubCommand {
     Info,
     /// List all the profiles with their data
     List,
-    /// Create a new profile.
-    /// Optionally, provide the settings as arguments.
+    /// Create a new profile. Prompts when no options given
     #[command(visible_aliases = ["create"])]
     New {
         /// The Minecraft version to use
@@ -132,19 +131,16 @@ pub enum ProfileSubCommand {
         #[arg(value_hint(ValueHint::DirPath), default_value = DEFAULT_MINECRAFT_DIR.as_os_str())]
         path: PathBuf,
     },
-    /// Delete a profile.
-    /// Optionally, provide the name of the profile to delete.
+    /// Delete a profile. Prompts when no options given
     #[command(visible_aliases = ["rm", "delete", "del"])]
     Remove {
         /// The name of the profile to delete
         profile_name: Option<String>,
-        /// The name of the profile to switch to afterwards
+        /// The profile to switch to afterwards
         #[arg(long, short)]
         switch_to: Option<String>,
     },
-    /// Configure the current profile's name, Minecraft version, mod loader, and
-    /// output directory. Optionally, provide the settings to change as
-    /// arguments.
+    /// Configure the current profile's name, Minecraft version, and mod loader
     #[command(visible_aliases = ["config", "conf"])]
     Configure {
         /// The Minecraft version to use
@@ -158,10 +154,9 @@ pub enum ProfileSubCommand {
         #[arg(long, short)]
         name: Option<String>,
     },
-    /// Switch between different profiles.
-    /// Optionally, provide the name of the profile to switch to.
+    /// Switch between different profiles. Prompts when no options given
     Switch {
-        /// The name of the profile to switch to
+        /// The name or path suffix of the profile to switch to
         profile_name: Option<String>,
     },
 }
@@ -171,17 +166,18 @@ pub enum ModpackSubCommand {
     /// Show information about the current modpack
     Info,
     /// Set a modpack on the active profile.
-    #[command(visible_aliases = ["new", "create"])]
+    #[command(visible_aliases = ["set"])]
     Add {
         /// The identifier of the modpack/project
         ///
         /// The Modrinth project ID is specified at the bottom of the left
-        /// sidebar under 'Technical information'. You can also use the
-        /// project slug for this. The CurseForge project ID is
-        /// specified at the top of the right sidebar under 'About Project'.
+        /// sidebar under 'Technical information'. You can also use the project
+        /// slug in the URL.
+        /// The CurseForge project ID is specified at the top of the right
+        /// sidebar under 'About Project'.
         id: String,
         /// Whether to install the modpack's overrides to the output directory.
-        /// This will override existing files when upgrading.
+        /// This will overwrite existing files when installing.
         #[arg(long, short)]
         install_overrides: Option<bool>,
     },
@@ -197,7 +193,7 @@ pub enum ModpackSubCommand {
     #[command(visible_aliases = ["config", "conf"])]
     Configure {
         /// Whether to install the modpack's overrides to the output directory.
-        /// This will override existing files when upgrading.
+        /// This will overwrite existing files when installing.
         #[arg(long, short)]
         install_overrides: Option<bool>,
     },
