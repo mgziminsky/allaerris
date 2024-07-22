@@ -14,7 +14,7 @@ static CF: Lazy<ColoredString> = Lazy::new(|| "CF".red());
 static MR: Lazy<ColoredString> = Lazy::new(|| "MR".green());
 static GH: Lazy<ColoredString> = Lazy::new(|| "GH".purple());
 
-pub const CROSS: &str = "⨉";
+pub const CROSS: &str = "✗";
 pub static CROSS_RED: Lazy<ColoredString> = Lazy::new(|| CROSS.red());
 
 pub const TICK: &str = "✓";
@@ -24,12 +24,12 @@ pub static TICK_YELLOW: Lazy<ColoredString> = Lazy::new(|| TICK.yellow());
 pub static THEME: Lazy<ColorfulTheme> = Lazy::new(Default::default);
 pub static PROG_BYTES: Lazy<ProgressStyle> = Lazy::new(|| {
     ProgressStyle::with_template(
-        "{spinner} {msg:^20} ({eta:.bold}) {wide_bar:.cyan/blue} [{bytes_per_sec:.green} | {bytes:.cyan} / {total_bytes:.blue}]",
+        "{spinner} {msg} ({eta:.bold.yellow}) {wide_bar:.cyan/blue} [{bytes_per_sec:.green} | {bytes:.cyan} / {total_bytes:.blue}]",
     )
     .expect("template should be valid")
 });
 pub static PROG_DONE: Lazy<ProgressStyle> =
-    Lazy::new(|| ProgressStyle::with_template("{prefix:.bold} {msg} [{elapsed}]").expect("template should be valid"));
+    Lazy::new(|| ProgressStyle::with_template("{prefix:.bold} {msg} [{elapsed:.yellow} - {bytes:.cyan}]").expect("template should be valid"));
 
 macro_rules! min {
     ($a:expr, $b:expr) => {

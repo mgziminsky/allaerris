@@ -219,12 +219,12 @@ pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandl
             while let Ok(evt) = receiver.recv() {
                 match evt {
                     ProgressEvent::Status(msg) => {
-                        let _ = progress.println(msg);
+                        println!("{msg}");
                     },
                     ProgressEvent::Download(evt) => handle_dl(evt, &mut bars, &progress),
                     ProgressEvent::Installed { file, is_new, typ } => {
                         use relibium::mgmt::events::InstallType::*;
-                        let _ = progress.println(format!(
+                        println!(
                             "{} {:>9}: {}",
                             if is_new { &*TICK_GREEN } else { &*TICK_YELLOW },
                             match typ {
@@ -233,13 +233,13 @@ pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandl
                                 Other => "Other",
                             },
                             file.display()
-                        ));
+                        );
                     },
                     ProgressEvent::Deleted(file) => {
-                        let _ = progress.println(format!("{}   Deleted: {}", &*TICK_GREEN, file.display()));
+                        println!("{}   Deleted: {}", &*TICK_GREEN, file.display());
                     },
                     ProgressEvent::Error(err) => {
-                        let _ = progress.println(format!("{}", style(format!("{:?}", anyhow!(err))).red()));
+                        eprintln!("{}", style(format!("{:?}", anyhow!(err))).red());
                     },
                 }
             }
@@ -261,16 +261,14 @@ fn handle_dl(evt: DownloadProgress, bars: &mut HashMap<DownloadId, ProgressBar>,
         },
         Success(id) => {
             if let Some(bar) = bars.remove(&id) {
-                bar.with_style(PROG_DONE.clone())
-                    .with_prefix(TICK_GREEN.to_string())
-                    .finish_using_style();
+                bar.with_style(PROG_DONE.clone()).with_prefix(TICK_GREEN.to_string()).finish();
             }
         },
         Fail(id, err) => {
             if let Some(bar) = bars.remove(&id) {
                 bar.with_style(PROG_DONE.clone())
                     .with_prefix(CROSS_RED.to_string())
-                    .abandon_with_message(err.to_string());
+                    .abandon_with_message(style(err).bright().red().to_string());
             }
         },
     }
