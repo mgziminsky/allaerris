@@ -35,16 +35,24 @@ pub struct Ferium {
 #[derive(Subcommand)]
 pub enum SubCommand {
     /// Add mods to the active profile
-    #[command(visible_aliases = ["new", "create"])]
     Add {
         /// The identifier(s) of the mod/project/repository
         ///
         /// The Modrinth project ID is specified at the bottom of the left
         /// sidebar under 'Technical information'. You can also use the project
-        /// slug in the URL. The CurseForge project ID is specified at the top
-        /// of the right sidebar under 'About Project'. The GitHub identifier is
-        /// the repository's full name, e.g. `gorilla-devs/ferium`.
-        identifiers: Vec<String>,
+        /// slug in the URL.
+        /// The CurseForge project ID is specified at the top of the right
+        /// sidebar under 'About Project'.
+        /// The GitHub identifier is the repository's full name, e.g.
+        /// `gorilla-devs/ferium`.
+        ids: Vec<String>,
+
+        /// Prevent the mod(s) from being installed
+        ///
+        /// This will prevent the specified mods from being installed as part of
+        /// a modpack
+        #[arg(short = 'x', long)]
+        exclude: bool,
     },
     /// Print shell auto completions for the specified shell
     Complete {

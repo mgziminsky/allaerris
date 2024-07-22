@@ -1,5 +1,5 @@
 use std::{
-    collections::{BinaryHeap, HashSet},
+    collections::{BinaryHeap, HashMap},
     path::{Path, PathBuf},
 };
 
@@ -50,6 +50,8 @@ pub struct ProfileData {
     /// from the modpack if present. This can be used to override
     /// the version of some mods in a modpack while leaving the others
     /// unaffected.
+    ///
+    /// Values are expected to be unique on [project id](Mod::project())
     pub mods: Vec<Mod>,
 
     /// The modpack to use as the base for this profile
@@ -87,16 +89,34 @@ impl ProfileData {
 
     /// Attempt to add all `mods` to this profile. Only adds if not already
     /// present based on [`id`](Mod::id). Returns a list of [`Result`] where
-    /// [`Ok`] means the mod was added, and [`Err`] means it was already
+    /// [`Ok`] means the mod was added/updated, and [`Err`] means it was already
     /// present.
     pub fn add_mods<'m>(&mut self, mods: impl IntoIterator<Item = &'m Mod>) -> Vec<StdResult<&'m Mod, &'m Mod>> {
-        let set = HashSet::<_>::from_iter(&self.mods);
+        let mods = mods.into_iter();
+        let cur_mods: HashMap<_, _> = self.mods.iter().enumerate().map(|(i, m)| (m, i)).collect();
 
-        let checked: Vec<_> = mods.into_iter().map(|m| if set.contains(m) { Err(m) } else { Ok(m) }).collect();
+        let mut checked = Vec::with_capacity(mods.size_hint().0);
+        let mut up = vec![];
+        for new in mods {
+            match cur_mods.get_key_value(new) {
+                Some((exist, i)) if exist.exclude != new.exclude => up.push((new, *i)),
+                Some(_) => checked.push(Err(new)),
+                None => checked.push(Ok(new)),
+            }
+        }
 
-        let to_add = checked.iter().filter_map(|r| r.ok());
-        self.mods.reserve(to_add.clone().count());
-        self.mods.extend(to_add.cloned());
+        // Update excluded for existing
+        let up: Vec<_> = up
+            .into_iter()
+            .map(|(m, i)| {
+                self.mods[i].exclude = m.exclude;
+                Ok(m)
+            })
+            .collect();
+        // Add new
+        self.mods.extend(checked.iter().filter_map(|r| r.ok()).cloned());
+        // Append updated
+        checked.extend(up);
 
         checked
     }

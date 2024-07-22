@@ -10,7 +10,7 @@ use crate::{
 
 /// Represents a type that with a [project ID](ProjectId) and an optional
 /// [version ID](VersionId). When both are present, they MUST belong to the same
-/// service
+/// service, and it is undefined behavior if they don't
 pub trait VersionedProject {
     /// The [project id](ProjectId)
     fn project(&self) -> &ProjectId;

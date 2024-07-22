@@ -1,13 +1,13 @@
 use anyhow::Result;
 use colored::Colorize;
 use relibium::{
-    config::{profile::ProfileData, VersionedProject},
+    config::{profile::ProfileData, Mod, VersionedProject},
     Client,
 };
 
 use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 
-pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>) -> Result<()> {
+pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>, exclude: bool) -> Result<()> {
     eprint!("Fetching mod information...");
     let mods = if ids.len() == 1 {
         let m = client.get_mod(&ids[0]).await?;
@@ -21,7 +21,11 @@ pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>) ->
         mods
     }
     .into_iter()
-    .map(Into::into) // From schema to config Mod
+    .map(Mod::from) // From schema to config Mod
+    .map(|mut m| {
+        m.exclude = exclude;
+        m
+    })
     .collect::<Vec<_>>();
 
     let added = profile.add_mods(mods.iter());

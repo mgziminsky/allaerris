@@ -142,11 +142,11 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 list::simple(profile).await?;
             }
         },
-        SubCommand::Add { identifiers: ids } => {
+        SubCommand::Add { ids, exclude } => {
             if ids.is_empty() {
                 bail!("Must provide at least one identifier")
             }
-            subcommands::add(client, helpers::get_active_profile(&mut config)?.data_mut().await?, ids).await?;
+            subcommands::add(client, helpers::get_active_profile(&mut config)?.data_mut().await?, ids, exclude).await?;
         },
         SubCommand::Remove { mod_names } => {
             let profile = helpers::get_active_profile(&mut config)?;
