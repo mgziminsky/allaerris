@@ -212,7 +212,12 @@ as_inner! {
 /// api macro
 macro_rules! get_latest {
     () => {
-        async fn get_latest(&self, id: &(impl ProjectIdSvcType + ?Sized), game_version: Option<&str>, loader: Option<ModLoader>) -> Result<Version> {
+        async fn get_latest(
+            &self,
+            id: &(impl ProjectIdSvcType + ?Sized),
+            game_version: Option<&str>,
+            loader: Option<ModLoader>,
+        ) -> Result<Version> {
             self.get_project_versions(id, game_version, loader)
                 .await?
                 .into_iter()
@@ -228,7 +233,10 @@ use get_latest;
 macro_rules! get_version {
     () => {
         async fn get_version(&self, id: &(impl VersionIdSvcType + ?Sized)) -> Result<Version> {
-            self.get_versions(&[&id]).await?.pop().ok_or(crate::error::ErrorKind::DoesNotExist.into())
+            self.get_versions(&[&id])
+                .await?
+                .pop()
+                .ok_or(crate::error::ErrorKind::DoesNotExist.into())
         }
     };
 }

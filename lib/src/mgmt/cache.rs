@@ -1,6 +1,9 @@
 use once_cell::sync::Lazy;
 
-use crate::{checked_types::{PathAbsolute, PathScopedRef}, client::schema::Version};
+use crate::{
+    checked_types::{PathAbsolute, PathScopedRef},
+    client::schema::Version,
+};
 
 
 pub static CACHE_DIR: Lazy<PathAbsolute> = Lazy::new(|| {

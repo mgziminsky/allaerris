@@ -8,58 +8,64 @@ use url::Url;
 use crate::{
     client::schema::Version,
     mgmt::{
-        events::{DownloadProgress, EventSouce, DownloadId},
+        events::{DownloadId, DownloadProgress, EventSouce},
         hash::{hex_decode, verify_sha1},
         ProfileManager,
     },
     ErrorKind, Result,
 };
 
+pub trait Downloadable: Sync {
+    /// A unique id for identifying this download
+    fn id(&self) -> DownloadId;
+    fn download_url(&self) -> Option<&Url>;
+    fn title(&self) -> &str;
+    fn length(&self) -> u64;
+    fn sha1(&self) -> Option<&str>;
+}
+
 
 impl ProfileManager {
     #[inline]
-    pub(in crate::mgmt) async fn dl_version(&self, v: Version, save_path: impl AsRef<Path>) -> Option<Version> {
-        self._dl_version(v, save_path.as_ref()).await
-    }
-
-    async fn _dl_version(&self, mut v: Version, save_path: &Path) -> Option<Version> {
-        let phash = (&v.project_id).into();
+    pub(in crate::mgmt) async fn dl_version(&self, dl: &dyn Downloadable, save_path: &Path) -> Option<String> {
+        let id = dl.id();
+        let title = dl.title();
         self.send(
             DownloadProgress::Start {
-                project: phash,
-                title: v.title.clone(),
-                length: v.length,
+                project: id,
+                title: title.to_owned(),
+                length: dl.length(),
             }
             .into(),
         );
-        if save_path.is_file() && v.sha1.is_some() && verify_sha1(v.sha1.as_ref().unwrap(), save_path).await.is_ok_and(identity) {
-            self.send(DownloadProgress::Success(phash).into());
-            return Some(v);
+        let sha1 = dl.sha1();
+        if save_path.is_file() && sha1.is_some() && verify_sha1(sha1.unwrap(), save_path).await.is_ok_and(identity) {
+            self.send(DownloadProgress::Success(id).into());
+            return sha1.map(Into::into);
         }
 
-        if let Some(url) = &v.download_url {
+        if let Some(url) = dl.download_url() {
             match self
-                .dl_verified(phash, save_path, v.sha1.as_ref(), url.clone())
+                .dl_verified(id, save_path, sha1, url.clone())
                 .await
-                .with_context(|| ErrorKind::DownloadFailed(v.project_id.clone(), url.clone()))
+                .with_context(|| ErrorKind::DownloadFailed(url.clone()))
             {
                 Ok(sha1) => {
-                    v.sha1 = Some(sha1);
-                    self.send(DownloadProgress::Success(phash).into());
-                    Some(v)
+                    self.send(DownloadProgress::Success(id).into());
+                    Some(sha1)
                 },
                 Err(e) => {
-                    self.send(DownloadProgress::Fail(phash, e.into()).into());
+                    self.send(DownloadProgress::Fail(id, e.into()).into());
                     None
                 },
             }
         } else {
-            self.send(DownloadProgress::Fail(phash, ErrorKind::DistributionDenied(v.project_id, v.title).into()).into());
+            self.send(DownloadProgress::Fail(id, ErrorKind::DistributionDenied(title.to_owned()).into()).into());
             None
         }
     }
 
-    async fn dl_verified(&self, dlid: DownloadId, out_path: &Path, sha1: Option<&String>, url: Url) -> Result<String> {
+    async fn dl_verified(&self, dlid: DownloadId, out_path: &Path, sha1: Option<&str>, url: Url) -> Result<String> {
         if let Some(parent) = out_path.parent() {
             tokio::fs::create_dir_all(parent).await?;
         }
@@ -91,5 +97,27 @@ impl ProfileManager {
             )
             .into())
         }
+    }
+}
+
+impl Downloadable for Version {
+    fn id(&self) -> DownloadId {
+        (&self.project_id).into()
+    }
+
+    fn download_url(&self) -> Option<&Url> {
+        self.download_url.as_ref()
+    }
+
+    fn title(&self) -> &str {
+        &self.title
+    }
+
+    fn length(&self) -> u64 {
+        self.length
+    }
+
+    fn sha1(&self) -> Option<&str> {
+        self.sha1.as_deref()
     }
 }

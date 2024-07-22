@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::HashMap,
+    ffi::OsStr,
+    hash::{Hash, Hasher},
+    path::PathBuf,
+};
 
 use serde::Deserialize;
 use url::Url;
@@ -8,6 +13,7 @@ use url::Url;
 use crate::{
     checked_types::{PathScopeError, PathScopedRef},
     client::schema::{ProjectId, VersionId},
+    mgmt::ops::download::Downloadable,
 };
 
 
@@ -94,5 +100,34 @@ impl IndexFile {
 
     pub fn path_scoped(&self) -> Result<&PathScopedRef, PathScopeError> {
         PathScopedRef::new(&self.path)
+    }
+}
+
+impl Downloadable for IndexFile {
+    fn id(&self) -> crate::mgmt::events::DownloadId {
+        let mut hasher = std::hash::DefaultHasher::new();
+        self.sha1().hash(&mut hasher);
+        hasher.finish().into()
+    }
+
+    fn download_url(&self) -> Option<&Url> {
+        self.downloads.first()
+    }
+
+    fn title(&self) -> &str {
+        self.path
+            .file_name()
+            .map(OsStr::as_encoded_bytes)
+            .and_then(|s| std::str::from_utf8(s).ok())
+            .or_else(|| self.download_url().and_then(Url::path_segments).and_then(Iterator::last))
+            .unwrap_or("Unknown File")
+    }
+
+    fn length(&self) -> u64 {
+        self.file_size
+    }
+
+    fn sha1(&self) -> Option<&str> {
+        Some(&self.hashes.sha1)
     }
 }

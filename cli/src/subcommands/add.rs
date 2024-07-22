@@ -1,6 +1,9 @@
 use anyhow::Result;
 use colored::Colorize;
-use relibium::{config::{profile::ProfileData, VersionedProject}, Client};
+use relibium::{
+    config::{profile::ProfileData, VersionedProject},
+    Client,
+};
 
 use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 

@@ -1,8 +1,7 @@
 use std::{borrow::Borrow, cell::RefCell, path::Path};
 
-use crate::PathAbsolute;
-
 use super::Profile;
+use crate::PathAbsolute;
 
 /// Crate internal wrapper around a [profile](Profile) for use in a
 /// [`Set`](std::collections) keyed on `path`
@@ -16,6 +15,7 @@ impl ProfileByPath {
     pub fn as_path(&self) -> &Path {
         self.borrow()
     }
+
     pub fn as_absolute(&self) -> &PathAbsolute {
         self.borrow()
     }

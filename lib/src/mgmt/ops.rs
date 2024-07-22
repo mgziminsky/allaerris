@@ -1,2 +1,2 @@
-mod download;
+pub(super) mod download;
 mod install;

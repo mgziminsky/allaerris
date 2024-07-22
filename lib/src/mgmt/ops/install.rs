@@ -19,8 +19,8 @@ use crate::{
         cache,
         events::{EventSouce, InstallType, ProgressEvent},
         hash::{verify_sha1, verify_sha1_sync, Sha1Writer},
-        lockfile::{LockFile, LockedId, LockedMod, LockedPack},
-        modpack::ModpackData,
+        lockfile::{LockFile, LockedId, LockedMod, LockedPack, PathHashes},
+        modpack::{modrinth::IndexFile, ModpackData},
         version::VersionSet,
         ProfileManager,
     },
@@ -52,9 +52,10 @@ impl ProfileManager {
     /// [`channel`]: Self::with_channel
     pub async fn apply(&self, client: &Client, profile: &Profile) -> Result<()> {
         let data = profile.data().await?;
+        let profile_path = profile.path();
 
         self.send(ProgressEvent::Status("Loading lockfile...".to_string()));
-        let mut lockfile = LockFile::load(profile.path()).await?;
+        let mut lockfile = LockFile::load(profile_path).await?;
         let reset = lockfile.game_version != data.game_version || lockfile.loader != data.loader;
         lockfile.game_version.clone_from(&data.game_version);
         lockfile.loader = data.loader;
@@ -63,7 +64,7 @@ impl ProfileManager {
         // that should be deleted
         let mut delete = vec![];
 
-        let mut pack = self.load_pack(&mut lockfile, data, client, &mut delete).await;
+        let mut pack = self.load_pack(client, profile_path, data, &mut lockfile, &mut delete).await;
 
         self.send(ProgressEvent::Status("Resolving mod versions...".to_string()));
         let ResolvedMods {
@@ -71,7 +72,7 @@ impl ProfileManager {
             unversioned,
             installed,
             mut pending,
-        } = merge_sources(&data.mods, &lockfile.mods, pack.as_mut(), profile.path(), &mut delete, reset).await;
+        } = merge_sources(&data.mods, &lockfile.mods, pack.as_mut(), profile_path, &mut delete, reset).await;
 
         self.send(ProgressEvent::Status("Fetch version details...".to_string()));
         self.fetch_versions(client, data, unversioned, versioned, &mut pending).await;
@@ -81,12 +82,18 @@ impl ProfileManager {
             let sub = PathScopedRef::new("mods").ok();
             for v in pending {
                 let save_path = cache::version_path(&v, v.filename.parent().and_then(|p| p.file_name_path()).or(sub));
-                scope.spawn(async { self.dl_version(v.into(), &save_path).await.map(|v| (v, save_path)) });
+                scope.spawn(async move {
+                    self.dl_version(&*v, &save_path).await.map(|sha1| {
+                        let mut v = v.into_inner();
+                        v.sha1.replace(sha1);
+                        (v, save_path)
+                    })
+                });
             }
         });
 
         // Start deleting old files while new ones install
-        let delete_job = self.spawn_delete_files(&delete, profile.path());
+        let delete_job = self.spawn_delete_files(&delete, profile_path);
 
         self.send(ProgressEvent::Status("Installing...".to_string()));
         lockfile.mods = installed
@@ -100,7 +107,7 @@ impl ProfileManager {
             })
             .map(Cow::into_owned)
             .collect();
-        lockfile.mods.extend(self.install_downloaded(downloads, profile.path()).await);
+        lockfile.mods.extend(self.install_downloaded(downloads, profile_path).await);
 
         if delete_job.await.is_err() {
             let mut files = String::with_capacity(2 * delete.len() + delete.iter().map(|p| p.as_os_str().len()).sum::<usize>());
@@ -112,15 +119,52 @@ impl ProfileManager {
         }
 
         if let Some(pack) = pack {
-            self.extract_overrides(&mut lockfile, pack, profile.path());
+            use crate::mgmt::modpack::PackMods::Modrinth;
+            if let Modrinth { ref unknown, .. } = pack.mods {
+                self.install_modrinth_unknown(&mut lockfile.other, profile_path, unknown);
+            }
+            if data.modpack.as_ref().is_some_and(|mp| mp.install_overrides) {
+                self.extract_overrides(&mut lockfile, pack, profile_path);
+            }
         }
 
         lockfile.mods.sort_unstable_by(|a, b| a.file.cmp(&b.file));
-        if let Err(e) = lockfile.save(profile.path()).await {
+        if let Err(e) = lockfile.save(profile_path).await {
             self.send_err(e);
         };
 
         Ok(())
+    }
+
+    fn install_modrinth_unknown(&self, lock: &mut PathHashes, profile_path: &PathAbsolute, unknown: &[IndexFile]) {
+        if !unknown.is_empty() {
+            self.send(ProgressEvent::Status("Installing remaining external pack mods...".into()));
+        }
+        let ((), downloads) = TokioScope::scope_and_block(|scope| {
+            for file in unknown {
+                scope.spawn(async move {
+                    let Ok(path) = file.path_scoped() else {
+                        return None;
+                    };
+                    self.dl_version(file, &profile_path.join(path))
+                        .await
+                        .map(|sha1| (sha1, path.to_owned()))
+                });
+            }
+        });
+        for dl in downloads {
+            match dl {
+                Ok(Some((sha1, path))) => {
+                    self.send(ProgressEvent::Installed {
+                        file: path.clone(),
+                        is_new: lock.insert(path, sha1).is_none(),
+                        typ: InstallType::Other,
+                    });
+                },
+                Ok(None) => { /* Download failed. Error already sent to channel */ },
+                Err(e) => self.send_err(anyhow!(e).into()),
+            }
+        }
     }
 
     fn extract_overrides(&self, lockfile: &mut LockFile, mut pack: ModpackData, profile_path: &PathAbsolute) {
@@ -169,9 +213,10 @@ impl ProfileManager {
     /// Fetches and loads the modpack data from the pack index.
     async fn load_pack(
         &self,
-        lockfile: &mut LockFile,
-        data: &ProfileData,
         client: &Client,
+        profile_path: &PathAbsolute,
+        data: &ProfileData,
+        lockfile: &mut LockFile,
         delete: &mut Vec<PathScoped>,
     ) -> Option<ModpackData> {
         macro_rules! fetch_replace {
@@ -186,7 +231,7 @@ impl ProfileManager {
         macro_rules! delete_overrides {
             ($lp:expr) => {
                 for (p, s) in std::mem::take(&mut $lp.overrides) {
-                    if let Ok(true) = verify_sha1(&s, &p).await {
+                    if let Ok(true) = verify_sha1(&s, &profile_path.join(&p)).await {
                         delete.push(p);
                     } else {
                         self.send(ProgressEvent::Status(format!(

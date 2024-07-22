@@ -34,7 +34,7 @@ impl ProfileManager {
         pack: &impl VersionedProject,
         data: &ProfileData,
     ) -> Result<(Version, ModpackData)> {
-        let pack_version = if let Some(vid) = pack.version() {
+        let mut pack_version = if let Some(vid) = pack.version() {
             client.get_version(vid).await?
         } else {
             client
@@ -42,12 +42,12 @@ impl ProfileManager {
                 .await?
         };
         let cache_path = cache::version_path(&pack_version, PathScopedRef::new("modpacks").ok());
-        let version = self
-            .dl_version(pack_version, &cache_path)
-            .await
-            .ok_or(anyhow!("Modpack download failed"))?;
+        let Some(sha1) = self.dl_version(&pack_version, &cache_path).await else {
+            return Err(anyhow!("Modpack download failed").into());
+        };
+        pack_version.sha1.replace(sha1);
 
-        self.read_pack(client, &cache_path).await.map(|p| (version, p))
+        self.read_pack(client, &cache_path).await.map(|p| (pack_version, p))
     }
 
     async fn read_pack(&self, client: &Client, path: &Path) -> Result<ModpackData> {

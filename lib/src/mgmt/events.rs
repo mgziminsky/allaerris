@@ -13,11 +13,7 @@ pub(super) trait EventSouce {
 pub enum ProgressEvent {
     Status(String),
     Download(DownloadProgress),
-    Installed {
-        file: PathScoped,
-        is_new: bool,
-        typ: InstallType,
-    },
+    Installed { file: PathScoped, is_new: bool, typ: InstallType },
     Deleted(PathScoped),
     Error(crate::Error),
 }
@@ -43,10 +39,15 @@ impl From<DownloadProgress> for ProgressEvent {
     }
 }
 
-/// The hash value of a [`ProjectId`] to prevent the need for constant cloning
+/// A value meant to uniquely identify a download for event tracking
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct DownloadId(u64);
+impl From<u64> for DownloadId {
+    fn from(id: u64) -> Self {
+        Self(id)
+    }
+}
 impl From<&ProjectId> for DownloadId {
     fn from(pid: &ProjectId) -> Self {
         use std::hash::{DefaultHasher, Hash, Hasher};

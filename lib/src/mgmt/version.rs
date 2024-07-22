@@ -5,6 +5,12 @@ pub type VersionSet = std::collections::HashSet<VersionByProject>;
 #[derive(Debug, Clone)]
 pub(super) struct VersionByProject(schema::Version);
 
+impl VersionByProject {
+    pub fn into_inner(self) -> schema::Version {
+        self.0
+    }
+}
+
 
 impl From<schema::Version> for VersionByProject {
     fn from(val: schema::Version) -> Self {
@@ -13,7 +19,7 @@ impl From<schema::Version> for VersionByProject {
 }
 impl From<VersionByProject> for schema::Version {
     fn from(val: VersionByProject) -> Self {
-        val.0
+        val.into_inner()
     }
 }
 /// Required to allow set lookups by `path` only
