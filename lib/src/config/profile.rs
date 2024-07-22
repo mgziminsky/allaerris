@@ -131,21 +131,25 @@ mod tests {
                 id: ProjectId::Forge(3).into(),
                 slug: "test-3".to_owned(),
                 name: "Test 3".to_owned(),
+                exclude: false,
             },
             Mod {
                 id: ProjectId::Forge(1).into(),
                 slug: "test-1".to_owned(),
                 name: "test 1".to_owned(),
+                exclude: false,
             },
             Mod {
                 id: ProjectId::Forge(2).into(),
                 slug: "test-2".to_owned(),
                 name: "Test 2".to_owned(),
+                exclude: false,
             },
             Mod {
                 id: ProjectId::Forge(0).into(),
                 slug: "test-0".to_owned(),
                 name: "test 0".to_owned(),
+                exclude: false,
             },
         ];
         let sorted = {

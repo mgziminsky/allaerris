@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     config::{Mod, ModLoader, Modpack, VersionedProject},
     fs_util::{FsUtil, FsUtils},
-    PathAbsolute, Result,
+    PathAbsolute, Result, StdResult,
 };
 
 
@@ -89,7 +89,7 @@ impl ProfileData {
     /// present based on [`id`](Mod::id). Returns a list of [`Result`] where
     /// [`Ok`] means the mod was added, and [`Err`] means it was already
     /// present.
-    pub fn add_mods<'m>(&mut self, mods: impl IntoIterator<Item = &'m Mod>) -> Vec<std::result::Result<&'m Mod, &'m Mod>> {
+    pub fn add_mods<'m>(&mut self, mods: impl IntoIterator<Item = &'m Mod>) -> Vec<StdResult<&'m Mod, &'m Mod>> {
         let set = HashSet::<_>::from_iter(&self.mods);
 
         let checked: Vec<_> = mods.into_iter().map(|m| if set.contains(m) { Err(m) } else { Ok(m) }).collect();
@@ -113,7 +113,7 @@ impl ProfileData {
         let idxs = self.mods.iter().enumerate().fold(vec![], |mut found, (idx, m)| {
             if to_remove
                 .iter()
-                .any(|(rm_id, rm_name)| rm_name == &m.name.to_lowercase() || rm_id == &m.project().to_string())
+                .any(|(rm_id, rm_name)| rm_name == &m.name.to_lowercase() || m.project() == rm_id)
             {
                 found.push(idx);
             }

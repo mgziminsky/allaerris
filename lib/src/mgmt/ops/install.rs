@@ -410,6 +410,10 @@ async fn merge_sources<'a>(
     // Then mods from the profile
     for m in profile {
         let pid = m.project();
+        if m.exclude {
+            pending.remove(pid);
+            continue;
+        }
         match (pending.get(pid), m.version()) {
             (None, None) => {
                 unversioned.insert(pid.into());

@@ -17,6 +17,10 @@ pub struct Mod {
     /// The local name of this mod. May not match actual project name from the
     /// [client](crate::Client)
     pub name: String,
+
+    /// If `true`, will prevent this mod from being installed by a modpack
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub exclude: bool,
 }
 
 impl VersionedProject for Mod {
@@ -55,6 +59,7 @@ impl From<Project> for Mod {
             id: proj.id.into(),
             slug: proj.slug,
             name: proj.name,
+            exclude: false,
         }
     }
 }
