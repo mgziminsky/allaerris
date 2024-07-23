@@ -28,7 +28,7 @@ where
 /// An empty result is still considered success
 pub(super) async fn combined<'c, Ret, Item, F, FRet>(clients: &'c [Client], func: F) -> Result<Ret>
 where
-    Ret: Extend<Item> + IntoIterator<Item = Item>,
+    Ret: Collection<Item>,
     F: Fn(&'c Client) -> FRet,
     FRet: Future<Output = Result<Ret>>,
 {
@@ -49,7 +49,8 @@ where
             },
         }
     }
-    ret.ok_or_else(|| ErrorKind::Multi(errs).into())
+    ret.filter(|c| errs.is_empty() || !c.is_empty())
+        .ok_or_else(|| ErrorKind::Multi(errs).into())
 }
 
 impl TryFrom<Vec<Client>> for Client {
@@ -77,5 +78,28 @@ impl TryFrom<&[Client]> for Client {
 
     fn try_from(value: &[Client]) -> super::Result<Self> {
         value.to_vec().try_into()
+    }
+}
+
+
+pub(super) trait Collection<T>: Extend<T> + IntoIterator<Item = T> {
+    fn is_empty(&self) -> bool;
+}
+impl<T> Collection<T> for Vec<T> {
+    #[inline]
+    fn is_empty(&self) -> bool {
+        Self::is_empty(self)
+    }
+}
+impl<T: std::cmp::Ord> Collection<T> for std::collections::BTreeSet<T> {
+    #[inline]
+    fn is_empty(&self) -> bool {
+        Self::is_empty(self)
+    }
+}
+impl<T: std::hash::Hash + std::cmp::Eq> Collection<T> for std::collections::HashSet<T> {
+    #[inline]
+    fn is_empty(&self) -> bool {
+        Self::is_empty(self)
     }
 }
