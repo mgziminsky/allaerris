@@ -1,10 +1,10 @@
 use anyhow::{anyhow, bail, Ok, Result};
-use colored::Colorize;
 use dialoguer::Confirm;
 use relibium::{
     config::{Modpack, Profile},
     Client, Config,
 };
+use yansi::Paint;
 
 use crate::{
     cli::ModpackSubCommand,
@@ -61,7 +61,7 @@ Install Overrides: {}
 ",
         mod_single_line(pack),
         pack.slug.italic(),
-        if pack.install_overrides { &*TICK_GREEN } else { &*CROSS_RED }
+        if pack.install_overrides { TICK_GREEN } else { CROSS_RED }
     );
 }
 

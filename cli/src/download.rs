@@ -3,7 +3,7 @@
 
 use crate::tui::{STYLE_BYTE, TICK_GREEN};
 use anyhow::{anyhow, bail, Error, Result};
-use colored::Colorize;
+use yansi::Paint;
 use fs_extra::{
     dir::{copy as copy_dir, CopyOptions as DirCopyOptions},
     file::{move_file, CopyOptions as FileCopyOptions},

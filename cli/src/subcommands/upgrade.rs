@@ -7,7 +7,7 @@ use crate::{
 };
 
 use anyhow::{anyhow, bail, Result};
-use colored::Colorize;
+use yansi::Paint;
 use ferinth::Ferinth;
 use furse::Furse;
 use indicatif::ProgressBar;

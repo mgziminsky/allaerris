@@ -1,15 +1,15 @@
 use std::ops::Deref;
 
 use anyhow::{Context, Result};
-use colored::Colorize;
 use dialoguer::{Input, Select};
 use relibium::{
     checked_types::PathAbsolute,
     config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
 };
 use tokio::sync::OnceCell;
+use yansi::Paint;
 
-use crate::tui::{fmt_profile_simple, THEME};
+use crate::tui::{const_style, fmt_profile_simple, THEME};
 
 static MC_VERSIONS: OnceCell<Vec<String>> = OnceCell::const_new();
 
@@ -60,8 +60,8 @@ pub async fn pick_minecraft_version(default: Option<&str>) -> Result<String> {
             .interact()
             .map(|i| versions[i].clone())?,
         err => {
-            let err = err.context("Failed to load minecraft versions".bold()).unwrap_err();
-            eprintln!("{}", format!("{err:#}").red());
+            let err = err.context(const_style!("Failed to load minecraft versions"; bold())).unwrap_err();
+            eprintln!("{:?}", err.red().wrap());
             Input::with_theme(&*THEME)
                 .with_prompt("Enter Minecraft version for the profile:")
                 .with_initial_text(default.unwrap_or(DEFAULT_GAME_VERSION))

@@ -1,23 +1,22 @@
 use anyhow::Result;
-use colored::Colorize;
 use relibium::{
     config::{profile::ProfileData, Mod, VersionedProject},
     Client,
 };
+use yansi::Paint;
 
 use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 
 pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>, exclude: bool) -> Result<()> {
-    eprint!("Fetching mod information...");
+    eprintln!("Fetching mod information...");
     let mods = if ids.len() == 1 {
         let m = client.get_mod(&ids[0]).await?;
-        eprintln!();
-        println!("{}\t{}", *TICK_GREEN, m.name.bold());
+        println!("{:^4}{}", TICK_GREEN, m.name.bold());
         vec![m]
     } else {
         let ids = ids.iter().map(|id| id as _).collect::<Vec<_>>();
         let mods = client.get_mods(&ids).await?;
-        eprintln!("{}", *TICK_GREEN);
+        println!("{:^4}{} mods found", TICK_GREEN, mods.len());
         mods
     }
     .into_iter()
@@ -28,19 +27,15 @@ pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>, ex
     })
     .collect::<Vec<_>>();
 
-    let added = profile.add_mods(mods.iter());
-    // Show already added
-    added.iter().filter_map(|r| r.err()).for_each(|m| {
-        println!("{}\t{}", *TICK_YELLOW, mod_single_line(m));
-    });
-    // Show newly added
-    added.iter().filter_map(|r| r.ok()).for_each(|m| {
-        println!("{}\t{}", *TICK_GREEN, mod_single_line(m));
-    });
+    for res in profile.add_mods(&mods) {
+        match res {
+            Ok(m) | Err(m) => println!("{:^4}{}", if res.is_ok() { TICK_GREEN } else { TICK_YELLOW }, mod_single_line(m)),
+        }
+    }
     // Show not found
     ids.into_iter()
         .filter(|id| !mods.iter().any(|m| &m.slug == id || m.project() == id))
-        .for_each(|id| println!("{}\t{} — Not Found", *CROSS_RED, id.italic().bold()));
+        .for_each(|id| println!("{:^4}{} — Not Found", CROSS_RED, id.italic().bold()));
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, fmt::Display, ops::Range};
 
-use colored::{ColoredString, Colorize};
+use anyhow::anyhow;
 use dialoguer::theme::ColorfulTheme;
 use indicatif::ProgressStyle;
 use itertools::Itertools;
@@ -9,17 +9,32 @@ use relibium::{
     client::schema::{Project, ProjectId},
     config::{Mod, Profile, VersionedProject},
 };
+use yansi::{Paint, Painted};
 
-static CF: Lazy<ColoredString> = Lazy::new(|| "CF".red());
-static MR: Lazy<ColoredString> = Lazy::new(|| "MR".green());
-static GH: Lazy<ColoredString> = Lazy::new(|| "GH".purple());
+
+/// Creates a compile time `const` styled value
+macro_rules! const_style {
+    ($val:expr; $($mods:tt)+) => {
+        const {
+            #[allow(unused_imports)]
+            use ::yansi::Paint;
+            ::yansi::Painted::new($val).$($mods)+
+        }
+    };
+}
+pub(crate) use const_style;
+
+
+const CF: Painted<&str> = Painted::new("CF").red();
+const MR: Painted<&str> = Painted::new("MR").green();
+const GH: Painted<&str> = Painted::new("GH").magenta();
 
 pub const CROSS: &str = "✗";
-pub static CROSS_RED: Lazy<ColoredString> = Lazy::new(|| CROSS.red());
+pub const CROSS_RED: Painted<&str> = Painted::new(CROSS).red();
 
 pub const TICK: &str = "✓";
-pub static TICK_GREEN: Lazy<ColoredString> = Lazy::new(|| TICK.green());
-pub static TICK_YELLOW: Lazy<ColoredString> = Lazy::new(|| TICK.yellow());
+pub const TICK_GREEN: Painted<&str> = Painted::new(TICK).green();
+pub const TICK_YELLOW: Painted<&str> = Painted::new(TICK).yellow();
 
 pub static THEME: Lazy<ColorfulTheme> = Lazy::new(Default::default);
 pub static PROG_BYTES: Lazy<ProgressStyle> = Lazy::new(|| {
@@ -28,8 +43,9 @@ pub static PROG_BYTES: Lazy<ProgressStyle> = Lazy::new(|| {
     )
     .expect("template should be valid")
 });
-pub static PROG_DONE: Lazy<ProgressStyle> =
-    Lazy::new(|| ProgressStyle::with_template("{prefix:.bold} {msg} [{elapsed:.yellow} - {bytes:.cyan}]").expect("template should be valid"));
+pub static PROG_DONE: Lazy<ProgressStyle> = Lazy::new(|| {
+    ProgressStyle::with_template("{prefix:.bold} {msg} [{elapsed:.yellow} - {bytes:.cyan}]").expect("template should be valid")
+});
 
 macro_rules! min {
     ($a:expr, $b:expr) => {
@@ -97,8 +113,8 @@ pub(crate) use ellipsize;
 
 fn id_tag(id: &ProjectId) -> String {
     match id {
-        ProjectId::Forge(id) => format!("{} {id:8}", *CF),
-        ProjectId::Modrinth(id) => format!("{} {id:8}", *MR),
+        ProjectId::Forge(id) => format!("{CF} {id}"),
+        ProjectId::Modrinth(id) => format!("{MR} {id}"),
         ProjectId::Github(_) => GH.to_string(),
     }
 }
@@ -107,7 +123,7 @@ pub fn mod_single_line(m: &Mod) -> String {
     let id = id_tag(m.project());
     let name = match m.project() {
         ProjectId::Forge(_) | ProjectId::Modrinth(_) => m.name.bold().to_string(),
-        ProjectId::Github((owner, repo)) => format!("{}/{}", owner.dimmed(), repo.bold()),
+        ProjectId::Github((owner, repo)) => format!("{}/{}", owner.dim(), repo.bold()),
     };
     format!("{id} ― {name}")
 }
@@ -123,35 +139,12 @@ pub fn print_mods(label: impl Display, mods: &[Mod]) {
 }
 
 pub async fn print_profile(profile: &Profile, active: bool) {
-    let (game_version, loader, mods, pack) = profile.data().await.ok().map_or(
-        (
-            Cow::Borrowed(&*CROSS_RED),
-            Cow::Borrowed(&*CROSS_RED),
-            Cow::Borrowed(&*CROSS_RED),
-            Cow::Borrowed(&*CROSS_RED),
-        ),
-        |data| {
-            (
-                Cow::Owned(data.game_version.green()),
-                Cow::Owned(format!("{:?}", data.loader).purple()),
-                Cow::Owned(data.mods.len().to_string().yellow()),
-                Cow::Owned(
-                    data.modpack
-                        .as_deref()
-                        .map_or_else(|| CROSS_RED.to_string(), mod_single_line)
-                        .into(),
-                ),
-            )
-        },
-    );
+    let data = profile.data().await;
     println!(
         "\
 {}
     Path:        {}
-    MC Version:  {}
-    Mod Loader:  {}
-    Mods:        {}
-    Modpack:     {}
+    {}
 ",
         {
             let mut name = profile.name().bold();
@@ -160,11 +153,21 @@ pub async fn print_profile(profile: &Profile, active: bool) {
             }
             name
         },
-        profile.path().display().to_string().blue().underline(),
-        game_version,
-        loader,
-        mods,
-        pack,
+        profile.path().display().bright_blue().underline(),
+        data.map_or_else(
+            |e| format!("Error:       {:?}", anyhow!(e).red()),
+            |d| format!(
+                "\
+    MC Version:  {}
+    Mod Loader:  {}
+    Mods:        {}
+    Modpack:     {}",
+                d.game_version.green(),
+                format_args!("{:?}", d.loader).magenta(),
+                d.mods.len().yellow(),
+                d.modpack.as_deref().map_or_else(|| CROSS_RED.to_string(), mod_single_line)
+            )
+        ),
     );
 }
 
@@ -173,25 +176,28 @@ pub fn print_project_verbose(proj: &Project) {
         "\
 {}
 {}
-
-  Link:\t\t{}
-  Project ID:\t{}
-  Open Source:\t{}
-  Downloads:\t{}
-  Authors:\t{}
-  Categories:\t{}
-  License:\t{}
+    Link:         {}
+    Project ID:   {}
+    Open Source:  {}
+    Downloads:    {}
+    Authors:      {}
+    Categories:   {}
+    License:      {}
 ",
         proj.name.trim().bold(),
         proj.description.trim().italic(),
-        proj.website.as_ref().map(url::Url::as_str).unwrap_or_default().blue().underline(),
-        id_tag(&proj.id).dimmed(),
-        proj.source_url
+        proj.website
             .as_ref()
             .map(url::Url::as_str)
-            .map(|u| format!("{} {}", *TICK_GREEN, u.blue().underline()).into())
-            .map_or(Cow::Borrowed(&*CROSS_RED), Cow::Owned),
-        proj.downloads.to_string().yellow(),
+            .unwrap_or_default()
+            .bright_blue()
+            .underline(),
+        id_tag(&proj.id).dim(),
+        proj.source_url.as_ref().map(url::Url::as_str).map_or_else(
+            || CROSS_RED.to_string(),
+            |u| format!("{} {}", TICK_GREEN, u.bright_blue().underline())
+        ),
+        proj.downloads.yellow(),
         proj.authors.iter().format_with(", ", |a, fmt| fmt(&a.name.cyan())),
         proj.categories.iter().format_with(", ", |c, fmt| fmt(&c.magenta())),
         proj.license.as_ref().map_or_else(
@@ -202,7 +208,7 @@ pub fn print_project_verbose(proj: &Project) {
                     l.spdx_id,
                     l.url
                         .as_ref()
-                        .map_or_else(String::new, |url| format!(" ({})", url.as_str().blue().underline()))
+                        .map_or_else(String::new, |url| format!(" ({})", url.bright_blue().underline()))
                 )
             }
         ),

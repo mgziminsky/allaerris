@@ -16,8 +16,6 @@ use std::{
 
 use anyhow::{anyhow, bail, Context, Result};
 use clap::{CommandFactory, Parser};
-use colored::Colorize;
-use dialoguer::console::style;
 use indicatif::{MultiProgress, ProgressBar};
 use relibium::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
@@ -29,12 +27,13 @@ use relibium::{
     },
 };
 use tokio::runtime;
+use yansi::Paint;
 
 use self::{
     cli::{Ferium, ModpackSubCommand, ProfileSubCommand, SubCommand},
     helpers::{consts, APP_NAME},
     subcommands::{list, modpack, profile},
-    tui::{print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, TICK_GREEN, TICK_YELLOW},
+    tui::{const_style, print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, TICK_GREEN, TICK_YELLOW},
 };
 
 const USER_AGENT: &str = concat!(consts!(APP_NAME), "/", env!("CARGO_PKG_VERSION"), " (Github: mgziminsky)");
@@ -50,13 +49,8 @@ fn main() -> ExitCode {
         }
         builder.build().expect("Could not initialise Tokio runtime")
     };
-    #[cfg(windows)]
-    {
-        // Enable colours on conhost
-        let _ = colored::control::set_virtual_terminal(true);
-    }
     if let Err(err) = runtime.block_on(actual_main(cli)) {
-        eprintln!("{}", format!("{err:?}").red());
+        eprintln!("{:?}", err.red().wrap());
         if err.to_string().contains("error trying to connect") {
             eprintln!("{}", "Verify that you are connnected to the internet".yellow().bold());
         }
@@ -118,14 +112,8 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         .unwrap_or(DEFAULT_CONFIG_PATH.to_owned().into());
     let mut config = Config::load_from(config_path)
         .await
-        .with_context(|| {
-            format!(
-                "Failed to read config file at `{}`, using defaults",
-                config_path.display().to_string().bold()
-            )
-            .yellow()
-        })
-        .inspect_err(|err| eprintln!("{err}"))
+        .with_context(|| format!("Failed to read config file at `{}`, using defaults", config_path.display().bold()))
+        .inspect_err(|err| eprintln!("{:?}", err.yellow().wrap()))
         .unwrap_or_default();
 
     // Run function(s) based on the sub(sub)command to be executed
@@ -153,10 +141,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             helpers::check_empty_profile(profile).await?;
             let removed = subcommands::remove(profile.data_mut().await?, &mod_names)?;
             if !removed.is_empty() {
-                print_mods(
-                    format_args!("Removed {} Mods", format!("{}", removed.len()).yellow().bold()),
-                    &removed,
-                );
+                print_mods(format_args!("Removed {} Mods", removed.len().yellow().bold()), &removed);
             }
         },
         SubCommand::Profile { subcommand } => {
@@ -169,11 +154,12 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             if default_flag {
                 println!(
                     "{}",
-                    format!(
+                    format_args!(
                         "Use `{}` for more information about this subcommand",
-                        concat!(consts!(APP_NAME), " profile help").bold()
+                        const_style!(concat!(consts!(APP_NAME), " profile help"); bold())
                     )
                     .yellow()
+                    .wrap()
                 );
             }
         },
@@ -187,11 +173,12 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             if default_flag {
                 println!(
                     "{}",
-                    format!(
+                    format_args!(
                         "Use `{}` for more information about this subcommand",
-                        concat!(consts!(APP_NAME), " modpack help").bold()
+                        const_style!(concat!(consts!(APP_NAME), " modpack help"); bold())
                     )
                     .yellow()
+                    .wrap()
                 );
             }
         },
@@ -226,7 +213,7 @@ pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandl
                         use relibium::mgmt::events::InstallType::*;
                         println!(
                             "{} {:>9}: {}",
-                            if is_new { &*TICK_GREEN } else { &*TICK_YELLOW },
+                            if is_new { TICK_GREEN } else { TICK_YELLOW },
                             match typ {
                                 Mod => "Installed",
                                 Override => "Override",
@@ -236,10 +223,10 @@ pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandl
                         );
                     },
                     ProgressEvent::Deleted(file) => {
-                        println!("{}   Deleted: {}", &*TICK_GREEN, file.display());
+                        println!("{}   Deleted: {}", TICK_GREEN, file.display());
                     },
                     ProgressEvent::Error(err) => {
-                        eprintln!("{}", style(format!("{:?}", anyhow!(err))).red());
+                        eprintln!("{:?}", anyhow!(err).red());
                     },
                 }
             }
@@ -268,7 +255,7 @@ fn handle_dl(evt: DownloadProgress, bars: &mut HashMap<DownloadId, ProgressBar>,
             if let Some(bar) = bars.remove(&id) {
                 bar.with_style(PROG_DONE.clone())
                     .with_prefix(CROSS_RED.to_string())
-                    .abandon_with_message(style(err).bright().red().to_string());
+                    .abandon_with_message(err.bright().red().to_string());
             }
         },
     }

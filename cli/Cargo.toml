@@ -25,7 +25,6 @@ gui = ["rfd"]
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
-colored = "2.1"
 dialoguer = "0.11"
 indicatif = "0.17"
 relibium = { version = "2", path = "../lib" }
@@ -33,6 +32,7 @@ rfd = { version = "0.14", default-features = false, optional = true, features = 
     "xdg-portal",
     "tokio",
 ] }
+yansi = "1"
 
 anyhow.workspace = true
 async-scoped.workspace = true

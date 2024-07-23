@@ -4,12 +4,12 @@ mod delete;
 mod helpers;
 
 use anyhow::{bail, Context, Result};
-use colored::Colorize;
 use relibium::{
     checked_types::PathAbsolute,
     config::{profile::ProfileData, Profile},
     Config,
 };
+use yansi::Paint;
 
 use self::{configure::configure, create::create, delete::delete, helpers::switch_profile};
 use crate::{
@@ -47,6 +47,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                     concat!(consts!(APP_NAME), " upgrade").bold()
                 )
                 .yellow()
+                .wrap()
             );
         },
         ProfileSubCommand::Add { name, path } => {
@@ -54,7 +55,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
             if !ProfileData::file_path(&path).exists() {
                 bail!(
                     "No existing profile found at `{}`\nUse `{}` to create one",
-                    path.display().to_string().bold().italic(),
+                    path.display().bold().italic(),
                     concat!(consts!(APP_NAME), " new").bold(),
                 );
             }
@@ -65,7 +66,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
             let _ = config
                 .set_active(path)
                 .context("Failed to switch to imported profile")
-                .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()))
+                .inspect_err(|e| eprintln!("{:?}", e.yellow()))
                 .inspect(|()| println!("The imported profile is now active"));
         },
         ProfileSubCommand::Remove { profile_name, switch_to } => {

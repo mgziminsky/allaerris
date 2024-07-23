@@ -1,7 +1,6 @@
 use std::{collections::HashMap, ops::Deref};
 
 use anyhow::{Context, Result};
-use colored::Colorize;
 use once_cell::sync::Lazy;
 use relibium::{
     client::schema::{Author, ProjectId, ProjectIdSvcType},
@@ -9,6 +8,7 @@ use relibium::{
     modrinth::apis::teams_api::GetTeamsParams,
     Client,
 };
+use yansi::Paint;
 
 use crate::tui::{print_mods, print_project_markdown, print_project_verbose};
 
@@ -24,8 +24,8 @@ pub async fn simple(profile: &Profile) -> Result<(), anyhow::Error> {
         format_args!(
             "{} {} on {} {}",
             profile.name().bold(),
-            format!("({} mods)", data.mods.len()).yellow(),
-            format!("{:?}", data.loader).purple(),
+            format_args!("({} mods)", data.mods.len()).yellow(),
+            format_args!("{:?}", data.loader).magenta(),
             data.game_version.green(),
         ),
         &data.mods,
@@ -34,7 +34,7 @@ pub async fn simple(profile: &Profile) -> Result<(), anyhow::Error> {
 }
 
 pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Result<()> {
-    eprintln!("{}\n", "Querying metadata...".dimmed());
+    eprintln!("{}\n", "Querying metadata...".dim());
 
     let data = profile.data().await?;
     let mut projects = client

@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Context, Ok, Result};
-use colored::Colorize;
 use relibium::config::{Config, Profile};
+use yansi::Paint;
 
 macro_rules! consts {
     (APP_NAME) => {
@@ -9,13 +9,10 @@ macro_rules! consts {
 }
 pub(crate) use consts;
 
+use crate::tui::const_style;
+
 pub const APP_NAME: &str = consts!(APP_NAME);
 
-const MSG_PROFILE_EMPTY: &str = concat!(
-    "The currently selected profile is empty! Run `",
-    consts!(APP_NAME),
-    " help` to see how to add mods"
-);
 
 /// Get the active profile with error handling
 pub(crate) fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
@@ -28,13 +25,16 @@ pub(crate) fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
             ),
             _ => err.into(),
         })
-        .with_context(|| "Failed to load active profile".bold())
+        .context(const_style!("Failed to load active profile"; bold()))
 }
 
 /// Check if `profile` is empty, and if so return an error
 pub(crate) async fn check_empty_profile(profile: &Profile) -> Result<()> {
     if profile.data().await?.is_empty() {
-        bail!(MSG_PROFILE_EMPTY);
+        bail!(
+            "The currently selected profile is empty! Run `{}` to see how to add mods",
+            const_style!(concat!(consts!(APP_NAME), " help"); bold())
+        );
     }
     Ok(())
 }

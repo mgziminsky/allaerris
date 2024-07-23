@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
 use anyhow::{bail, Context, Ok, Result};
-use colored::Colorize;
 use dialoguer::{Confirm, Input};
 use relibium::{
     checked_types::PathAbsolute,
     config::{profile::ProfileData, ModLoader, Profile},
     Config, DEFAULT_MINECRAFT_DIR,
 };
+use yansi::Paint;
 
 use super::helpers::{pick_minecraft_version, pick_mod_loader};
 use crate::{
@@ -26,7 +26,7 @@ pub async fn create(
         || {
             println!(
                 "The default profile directory is `{}`",
-                DEFAULT_MINECRAFT_DIR.display().to_string().bold().italic()
+                DEFAULT_MINECRAFT_DIR.display().bold().italic()
             );
             if config.profile(&*DEFAULT_MINECRAFT_DIR).is_ok()
                 || Confirm::with_theme(&*THEME)
@@ -42,23 +42,15 @@ pub async fn create(
     )?;
     let path = PathAbsolute::new(path)?;
     if config.profile(&path).is_ok() {
-        bail!(
-            "Config already contains a profile at the path `{}`",
-            path.display().to_string().bold().italic()
-        )
+        bail!("Config already contains a profile at the path `{}`", path.display().bold().italic())
     }
     if ProfileData::file_path(&path).exists() {
         bail!(
             "A profile config file already exists at `{}`\n# Use import command instead",
-            path.display().to_string().bold().italic()
+            path.display().bold().italic()
         )
     }
-    println!(
-        "{} {} = {}",
-        *TICK_GREEN,
-        "Profile Directory".bold(),
-        path.display().to_string().green()
-    );
+    println!("{} {} = {}", TICK_GREEN, "Profile Directory".bold(), path.display().green());
 
     let name = name.map_or_else(
         || loop {
@@ -91,7 +83,7 @@ pub async fn create(
     let _ = config
         .set_active(path)
         .context("Failed to switch to newly created profile")
-        .inspect_err(|e| eprintln!("{:?}", e.to_string().yellow()))
+        .inspect_err(|e| eprintln!("{:?}", e.yellow()))
         .inspect(|()| println!("The newly created profile is now active"));
 
     Ok(())
