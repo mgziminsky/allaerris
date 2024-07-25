@@ -64,7 +64,7 @@ impl ProfileManager {
         // that should be deleted
         let mut delete = vec![];
 
-        let mut pack = self.load_pack(client, profile_path, data, &mut lockfile, &mut delete).await;
+        let mut pack = self.load_pack(client, profile_path, data, &mut lockfile, &mut delete).await?;
 
         self.send(ProgressEvent::Status("Resolving mod versions...".to_string()));
         let ResolvedMods {
@@ -132,12 +132,12 @@ impl ProfileManager {
         data: &ProfileData,
         lockfile: &mut LockFile,
         delete: &mut Vec<PathScoped>,
-    ) -> Option<ModpackData> {
+    ) -> Result<Option<ModpackData>> {
         macro_rules! fetch_replace {
             ($pack:expr) => {
                 self.fetch_pack(client, $pack.deref(), data).await.map(|(data, lm)| {
                     lockfile.pack.replace(LockedPack::new(lm));
-                    data
+                    Some(data)
                 })
             };
         }
@@ -156,11 +156,12 @@ impl ProfileManager {
                 }
             };
         }
+        self.send(ProgressEvent::Status("Fetch and read modpack...".to_string()));
         match (lockfile.pack.as_mut(), &data.modpack) {
-            (None, None) => None,
+            (None, None) => Ok(None),
             (Some(lp), None) => {
                 delete_overrides!(lp);
-                None
+                Ok(None)
             },
             (Some(lp), Some(pack)) => {
                 if pack.version().is_some_and(|v| v != &lp.id.version) {
@@ -170,32 +171,34 @@ impl ProfileManager {
                     if !pack.install_overrides {
                         delete_overrides!(lp);
                     }
-                    self.fetch_pack(client, lp, data).await.map(|(data, _)| data)
+                    let cached = cache::versioned_path(
+                        &lp.id.project,
+                        &lp.id.version,
+                        lp.file.as_os_str(),
+                        PathScopedRef::new("modpacks").ok(),
+                    );
+                    if cached.exists() && verify_sha1(&lp.sha1, &cached).await.is_ok_and(identity) {
+                        self.read_pack(client, &cached).await.map(Some)
+                    } else {
+                        self.fetch_pack(client, lp, data).await.map(|(data, _)| data).map(Some)
+                    }
                 }
             },
             (None, Some(pack)) => fetch_replace!(pack),
         }
     }
 
-    async fn fetch_pack(&self, client: &Client, pack: &impl VersionedProject, data: &ProfileData) -> Option<(ModpackData, LockedMod)> {
-        self.send(ProgressEvent::Status("Fetch and read modpack...".to_string()));
-        match self.load_modpack(client, pack, data).await {
-            Ok((v, data)) => {
-                let lm = LockedMod {
-                    id: LockedId {
-                        project: v.project_id,
-                        version: v.id,
-                    },
-                    file: v.filename,
-                    sha1: v.sha1.expect("Downloaded pack should have a sha1"),
-                };
-                Some((data, lm))
+    async fn fetch_pack(&self, client: &Client, pack: &impl VersionedProject, data: &ProfileData) -> Result<(ModpackData, LockedMod)> {
+        let (v, data) = self.load_modpack(client, pack, data).await?;
+        let lm = LockedMod {
+            id: LockedId {
+                project: v.project_id,
+                version: v.id,
             },
-            Err(e) => {
-                self.send_err(e);
-                None
-            },
-        }
+            file: v.filename,
+            sha1: v.sha1.expect("Downloaded pack should have a sha1"),
+        };
+        Ok((data, lm))
     }
 
     /// Fetch the [version] details of all mods that will be installed

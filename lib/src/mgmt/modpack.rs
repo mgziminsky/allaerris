@@ -50,7 +50,7 @@ impl ProfileManager {
         self.read_pack(client, &cache_path).await.map(|p| (pack_version, p))
     }
 
-    async fn read_pack(&self, client: &Client, path: &Path) -> Result<ModpackData> {
+    pub(super) async fn read_pack(&self, client: &Client, path: &Path) -> Result<ModpackData> {
         let mut zip = PackArchive::new(File::open(path).await?.into_std().await).map_err(anyhow::Error::new)?;
 
         macro_rules! parse {
