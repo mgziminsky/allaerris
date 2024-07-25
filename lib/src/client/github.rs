@@ -56,13 +56,17 @@ impl ApiOps for GithubClient {
         // );
         // let resp = self.graphql(&HashMap::from([("query", query)])).await?;
 
+        let ids: Vec<_> = ids.iter().filter_map(|id| id.get_github().ok()).collect();
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
         // FIXME: Rate limiting
         let ((), mods) = TokioScope::scope_and_block(|s| {
             for id in ids {
-                s.spawn(self.get_mod(id));
+                s.spawn(fetch_repo(self, id));
             }
         });
-        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(Result::ok)).collect();
+        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(Result::ok).map(Mod)).collect();
         Ok(mods)
     }
 
@@ -132,7 +136,11 @@ impl ApiOps for GithubClient {
         Err(ErrorKind::Unsupported.into())
     }
 
-    async fn get_versions(&self, _ids: &[&dyn VersionIdSvcType]) -> Result<Vec<Version>> {
+    async fn get_versions(&self, ids: &[&dyn VersionIdSvcType]) -> Result<Vec<Version>> {
+        let ids: Vec<_> = ids.iter().filter_map(|id| id.get_github().ok()).collect();
+        if ids.is_empty() {
+            return Ok(vec![]);
+        }
         // Rest API doesn't support getting arbitrary assets by id. Needs GraphQL
         Err(ErrorKind::Unsupported.into())
     }
