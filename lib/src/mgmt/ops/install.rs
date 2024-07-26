@@ -56,17 +56,34 @@ impl ProfileManager {
 
         self.send(ProgressEvent::Status("Loading lockfile...".to_string()));
         let mut lockfile = LockFile::load(profile_path).await?;
-        let reset = lockfile.game_version != data.game_version || lockfile.loader != data.loader;
+
+        self.install(client, profile_path, data, &mut lockfile).await?;
+
         lockfile.game_version.clone_from(&data.game_version);
         lockfile.loader = data.loader;
+        lockfile.mods.sort_unstable_by(|a, b| a.file.cmp(&b.file));
+        if let Err(e) = lockfile.save(profile_path).await {
+            self.send_err(e);
+        };
 
+        Ok(())
+    }
+
+    pub(super) async fn install(
+        &self,
+        client: &Client,
+        profile_path: &PathAbsolute,
+        data: &ProfileData,
+        lockfile: &mut LockFile,
+    ) -> Result<()> {
         // This will be passed to other local methods which will add to it any files
         // that should be deleted
         let mut delete = vec![];
 
-        let mut pack = self.load_pack(client, profile_path, data, &mut lockfile, &mut delete).await?;
+        let mut pack = self.load_pack(client, profile_path, data, lockfile, &mut delete).await?;
 
         self.send(ProgressEvent::Status("Resolving mod versions...".to_string()));
+        let reset = lockfile.game_version != data.game_version || lockfile.loader != data.loader;
         let ResolvedMods {
             versioned,
             unversioned,
@@ -109,14 +126,9 @@ impl ProfileManager {
                 self.install_modrinth_unknown(&mut lockfile.other, profile_path, unknown);
             }
             if data.modpack.as_ref().is_some_and(|mp| mp.install_overrides) {
-                self.extract_overrides(&mut lockfile, pack, profile_path);
+                self.extract_overrides(lockfile, pack, profile_path);
             }
         }
-
-        lockfile.mods.sort_unstable_by(|a, b| a.file.cmp(&b.file));
-        if let Err(e) = lockfile.save(profile_path).await {
-            self.send_err(e);
-        };
 
         Ok(())
     }
@@ -366,7 +378,7 @@ impl ProfileManager {
                 use std::{fs, io};
                 target.parent().map(fs::create_dir_all);
                 fs::File::create(target).and_then(|target| {
-                    let mut target = Sha1Writer::new(target);
+                    let mut target = Sha1Writer::new(io::BufWriter::new(target));
                     io::copy(&mut file, &mut target)?;
                     target.finalize_str()
                 })

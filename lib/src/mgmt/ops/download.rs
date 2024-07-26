@@ -28,6 +28,11 @@ pub trait Downloadable: Sync {
 impl ProfileManager {
     #[inline]
     pub(in crate::mgmt) async fn download(&self, dl: &dyn Downloadable, save_path: &Path) -> Option<String> {
+        // Limit number of concurrent downloads.
+        // Should this be configurable? Maybe via an environment variable
+        static PERMITS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(10);
+        let _permit = PERMITS.acquire().await.unwrap();
+
         let id = dl.id();
         let title = dl.title();
         self.send(
