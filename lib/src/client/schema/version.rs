@@ -14,7 +14,7 @@ use crate::{
 
 
 svc_id_type! {
-    #[derive(Deserialize, Serialize, Debug, Clone, PartialEq, Eq, Hash)]
+    #[derive(Deserialize, Serialize, Debug, Clone, Eq, Hash)]
     #[serde(rename_all = "lowercase")]
     pub enum VersionId {
         Forge(u64),
@@ -63,7 +63,24 @@ impl Display for VersionId {
         write!(f, "{val}")
     }
 }
-
+impl<T: VersionIdSvcType> PartialEq<T> for VersionId {
+    fn eq(&self, other: &T) -> bool {
+        match self {
+            VersionId::Forge(id) => other.get_forge().is_ok_and(|oid| *id == oid),
+            VersionId::Modrinth(id) => other.get_modrinth().is_ok_and(|other| id == other),
+            VersionId::Github(id) => other.get_github().is_ok_and(|oid| *id == oid),
+        }
+    }
+}
+impl<T: VersionIdSvcType> PartialOrd<T> for VersionId {
+    fn partial_cmp(&self, other: &T) -> Option<std::cmp::Ordering> {
+        match self {
+            VersionId::Forge(id) => other.get_forge().ok().and_then(|oid| id.partial_cmp(&oid)),
+            VersionId::Modrinth(id) => other.get_modrinth().ok().map(|other| id.as_str().cmp(other)),
+            VersionId::Github(id) => other.get_github().ok().and_then(|oid| id.partial_cmp(&oid)),
+        }
+    }
+}
 
 impl VersionIdSvcType for VersionId {
     #[inline]

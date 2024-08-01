@@ -14,11 +14,11 @@ use crate::models;
 pub struct GetFingerprintMatchesRequestBody {
     /// list of murmur2 hashes with seed 1
     #[serde(rename = "fingerprints", default)]
-    pub fingerprints: Vec<u64>,
+    pub fingerprints: Vec<u32>,
 }
 
 impl GetFingerprintMatchesRequestBody {
-    pub fn new(fingerprints: Vec<u64>) -> Self {
+    pub fn new(fingerprints: Vec<u32>) -> Self {
         Self {
             fingerprints,
         }

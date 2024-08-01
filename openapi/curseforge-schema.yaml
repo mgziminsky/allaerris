@@ -1198,7 +1198,7 @@ components:
           type: array
           items:
             type: integer
-            format: int64
+            format: int32
     FingerprintFuzzyMatchResult:
       type: object
       properties:
@@ -1231,7 +1231,7 @@ components:
           type: array
           items:
             type: integer
-            format: int64
+            format: int32
         partialMatches:
           type: array
           items:
@@ -1247,12 +1247,12 @@ components:
           type: array
           items:
             type: integer
-            format: int64
+            format: int32
         unmatchedFingerprints:
           type: array
           items:
             type: integer
-            format: int64
+            format: int32
     FolderFingerprint:
       type: object
       properties:
@@ -1262,7 +1262,7 @@ components:
           type: array
           items:
             type: integer
-            format: int64
+            format: int32
     Game:
       type: object
       properties:
@@ -1484,7 +1484,7 @@ components:
           type: array
           items:
             type: integer
-            format: int64
+            format: int32
     GetFuzzyMatchesRequestBody:
       type: object
       properties:

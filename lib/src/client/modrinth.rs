@@ -1,18 +1,23 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 use modrinth::{
     apis::{
         projects_api::{GetProjectParams, GetProjectsParams},
+        version_files_api::GetLatestVersionsFromHashesParams,
         versions_api::{GetProjectVersionsParams, GetVersionParams, GetVersionsParams},
     },
-    models::{game_version_tag::VersionType, Project as ApiProject},
+    models::{game_version_tag::VersionType, GetLatestVersionsFromHashesBody, Project as ApiProject},
 };
 
 use super::{
     schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ModrinthClient,
 };
-use crate::{config::ModLoader, Result};
+use crate::{
+    config::{ModLoader, VersionedProject},
+    mgmt::LockedMod,
+    Result,
+};
 
 impl ApiOps for ModrinthClient {
     super::get_latest!();
@@ -99,6 +104,40 @@ impl ApiOps for ModrinthClient {
             .await
             .map(Into::into)
             .map_err(Into::into)
+    }
+
+    async fn get_updates(&self, game_version: &str, loader: ModLoader, mods: &[&LockedMod]) -> Result<Vec<LockedMod>> {
+        use modrinth::models::get_latest_versions_from_hashes_body::Algorithm;
+
+        let mods = mods
+            .iter()
+            .filter_map(|m| m.project().get_modrinth().map(|_| (m.sha1.as_str(), *m)).ok())
+            .collect::<HashMap<_, _>>();
+        if mods.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let updates = self
+            .version_files()
+            .get_latest_versions_from_hashes(&GetLatestVersionsFromHashesParams {
+                get_latest_versions_from_hashes_body: Some(&GetLatestVersionsFromHashesBody {
+                    hashes: mods.keys().copied().collect(),
+                    algorithm: Algorithm::Sha1,
+                    game_versions: vec![game_version],
+                    // API bugged and loader filters don't work on modpacks
+                    loaders: vec![/* loader.as_str() */],
+                }),
+            })
+            .await?
+            .into_iter()
+            .filter_map(|(sha1, v)| {
+                // Check loader here since api filter doesn't work
+                (mods[sha1.as_str()].version().unwrap() != &v.id && v.loaders.iter().any(|l| l == loader.as_str()))
+                    .then_some(Version::from(v).into())
+            })
+            .collect();
+
+        Ok(updates)
     }
 }
 

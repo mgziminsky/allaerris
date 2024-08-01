@@ -9,7 +9,11 @@ use super::{
     schema::{GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
     ApiOps, GithubClient,
 };
-use crate::{config::ModLoader, ErrorKind, Result};
+use crate::{
+    config::{ModLoader, VersionedProject},
+    mgmt::LockedMod,
+    ErrorKind, Result,
+};
 
 impl ApiOps for GithubClient {
     super::get_latest!();
@@ -143,6 +147,24 @@ impl ApiOps for GithubClient {
         }
         // Rest API doesn't support getting arbitrary assets by id. Needs GraphQL
         Err(ErrorKind::Unsupported.into())
+    }
+
+    async fn get_updates(&self, game_version: &str, loader: ModLoader, mods: &[&LockedMod]) -> Result<Vec<LockedMod>> {
+        let mods: Vec<_> = mods.iter().filter(|lm| matches!(lm.project(), ProjectId::Github(_))).collect();
+        if mods.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let mut updates = vec![];
+        for m in mods {
+            if let Ok(up) = self.get_latest(m.project(), Some(game_version), Some(loader)).await {
+                if up.id != m.version().unwrap() {
+                    updates.push(up.into());
+                }
+            }
+        }
+
+        Ok(updates)
     }
 }
 

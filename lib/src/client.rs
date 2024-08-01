@@ -12,7 +12,7 @@ use std::collections::BTreeSet;
 
 use self::schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType};
 pub use self::service_id::ServiceId;
-use crate::{config::ModLoader, Result};
+use crate::{config::ModLoader, mgmt::LockedMod, Result};
 
 #[rustfmt::skip]
 mod exported {
@@ -42,7 +42,7 @@ macro_rules! api {
 
         /// Methods wrapping the common api actions provided by the different services.
         ///
-        /// Any ![Copy] args require references to work around long standing compiler bug
+        /// Any ![`Copy`] args require references to work around long standing compiler bug
         /// related to recursive resolution of generics...
         impl Client {$(
             $(#[$attr])*
@@ -134,6 +134,8 @@ api! {
     ///
     /// [`ErrorKind::WrongService`]: crate::ErrorKind::WrongService
     pub get_latest(id: &(impl ProjectIdSvcType + ?Sized), game_version: Option<&str>, loader: Option<ModLoader>) -> Version;
+
+    ++pub(crate) get_updates(game_version: &str, loader: ModLoader, mods: &[&LockedMod]) -> Vec<LockedMod>;
 }
 
 /// The main [`Client`] for accessing the various modding APIs

@@ -1,15 +1,15 @@
 use std::{
     borrow::Cow,
-    collections::{HashMap, HashSet},
+    collections::{BTreeSet, HashMap, HashSet},
     convert::identity,
-    fmt::Write,
+    mem::take,
     ops::Deref,
     path::Path,
 };
 
 use anyhow::{anyhow, Context};
 use async_scoped::TokioScope;
-use once_cell::sync::Lazy;
+use itertools::Itertools;
 
 use crate::{
     checked_types::{PathAbsolute, PathScoped, PathScopedRef},
@@ -19,7 +19,7 @@ use crate::{
         cache,
         events::{EventSouce, InstallType, ProgressEvent},
         hash::{verify_sha1, verify_sha1_sync, Sha1Writer},
-        lockfile::{LockFile, LockedId, LockedMod, LockedPack, PathHashes},
+        lockfile::{LockFile, LockedMod, LockedPack, PathHashes},
         modpack::{modrinth::IndexFile, ModpackData},
         version::VersionSet,
         ProfileManager,
@@ -29,8 +29,6 @@ use crate::{
 
 type Downloads = Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::JoinError>>;
 
-
-static MODS_PATH: Lazy<&PathScopedRef> = Lazy::new(|| PathScopedRef::new("mods").unwrap());
 
 // Public interface
 impl ProfileManager {
@@ -61,24 +59,19 @@ impl ProfileManager {
 
         lockfile.game_version.clone_from(&data.game_version);
         lockfile.loader = data.loader;
-        lockfile.mods.sort_unstable_by(|a, b| a.file.cmp(&b.file));
+        lockfile.sort();
         if let Err(e) = lockfile.save(profile_path).await {
             self.send_err(e);
         };
 
         Ok(())
     }
+}
 
-    pub(super) async fn install(
-        &self,
-        client: &Client,
-        profile_path: &PathAbsolute,
-        data: &ProfileData,
-        lockfile: &mut LockFile,
-    ) -> Result<()> {
-        // This will be passed to other local methods which will add to it any files
-        // that should be deleted
-        let mut delete = vec![];
+// Internal helpers
+impl ProfileManager {
+    async fn install(&self, client: &Client, profile_path: &PathAbsolute, data: &ProfileData, lockfile: &mut LockFile) -> Result<()> {
+        let mut delete = take(&mut lockfile.outdated).into_iter().map(|lm| lm.file).collect();
 
         let mut pack = self.load_pack(client, profile_path, data, lockfile, &mut delete).await?;
 
@@ -94,9 +87,6 @@ impl ProfileManager {
         self.fetch_versions(client, data, unversioned, versioned, &mut pending).await;
         let downloads = self.download_files(pending);
 
-        // Start deleting old files while new ones install
-        let delete_job = self.spawn_delete_files(&delete, profile_path);
-
         self.send(ProgressEvent::Status("Installing...".to_string()));
         lockfile.mods = installed
             .into_iter()
@@ -111,31 +101,52 @@ impl ProfileManager {
             .collect();
         lockfile.mods.extend(self.install_downloaded(downloads, profile_path).await);
 
-        if delete_job.await.is_err() {
-            let mut files = String::with_capacity(2 * delete.len() + delete.iter().map(|p| p.as_os_str().len()).sum::<usize>());
-            for file in delete {
-                files.push_str("\n\t");
-                let _ = write!(&mut files, "{}", file.display());
+        if let Some(pack) = pack {
+            delete.extend(self.install_pack(pack, lockfile, profile_path, data).into_keys());
+            // Don't delete extracted overrides
+            for p in lockfile.pack.as_ref().unwrap().overrides.keys() {
+                delete.remove(p);
             }
-            self.send_err(anyhow!("Unexpected error deleting old files. The following may need deleted manually:{files}",).into());
         }
 
-        if let Some(pack) = pack {
-            use crate::mgmt::modpack::PackMods::Modrinth;
-            if let Modrinth { ref unknown, .. } = pack.mods {
-                self.install_modrinth_unknown(&mut lockfile.other, profile_path, unknown);
-            }
-            if data.modpack.as_ref().is_some_and(|mp| mp.install_overrides) {
-                self.extract_overrides(lockfile, pack, profile_path);
-            }
+        // Don't delete anything that was just installed
+        for p in lockfile.mods.iter().map(|m| &m.file).chain(lockfile.other.keys()) {
+            delete.remove(p);
+        }
+        if self.delete_files(delete.iter(), profile_path).await.is_err() {
+            let files = delete.iter().map(|p| p.display()).join("\n\t");
+            self.send_err(anyhow!("Unexpected error deleting old files. The following may need deleted manually:\n\t{files}").into());
         }
 
         Ok(())
     }
-}
 
-// Internal helpers
-impl ProfileManager {
+    fn install_pack(&self, pack: ModpackData, lockfile: &mut LockFile, profile_path: &PathAbsolute, data: &ProfileData) -> PathHashes {
+        use crate::mgmt::modpack::PackMods::Modrinth;
+
+        let mut delete = PathHashes::new();
+        if let Modrinth { ref unknown, .. } = pack.mods {
+            delete.extend(self.install_modrinth_unknown(&mut lockfile.other, profile_path, unknown));
+        }
+        if data.modpack.as_ref().is_some_and(|mp| mp.install_overrides) {
+            let locked_pack = lockfile.pack.as_mut().expect("Should have lockfile pack if we have pack data");
+            let mut removed = self.extract_overrides(&mut locked_pack.overrides, pack, profile_path);
+            // Don't delete any overrides that have been modified
+            removed.retain(|path, sha1| {
+                let unchanged = verify_sha1_sync(sha1, &profile_path.join(path)).unwrap_or(true);
+                if !unchanged {
+                    self.send(ProgressEvent::Status(format!(
+                        "Keeping removed override due to modifications: {}",
+                        path.display()
+                    )));
+                }
+                unchanged
+            });
+            delete.extend(removed);
+        }
+        delete
+    }
+
     /// Fetches and loads the modpack data from the pack index.
     async fn load_pack(
         &self,
@@ -143,7 +154,7 @@ impl ProfileManager {
         profile_path: &PathAbsolute,
         data: &ProfileData,
         lockfile: &mut LockFile,
-        delete: &mut Vec<PathScoped>,
+        delete: &mut BTreeSet<PathScoped>,
     ) -> Result<Option<ModpackData>> {
         macro_rules! fetch_replace {
             ($pack:expr) => {
@@ -156,9 +167,9 @@ impl ProfileManager {
         // Marks unchanged overrides for deletion
         macro_rules! delete_overrides {
             ($lp:expr) => {
-                for (p, s) in std::mem::take(&mut $lp.overrides) {
+                for (p, s) in take(&mut $lp.overrides) {
                     if let Ok(true) = verify_sha1(&s, &profile_path.join(&p)).await {
-                        delete.push(p);
+                        delete.insert(p);
                     } else {
                         self.send(ProgressEvent::Status(format!(
                             "Keeping changed override file: {}",
@@ -190,10 +201,11 @@ impl ProfileManager {
                         PathScopedRef::new("modpacks").ok(),
                     );
                     if cached.exists() && verify_sha1(&lp.sha1, &cached).await.is_ok_and(identity) {
-                        self.read_pack(client, &cached).await.map(Some)
+                        self.read_pack(client, &cached).await
                     } else {
-                        self.fetch_pack(client, lp, data).await.map(|(data, _)| data).map(Some)
+                        self.fetch_pack(client, lp, data).await.map(|(data, _)| data)
                     }
+                    .map(Some)
                 }
             },
             (None, Some(pack)) => fetch_replace!(pack),
@@ -202,15 +214,7 @@ impl ProfileManager {
 
     async fn fetch_pack(&self, client: &Client, pack: &impl VersionedProject, data: &ProfileData) -> Result<(ModpackData, LockedMod)> {
         let (v, data) = self.load_modpack(client, pack, data).await?;
-        let lm = LockedMod {
-            id: LockedId {
-                project: v.project_id,
-                version: v.id,
-            },
-            file: v.filename,
-            sha1: v.sha1.expect("Downloaded pack should have a sha1"),
-        };
-        Ok((data, lm))
+        Ok((data, v.into()))
     }
 
     /// Fetch the [version] details of all mods that will be installed
@@ -284,8 +288,17 @@ impl ProfileManager {
         downloads
     }
 
-    fn spawn_delete_files(&self, delete: &[PathScoped], profile_path: &Path) -> tokio::task::JoinHandle<()> {
-        let delete = delete.iter().map(|p| (p.to_owned(), profile_path.join(p))).collect::<Vec<_>>();
+    #[must_use]
+    fn delete_files<'a>(&self, delete: impl Iterator<Item = &'a PathScoped>, profile_path: &PathAbsolute) -> tokio::task::JoinHandle<()> {
+        let delete = delete
+            .filter_map(|p| {
+                let file = profile_path.join(p);
+                file.exists().then_some((p.to_owned(), file))
+            })
+            .collect::<Vec<_>>();
+        if !delete.is_empty() {
+            self.send(ProgressEvent::Status("Deleting removed/outdated files...".into()));
+        }
         let channel = self.channel.clone();
         tokio::task::spawn_blocking(move || {
             for (p, file) in delete {
@@ -297,7 +310,7 @@ impl ProfileManager {
         })
     }
 
-    async fn install_downloaded(&self, downloads: Downloads, profile_path: &Path) -> Vec<LockedMod> {
+    async fn install_downloaded(&self, downloads: Downloads, profile_path: &PathAbsolute) -> Vec<LockedMod> {
         let mut installed = Vec::with_capacity(downloads.len());
         for dl in downloads {
             match dl {
@@ -319,28 +332,42 @@ impl ProfileManager {
         installed
     }
 
-    fn install_modrinth_unknown(&self, lock: &mut PathHashes, profile_path: &PathAbsolute, unknown: &[IndexFile]) {
-        if !unknown.is_empty() {
-            self.send(ProgressEvent::Status("Installing remaining external pack mods...".into()));
+    /// Install any additional files from a Modrinth pack that weren't
+    /// recognized as a project on one of the supported APIs.
+    ///
+    /// Returns any previously installed files that are no longer present in the
+    /// pack
+    fn install_modrinth_unknown(&self, lock: &mut PathHashes, profile_path: &PathAbsolute, unknown: &[IndexFile]) -> PathHashes {
+        let mut to_delete = take(lock);
+        if unknown.is_empty() {
+            return to_delete;
         }
+
+        self.send(ProgressEvent::Status("Installing remaining external pack mods...".into()));
         let ((), downloads) = TokioScope::scope_and_block(|scope| {
             for file in unknown {
+                let Ok(path) = file.path_scoped() else {
+                    continue;
+                };
+                to_delete.remove(path);
                 scope.spawn(async move {
-                    let Ok(path) = file.path_scoped() else {
-                        return None;
-                    };
-                    self.download(file, &profile_path.join(path))
-                        .await
-                        .map(|sha1| (sha1, path.to_owned()))
+                    let target = &profile_path.join(path);
+                    let path = path.to_owned();
+                    if let Ok(true) = verify_sha1(&file.hashes.sha1, target).await {
+                        Some((file.hashes.sha1.clone(), path, false))
+                    } else {
+                        self.download(file, target).await.map(|sha1| (sha1, path, true))
+                    }
                 });
             }
         });
         for dl in downloads {
             match dl {
-                Ok(Some((sha1, path))) => {
+                Ok(Some((sha1, file, is_new))) => {
+                    lock.insert(file.clone(), sha1);
                     self.send(ProgressEvent::Installed {
-                        file: path.clone(),
-                        is_new: lock.insert(path, sha1).is_none(),
+                        file,
+                        is_new,
                         typ: InstallType::Other,
                     });
                 },
@@ -348,49 +375,67 @@ impl ProfileManager {
                 Err(e) => self.send_err(anyhow!(e).into()),
             }
         }
+        to_delete
     }
 
-    fn extract_overrides(&self, lockfile: &mut LockFile, mut pack: ModpackData, profile_path: &PathAbsolute) {
-        self.send(ProgressEvent::Status("Modpack Overrides...".to_string()));
-        let Some(LockedPack { ref mut overrides, .. }) = lockfile.pack.as_mut() else {
-            unreachable!("Should have lockfile pack if we have pack data");
-        };
+    /// Extracts override files from the pack. Any previosly installed overrides
+    /// that changed since install will be backed up before overwriting.
+    ///
+    /// Returns any previously installed override files that are no longer
+    /// present in the pack
+    fn extract_overrides(&self, overrides: &mut PathHashes, mut pack: ModpackData, profile_path: &PathAbsolute) -> PathHashes {
+        self.send(ProgressEvent::Status("Extracting Overrides...".to_string()));
+        let mut to_delete = take(overrides);
         pack.visit_overrides(|path, mut file| {
-            macro_rules! event {
-                ($new:literal) => {
-                    ProgressEvent::Installed {
-                        file: path.to_owned(),
-                        is_new: $new,
-                        typ: InstallType::Override,
+            use std::{fs, io};
+
+            let target = &profile_path.join(path);
+            if let Some(sha1) = to_delete.remove(path) {
+                if let Ok(false) = verify_sha1_sync(&sha1, target) {
+                    let bak = {
+                        let mut bak = target.to_path_buf();
+                        bak.as_mut_os_string().push(".bak");
+                        bak
+                    };
+                    if fs::rename(target, &bak).is_ok() {
+                        self.send(ProgressEvent::Status(format!(
+                            "Created backup of modified override file: {}",
+                            bak.display()
+                        )));
+                    } else {
+                        self.send_err(
+                            anyhow!(
+                                "Failed to create backup of modified override file. It will not be extracted\n\t{}",
+                                path.display()
+                            )
+                            .into(),
+                        );
+                        return;
                     }
                 };
             }
 
-            let target = &profile_path.join(path);
-            if let Some(sha1) = overrides.get(path) {
-                if let Ok(true) = verify_sha1_sync(sha1, target) {
-                    self.send(event!(false));
-                    return;
-                };
-            }
-
-            let sha1 = {
-                use std::{fs, io};
-                target.parent().map(fs::create_dir_all);
-                fs::File::create(target).and_then(|target| {
-                    let mut target = Sha1Writer::new(io::BufWriter::new(target));
+            target.parent().map(fs::create_dir_all);
+            let sha1 = fs::File::create(target)
+                .map(io::BufWriter::new)
+                .map(Sha1Writer::new)
+                .and_then(|mut target| {
                     io::copy(&mut file, &mut target)?;
                     target.finalize_str()
-                })
-            };
+                });
             match sha1 {
                 Ok(sha1) => {
                     overrides.insert(path.to_owned(), sha1);
-                    self.send(event!(true));
+                    self.send(ProgressEvent::Installed {
+                        file: path.to_owned(),
+                        is_new: true,
+                        typ: InstallType::Override,
+                    });
                 },
                 Err(e) => self.send_err(e.into()),
             }
         });
+        to_delete
     }
 }
 
@@ -399,7 +444,7 @@ async fn merge_sources<'a>(
     locked: &'a Vec<LockedMod>,
     pack: Option<&'a mut ModpackData>,
     profile_path: &'a Path,
-    delete: &mut Vec<PathScoped>,
+    delete: &mut BTreeSet<PathScoped>,
     reset: bool,
 ) -> ResolvedMods<'a> {
     let mut resolved = ResolvedMods {
@@ -436,7 +481,7 @@ async fn merge_sources<'a>(
             (None, Some(v)) => {
                 versioned.insert(pid.into(), v.into());
             },
-            (Some(mpv), Some(v)) if &mpv.id != v => {
+            (Some(mpv), Some(v)) if mpv.id != v => {
                 versioned.insert(pid.into(), v.into());
                 pending.remove(pid);
             },
@@ -456,9 +501,9 @@ async fn merge_sources<'a>(
             if reset
                 || (!unversioned.remove(pid) && ver.is_none() && pen.is_none())
                 || ver.into_iter().any(|pv| pv.as_ref() != vid)
-                || pen.into_iter().any(|pv| &pv.id != vid)
+                || pen.into_iter().any(|pv| pv.id != vid)
             {
-                delete.push(m.file.clone());
+                delete.insert(m.file.clone());
                 continue;
             }
         }
@@ -474,17 +519,21 @@ async fn merge_sources<'a>(
     resolved
 }
 
-async fn install_version(profile_path: &Path, v: Version, cached: &Path) -> Result<LockedMod> {
-    // put in mods subdir if not specified
-    let file = match v.filename.parent() {
-        Some(p) if !p.as_os_str().is_empty() => v.filename,
-        _ => MODS_PATH.join(v.filename),
+async fn install_version(profile_path: &PathAbsolute, v: Version, cached: &Path) -> Result<LockedMod> {
+    let lm = {
+        use once_cell::sync::Lazy;
+        static MODS_PATH: Lazy<&PathScopedRef> = Lazy::new(|| PathScopedRef::new("mods").unwrap());
+
+        let mut lm: LockedMod = v.into();
+        // put in mods subdir if not specified
+        lm.file = match lm.file.parent() {
+            Some(p) if !p.as_os_str().is_empty() => lm.file,
+            _ => MODS_PATH.join(lm.file),
+        };
+
+        lm
     };
-    let lm = LockedMod {
-        id: LockedId::new(v.project_id, v.id)?,
-        sha1: v.sha1.expect("downloaded mod should always have a sha1"),
-        file,
-    };
+
     let dest = profile_path.join(&lm.file);
     let _ = tokio::fs::create_dir_all(dest.parent().expect("dest directory should always be valid")).await;
     tokio::fs::copy(cached, dest)

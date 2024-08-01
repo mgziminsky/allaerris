@@ -15,11 +15,11 @@ pub struct FolderFingerprint {
     #[serde(rename = "foldername")]
     pub foldername: String,
     #[serde(rename = "fingerprints", default)]
-    pub fingerprints: Vec<u64>,
+    pub fingerprints: Vec<u32>,
 }
 
 impl FolderFingerprint {
-    pub fn new(foldername: String, fingerprints: Vec<u64>) -> Self {
+    pub fn new(foldername: String, fingerprints: Vec<u32>) -> Self {
         Self {
             foldername,
             fingerprints,

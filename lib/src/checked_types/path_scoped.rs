@@ -159,6 +159,11 @@ impl PathScopedRef {
     pub fn file_stem_path(&self) -> Option<&Self> {
         self.0.file_stem().map(|p| unsafe { Self::cast(p) })
     }
+
+    /// Delegates to [`Path::with_file_name`]
+    pub fn with_file_name<S: AsRef<OsStr>>(&self, file_name: S) -> PathScoped {
+        PathScoped(self.0.with_file_name(file_name))
+    }
 }
 
 impl Deref for PathScopedRef {

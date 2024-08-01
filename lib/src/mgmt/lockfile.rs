@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashSet},
     path::{Path, PathBuf},
 };
 
@@ -8,14 +8,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     checked_types::PathScoped,
-    client::schema::{ProjectId, VersionId},
+    client::schema::{self, ProjectId, VersionId},
     config::{profile, ModLoader, ProjectWithVersion, VersionedProject},
     fs_util::{FsUtil, FsUtils},
     Result, StdResult,
 };
 
+crate::cow::cow!(LockedMod);
+
 pub type PathHashes = BTreeMap<PathScoped, String>;
 const FILENAME: &str = concat!(profile::consts!(FILENAME), ".lock");
+
+fn cmp_files(a: &LockedMod, b: &LockedMod) -> std::cmp::Ordering {
+    a.file.cmp(&b.file)
+}
 
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
@@ -26,17 +32,24 @@ pub struct LockFile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pack: Option<LockedPack>,
 
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "deduped_mods")]
     pub mods: Vec<LockedMod>,
 
     #[serde(default, skip_serializing_if = "PathHashes::is_empty")]
     pub other: PathHashes,
+
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub outdated: Vec<LockedMod>,
 }
 
 impl LockFile {
-    #[inline]
     pub fn file_path(profile_path: impl AsRef<Path>) -> PathBuf {
         profile_path.as_ref().join(FILENAME)
+    }
+
+    pub fn sort(&mut self) {
+        self.mods.sort_unstable_by(cmp_files);
+        self.outdated.sort_unstable_by(cmp_files);
     }
 
     /// Load the [lock file](LockFile) located at `profile_path` or return a
@@ -81,6 +94,18 @@ impl VersionedProject for LockedMod {
     }
 }
 
+impl From<schema::Version> for LockedMod {
+    fn from(v: schema::Version) -> Self {
+        LockedMod {
+            id: LockedId {
+                project: v.project_id,
+                version: v.id,
+            },
+            sha1: v.sha1.unwrap_or_default(),
+            file: v.filename,
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(try_from = "ProjectWithVersion", into = "ProjectWithVersion")]
@@ -164,4 +189,48 @@ impl std::ops::DerefMut for LockedPack {
 }
 
 
-crate::cow::cow!(LockedMod);
+fn deduped_mods<'de, D>(de: D) -> StdResult<Vec<LockedMod>, D::Error>
+where
+    D: serde::de::Deserializer<'de>,
+{
+    struct ModSetVisitor;
+    impl<'de> serde::de::Visitor<'de> for ModSetVisitor {
+        type Value = Vec<LockedMod>;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("A list of locked mods unique on project id")
+        }
+
+        fn visit_seq<A>(self, mut seq: A) -> std::result::Result<Self::Value, A::Error>
+        where
+            A: serde::de::SeqAccess<'de>,
+        {
+            #[derive(Deserialize)]
+            #[serde(transparent)]
+            struct ById(LockedMod);
+            impl Eq for ById {}
+            impl PartialEq for ById {
+                fn eq(&self, other: &Self) -> bool {
+                    self.0.project() == other.0.project()
+                }
+            }
+            impl std::hash::Hash for ById {
+                fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+                    self.0.project().hash(state);
+                }
+            }
+
+
+            let mut mods = HashSet::<ById>::new();
+            while let Some(lm) = seq.next_element()? {
+                if mods.contains(&lm) {
+                    return Err(serde::de::Error::custom(format!("Duplicate Mod: {}", lm.0.project())));
+                }
+                mods.insert(lm);
+            }
+            Ok(mods.into_iter().map(|m| m.0).collect())
+        }
+    }
+
+    de.deserialize_seq(ModSetVisitor)
+}

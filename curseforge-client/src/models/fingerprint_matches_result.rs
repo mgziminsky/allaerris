@@ -17,7 +17,7 @@ pub struct FingerprintMatchesResult {
     #[serde(rename = "exactMatches", default)]
     pub exact_matches: Vec<models::FingerprintMatch>,
     #[serde(rename = "exactFingerprints", default)]
-    pub exact_fingerprints: Vec<u64>,
+    pub exact_fingerprints: Vec<u32>,
     #[serde(rename = "partialMatches", default)]
     pub partial_matches: Vec<models::FingerprintMatch>,
     #[serde(rename = "partialMatchFingerprints")]
@@ -25,13 +25,13 @@ pub struct FingerprintMatchesResult {
     #[serde(rename = "additionalProperties", default)]
     pub additional_properties: Vec<u64>,
     #[serde(rename = "installedFingerprints", default)]
-    pub installed_fingerprints: Vec<u64>,
+    pub installed_fingerprints: Vec<u32>,
     #[serde(rename = "unmatchedFingerprints", default)]
-    pub unmatched_fingerprints: Vec<u64>,
+    pub unmatched_fingerprints: Vec<u32>,
 }
 
 impl FingerprintMatchesResult {
-    pub fn new(is_cache_built: bool, exact_matches: Vec<models::FingerprintMatch>, exact_fingerprints: Vec<u64>, partial_matches: Vec<models::FingerprintMatch>, partial_match_fingerprints: serde_json::Value, additional_properties: Vec<u64>, installed_fingerprints: Vec<u64>, unmatched_fingerprints: Vec<u64>) -> Self {
+    pub fn new(is_cache_built: bool, exact_matches: Vec<models::FingerprintMatch>, exact_fingerprints: Vec<u32>, partial_matches: Vec<models::FingerprintMatch>, partial_match_fingerprints: serde_json::Value, additional_properties: Vec<u64>, installed_fingerprints: Vec<u32>, unmatched_fingerprints: Vec<u32>) -> Self {
         Self {
             is_cache_built,
             exact_matches,

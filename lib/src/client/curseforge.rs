@@ -1,4 +1,4 @@
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 use curseforge::{
     apis::{
@@ -13,7 +13,12 @@ use super::{
     schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ForgeClient,
 };
-use crate::{config::ModLoader, Result};
+use crate::{
+    client::schema::{ProjectId, VersionId},
+    config::{ModLoader, ProjectWithVersion, VersionedProject},
+    mgmt::LockedMod,
+    Result,
+};
 
 impl ApiOps for ForgeClient {
     super::get_latest!();
@@ -29,21 +34,8 @@ impl ApiOps for ForgeClient {
     }
 
     async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
-        let mod_ids: Vec<_> = ids.iter().filter_map(|i| i.get_forge().ok()).collect();
-        if mod_ids.is_empty() {
-            return Ok(vec![]);
-        }
-        let mods = self
-            .mods()
-            .get_mods(&GetModsParams {
-                get_mods_by_ids_list_request_body: &GetModsByIdsListRequestBody { mod_ids },
-            })
-            .await?
-            .data
-            .into_iter()
-            .filter_map(|m| m.try_into().ok())
-            .collect();
-
+        let ids: Vec<_> = ids.iter().filter_map(|i| i.get_forge().ok()).collect();
+        let mods = fetch_mods(self, ids).await?.into_iter().filter_map(|m| m.try_into().ok()).collect();
         Ok(mods)
     }
 
@@ -102,12 +94,59 @@ impl ApiOps for ForgeClient {
 
         Ok(versions)
     }
+
+    async fn get_updates(&self, game_version: &str, loader: ModLoader, mods: &[&LockedMod]) -> Result<Vec<LockedMod>> {
+        let mods = &mods
+            .iter()
+            .filter_map(|m| m.project().get_forge().map(|id| (id, *m)).ok())
+            .collect::<HashMap<_, _>>();
+        let data = fetch_mods(self, mods.keys().copied().collect()).await?;
+        if data.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let updates = data
+            .into_iter()
+            .flat_map(|m| {
+                m.latest_file_indexes.into_iter().filter_map(move |fi| {
+                    let vid = mods[&m.id].version().unwrap();
+                    if fi.mod_loader == loader.into() && vid != &fi.file_id && fi.game_version == game_version {
+                        fi.filename.try_into().ok().map(|file| LockedMod {
+                            id: ProjectWithVersion::new(ProjectId::Forge(m.id), Some(VersionId::Forge(fi.file_id)))
+                                .unwrap()
+                                .try_into()
+                                .unwrap(),
+                            sha1: String::new(),
+                            file,
+                        })
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect();
+
+        Ok(updates)
+    }
 }
 
-#[inline]
 async fn fetch_mod(client: &ForgeClient, id: impl ProjectIdSvcType) -> Result<curseforge::models::Mod> {
     let mod_id = id.get_forge()?;
     Ok(client.mods().get_mod(&GetModParams { mod_id }).await?.data)
+}
+
+async fn fetch_mods(client: &ForgeClient, mod_ids: Vec<u64>) -> Result<Vec<curseforge::models::Mod>> {
+    if mod_ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let data = client
+        .mods()
+        .get_mods(&GetModsParams {
+            get_mods_by_ids_list_request_body: &GetModsByIdsListRequestBody { mod_ids },
+        })
+        .await?
+        .data;
+    Ok(data)
 }
 
 mod from {
