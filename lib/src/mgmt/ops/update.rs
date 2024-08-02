@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
-    client::schema::ProjectId,
+    checked_types::PathScoped,
+    client::schema::{ProjectId, VersionId},
     config::{profile::ProfileData, Profile, VersionedProject},
     mgmt::lockfile::{LockFile, LockedMod, LockedPack},
     Client, ProfileManager, Result,
@@ -16,24 +17,32 @@ macro_rules! get_mod {
     };
 }
 
+#[allow(missing_docs)] // fields are self explanatory
+/// Basic version info for an updated project
+pub struct UpdateInfo {
+    pub project: ProjectId,
+    pub from: (VersionId, PathScoped),
+    pub to: (VersionId, PathScoped),
+}
 
 #[allow(clippy::missing_panics_doc)] // Map indexing should be safe
 impl ProfileManager {
     /// Updates any installed profile mods without an explicit version to their
     /// latest compatible version
-    pub async fn update(&self, client: &Client, profile: &Profile) -> Result<()> {
+    pub async fn update(&self, client: &Client, profile: &Profile) -> Result<Vec<UpdateInfo>> {
         let profile_path = profile.path();
         let mut lockfile = LockFile::load(profile_path).await?;
         if lockfile.mods.is_empty() && lockfile.pack.is_none() {
-            return Ok(());
+            return Ok(vec![]);
         }
 
         let data = profile.data().await?;
         let pending = get_updatable(data, lockfile.pack.as_ref(), &lockfile.mods);
         if pending.is_empty() {
-            return Ok(());
+            return Ok(vec![]);
         }
 
+        let mut updated = vec![];
         let updates = client
             .get_updates(
                 &data.game_version,
@@ -56,33 +65,44 @@ impl ProfileManager {
                 },
                 _ => {},
             }
+            updated.push(UpdateInfo {
+                project: lm.project().clone(),
+                from: (lm.id.version.clone(), lm.file.clone()),
+                to: (ulm.id.version.clone(), ulm.file.clone()),
+            });
             lockfile.outdated.push(core::mem::replace(lm, ulm));
         }
 
         lockfile.sort();
         lockfile.save(profile_path).await?;
 
-        Ok(())
+        Ok(updated)
     }
 
     /// Cancel the update of any outdated mods waiting to be installed
-    pub async fn revert(&self, profile: &Profile) -> Result<()> {
+    pub async fn revert(&self, profile: &Profile) -> Result<Vec<UpdateInfo>> {
         let profile_path = profile.path();
         let mut lockfile = LockFile::load(profile_path).await?;
         if lockfile.outdated.is_empty() {
-            return Ok(());
+            return Ok(vec![]);
         }
 
+        let mut updated = vec![];
         let mods = get_updatable(profile.data().await?, lockfile.pack.as_ref(), &lockfile.mods);
         for prev in lockfile.outdated.drain(..) {
             let lm = get_mod!(lockfile, mods[prev.project()], mut);
+            updated.push(UpdateInfo {
+                project: lm.project().clone(),
+                from: (lm.id.version.clone(), lm.file.clone()),
+                to: (prev.id.version.clone(), prev.file.clone()),
+            });
             *lm = prev;
         }
 
         lockfile.sort();
         lockfile.save(profile_path).await?;
 
-        Ok(())
+        Ok(updated)
     }
 }
 

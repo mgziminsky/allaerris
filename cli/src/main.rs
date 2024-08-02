@@ -6,25 +6,18 @@ mod subcommands;
 mod tui;
 
 use std::{
-    collections::HashMap,
     env::{var, var_os},
     ffi::OsStr,
     path::Path,
     process::ExitCode,
-    sync::mpsc,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser};
-use indicatif::{MultiProgress, ProgressBar};
 use relibium::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
     config::{Config, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
-    mgmt::{
-        events::{DownloadId, DownloadProgress, ProgressEvent},
-        ProfileManager,
-    },
 };
 use tokio::runtime;
 use yansi::Paint;
@@ -32,8 +25,8 @@ use yansi::Paint;
 use self::{
     cli::{Ferium, ModpackSubCommand, ProfileSubCommand, SubCommand},
     helpers::{consts, APP_NAME},
-    subcommands::{list, modpack, profile},
-    tui::{const_style, print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, TICK_GREEN, TICK_YELLOW},
+    subcommands::{modpack, mods, profile},
+    tui::const_style,
 };
 
 const USER_AGENT: &str = concat!(consts!(APP_NAME), "/", env!("CARGO_PKG_VERSION"), " (Github: mgziminsky)");
@@ -121,27 +114,24 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommand::Complete { .. } | SubCommand::Profiles => {
             unreachable!();
         },
-        SubCommand::List { verbose, markdown } => {
-            let profile = helpers::get_active_profile(&mut config)?;
-            helpers::check_empty_profile(profile).await?;
-            if verbose || markdown {
-                list::verbose(&client, profile, markdown).await?;
-            } else {
-                list::simple(profile).await?;
-            }
-        },
-        SubCommand::Add { ids, exclude } => {
-            if ids.is_empty() {
-                bail!("Must provide at least one identifier")
-            }
-            subcommands::add(client, helpers::get_active_profile(&mut config)?.data_mut().await?, ids, exclude).await?;
-        },
-        SubCommand::Remove { mod_names } => {
-            let profile = helpers::get_active_profile(&mut config)?;
-            helpers::check_empty_profile(profile).await?;
-            let removed = subcommands::remove(profile.data_mut().await?, &mod_names)?;
-            if !removed.is_empty() {
-                print_mods(format_args!("Removed {} Mods", removed.len().yellow().bold()), &removed);
+        SubCommand::Mods(subcommand) => mods::process(subcommand, &mut config, client).await?,
+        SubCommand::Modpack { subcommand } => {
+            let mut default_flag = false;
+            let subcommand = subcommand.unwrap_or_else(|| {
+                default_flag = true;
+                ModpackSubCommand::Info
+            });
+            modpack::process(subcommand, &mut config, client).await?;
+            if default_flag {
+                println!(
+                    "{}",
+                    format_args!(
+                        "Use `{}` for more information about this subcommand",
+                        const_style!(concat!(consts!(APP_NAME), " modpack help"); bold())
+                    )
+                    .yellow()
+                    .wrap()
+                );
             }
         },
         SubCommand::Profile { subcommand } => {
@@ -163,100 +153,9 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 );
             }
         },
-        SubCommand::Modpack { subcommand } => {
-            let mut default_flag = false;
-            let subcommand = subcommand.unwrap_or_else(|| {
-                default_flag = true;
-                ModpackSubCommand::Info
-            });
-            modpack::process(subcommand, &mut config, client).await?;
-            if default_flag {
-                println!(
-                    "{}",
-                    format_args!(
-                        "Use `{}` for more information about this subcommand",
-                        const_style!(concat!(consts!(APP_NAME), " modpack help"); bold())
-                    )
-                    .yellow()
-                    .wrap()
-                );
-            }
-        },
-        SubCommand::Install => {
-            let (sender, handle) = progress_hander();
-            ProfileManager::with_channel(sender)
-                .apply(&client, helpers::get_active_profile(&mut config)?)
-                .await?;
-            let _ = handle.await;
-        },
     };
 
     config.save_to(config_path).await?;
 
     Ok(())
-}
-
-pub fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandle<()>) {
-    let (sender, receiver) = mpsc::channel();
-    (
-        sender,
-        tokio::task::spawn_blocking(move || {
-            let progress = MultiProgress::new();
-            let mut bars = HashMap::new();
-            while let Ok(evt) = receiver.recv() {
-                match evt {
-                    ProgressEvent::Status(msg) => {
-                        println!("{msg}");
-                    },
-                    ProgressEvent::Download(evt) => handle_dl(evt, &mut bars, &progress),
-                    ProgressEvent::Installed { file, is_new, typ } => {
-                        use relibium::mgmt::events::InstallType::*;
-                        println!(
-                            "{} {:>9}: {}",
-                            if is_new { TICK_GREEN } else { TICK_YELLOW },
-                            match typ {
-                                Mod => "Installed",
-                                Override => "Override",
-                                Other => "Other",
-                            },
-                            file.display()
-                        );
-                    },
-                    ProgressEvent::Deleted(file) => {
-                        println!("{}   Deleted: {}", TICK_GREEN, file.display());
-                    },
-                    ProgressEvent::Error(err) => {
-                        eprintln!("{:?}", anyhow!(err).red());
-                    },
-                }
-            }
-        }),
-    )
-}
-
-fn handle_dl(evt: DownloadProgress, bars: &mut HashMap<DownloadId, ProgressBar>, progress: &MultiProgress) {
-    use DownloadProgress::*;
-    match evt {
-        Start { project, title, length } => {
-            let bar = progress.add(ProgressBar::new(length).with_message(title).with_style(PROG_BYTES.clone()));
-            bars.insert(project, bar);
-        },
-        Progress(id, len) => {
-            if let Some(bar) = bars.get(&id) {
-                bar.inc(len);
-            }
-        },
-        Success(id) => {
-            if let Some(bar) = bars.remove(&id) {
-                bar.with_style(PROG_DONE.clone()).with_prefix(TICK_GREEN.to_string()).finish();
-            }
-        },
-        Fail(id, err) => {
-            if let Some(bar) = bars.remove(&id) {
-                bar.with_style(PROG_DONE.clone())
-                    .with_prefix(CROSS_RED.to_string())
-                    .abandon_with_message(err.bright().red().to_string());
-            }
-        },
-    }
 }

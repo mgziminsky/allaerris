@@ -39,12 +39,12 @@ pub const TICK_YELLOW: Painted<&str> = Painted::new(TICK).yellow();
 pub static THEME: Lazy<ColorfulTheme> = Lazy::new(Default::default);
 pub static PROG_BYTES: Lazy<ProgressStyle> = Lazy::new(|| {
     ProgressStyle::with_template(
-        "{spinner} {msg} ({eta:.bold.yellow}) {wide_bar:.cyan/blue} [{bytes_per_sec:.green} | {bytes:.cyan} / {total_bytes:.blue}]",
+        "{spinner} {msg:50!} {eta:>3.bold.yellow} {wide_bar:.cyan/blue} [{bytes_per_sec:.green} | {bytes:.cyan} / {total_bytes:.blue}]",
     )
     .expect("template should be valid")
 });
 pub static PROG_DONE: Lazy<ProgressStyle> = Lazy::new(|| {
-    ProgressStyle::with_template("{prefix:.bold} {msg} [{elapsed:.yellow} - {bytes:.cyan}]").expect("template should be valid")
+    ProgressStyle::with_template("{prefix:.bold} {bytes:>10.cyan} {elapsed:>3.yellow} {msg}").expect("template should be valid")
 });
 
 macro_rules! min {
@@ -111,7 +111,7 @@ macro_rules! ellipsize {
 }
 pub(crate) use ellipsize;
 
-fn id_tag(id: &ProjectId) -> String {
+pub fn id_tag(id: &ProjectId) -> String {
     match id {
         ProjectId::Forge(id) => format!("{CF} {id}"),
         ProjectId::Modrinth(id) => format!("{MR} {id}"),
@@ -142,10 +142,11 @@ pub async fn print_profile(profile: &Profile, active: bool) {
     let data = profile.data().await;
     println!(
         "\
-{}
+{}{}
     Path:        {}
     {}
 ",
+        active.then_some("*").unwrap_or_default(),
         {
             let mut name = profile.name().bold();
             if active {

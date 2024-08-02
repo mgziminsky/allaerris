@@ -34,6 +34,34 @@ pub struct Ferium {
 
 #[derive(Subcommand)]
 pub enum SubCommand {
+    #[command(flatten)]
+    Mods(ModsSubcommand),
+
+    /// Add, configure, or delete the current modpack
+    Modpack {
+        #[command(subcommand)]
+        subcommand: Option<ModpackSubCommand>,
+    },
+
+    /// Create, configure, delete, switch, or list profiles
+    Profile {
+        #[command(subcommand)]
+        subcommand: Option<ProfileSubCommand>,
+    },
+
+    /// List all the profiles with their data
+    Profiles,
+
+    /// Print shell auto completions for the specified shell
+    Complete {
+        /// The shell to generate auto completions for
+        #[arg(value_enum)]
+        shell: Shell,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum ModsSubcommand {
     /// Add mods to the active profile
     Add {
         /// The identifier(s) of the mod/project/repository
@@ -54,12 +82,15 @@ pub enum SubCommand {
         #[arg(short = 'x', long)]
         exclude: bool,
     },
-    /// Print shell auto completions for the specified shell
-    Complete {
-        /// The shell to generate auto completions for
-        #[arg(value_enum)]
-        shell: Shell,
+
+    /// Remove mods and/or repositories from the profile.
+    /// Optionally, provide a list of names or IDs of the mods to remove.
+    #[command(visible_aliases = ["rm", "delete", "del"])]
+    Remove {
+        /// List of project IDs or case-insensitive names of mods to remove
+        mod_names: Vec<String>,
     },
+
     /// List all the mods in the profile, including their metadata if verbose
     #[command(visible_alias = "mods")]
     List {
@@ -73,28 +104,31 @@ pub enum SubCommand {
         #[arg(long, short, visible_alias = "md")]
         markdown: bool,
     },
-    /// Add, configure, or delete the current modpack
-    Modpack {
-        #[command(subcommand)]
-        subcommand: Option<ModpackSubCommand>,
+
+    #[command(flatten)]
+    Mgmt(MgmtCommands),
+}
+
+#[derive(Subcommand)]
+pub enum MgmtCommands {
+    /// Download and install everything configured in the active profile
+    #[command(visible_aliases = ["install"])]
+    Apply,
+
+    /// Mark outdated mods in the active profile to be updated by the next call
+    /// to `apply`
+    ///
+    /// Only applies to the mods/modpack added directly to the profile. Will not
+    /// update individual mods inside a modpack unless they are also added to
+    /// the profile
+    #[command(visible_aliases = ["up"])]
+    Update {
+        /// Revert mods marked for updating to their installed version.
+        ///
+        /// Only works if updates haven't yet been applied
+        #[arg(short, long)]
+        revert: bool,
     },
-    /// Create, configure, delete, switch, or list profiles
-    Profile {
-        #[command(subcommand)]
-        subcommand: Option<ProfileSubCommand>,
-    },
-    /// List all the profiles with their data
-    Profiles,
-    /// Remove mods and/or repositories from the profile.
-    /// Optionally, provide a list of names or IDs of the mods to remove.
-    #[command(visible_aliases = ["rm", "delete", "del"])]
-    Remove {
-        /// List of project IDs or case-insensitive names of mods to remove
-        mod_names: Vec<String>,
-    },
-    /// Download and install everything configured in the current profile
-    #[command(visible_aliases = ["apply"])]
-    Install,
 }
 
 #[derive(Subcommand)]

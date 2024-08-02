@@ -1,3 +1,3 @@
 pub(super) mod download;
-mod install;
-mod update;
+pub(super) mod install;
+pub(super) mod update;
