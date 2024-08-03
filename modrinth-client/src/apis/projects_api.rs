@@ -504,7 +504,7 @@ impl<'c> ProjectsApi<'c> {
 
     pub async fn create_project(&self, params: &CreateProjectParams<'_,>) -> Result<models::Project> {
         // unwrap the parameters
-        let CreateProjectParams { data, icon, } = params;
+        let CreateProjectParams { data, icon: _, } = params;
 
         #[allow(unused_mut)]
         let mut local_var_req_builder = self.0.request(

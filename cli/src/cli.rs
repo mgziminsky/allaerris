@@ -40,13 +40,13 @@ pub enum SubCommand {
     /// Add, configure, or delete the current modpack
     Modpack {
         #[command(subcommand)]
-        subcommand: Option<ModpackSubCommand>,
+        subcommand: Option<ModpackSubcommand>,
     },
 
     /// Create, configure, delete, switch, or list profiles
     Profile {
         #[command(subcommand)]
-        subcommand: Option<ProfileSubCommand>,
+        subcommand: Option<ProfileSubcommand>,
     },
 
     /// List all the profiles with their data
@@ -106,17 +106,17 @@ pub enum ModsSubcommand {
     },
 
     #[command(flatten)]
-    Mgmt(MgmtCommands),
+    Mgmt(MgmtCommand),
 }
 
 #[derive(Subcommand)]
-pub enum MgmtCommands {
+pub enum MgmtCommand {
     /// Download and install everything configured in the active profile
     #[command(visible_aliases = ["install"])]
     Apply,
 
     /// Mark outdated mods in the active profile to be updated by the next call
-    /// to `apply`
+    /// to apply
     ///
     /// Only applies to the mods/modpack added directly to the profile. Will not
     /// update individual mods inside a modpack unless they are also added to
@@ -132,7 +132,7 @@ pub enum MgmtCommands {
 }
 
 #[derive(Subcommand)]
-pub enum ProfileSubCommand {
+pub enum ProfileSubcommand {
     /// Show information about the current profile
     Info,
     /// List all the profiles with their data
@@ -144,20 +144,19 @@ pub enum ProfileSubCommand {
         #[arg(long, short = 'v')]
         game_version: Option<String>,
         /// The mod loader to use
-        #[arg(long, short)]
-        #[arg(value_enum)]
+        #[arg(value_enum, long, short)]
         loader: Option<ModLoader>,
         /// The name of the profile
         #[arg(long, short)]
         name: Option<String>,
-        /// The directory to output mods to
+        /// The minecraft instance directory to install profile to
         #[arg(long, short)]
         #[arg(value_hint(ValueHint::DirPath))]
         path: Option<PathBuf>,
     },
-    /// Add/import and existing profile path to the config
-    #[command(visible_aliases = ["import"])]
-    Add {
+    /// Add/import an existing profile path to the config
+    #[command(visible_aliases = ["add"])]
+    Import {
         /// The name of the profile
         #[arg(long, short)]
         name: String,
@@ -181,8 +180,7 @@ pub enum ProfileSubCommand {
         #[arg(long, short = 'v')]
         game_version: Option<String>,
         /// The mod loader to use
-        #[arg(long, short)]
-        #[arg(value_enum)]
+        #[arg(value_enum, long, short)]
         loader: Option<ModLoader>,
         /// The name of the profile
         #[arg(long, short)]
@@ -196,7 +194,7 @@ pub enum ProfileSubCommand {
 }
 
 #[derive(Subcommand)]
-pub enum ModpackSubCommand {
+pub enum ModpackSubcommand {
     /// Show information about the current modpack
     Info,
     /// Set a modpack on the active profile.

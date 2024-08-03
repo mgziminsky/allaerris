@@ -1,51 +1,34 @@
 use anyhow::{anyhow, bail, Ok, Result};
 use dialoguer::Confirm;
 use relibium::{
-    config::{Modpack, Profile},
-    Client, Config,
+    config::{profile::ProfileData, Modpack, Profile},
+    Client,
 };
 use yansi::Paint;
 
 use crate::{
-    cli::ModpackSubCommand,
-    helpers::get_active_profile,
+    cli::ModpackSubcommand,
     tui::{mod_single_line, CROSS_RED, THEME, TICK_GREEN},
 };
 
 const MSG_NO_PACK: &str = "No modpack on active profile";
 
-pub async fn process(subcommand: ModpackSubCommand, config: &mut Config, client: Client) -> Result<()> {
+pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, client: Client) -> Result<()> {
     match subcommand {
-        ModpackSubCommand::Info => {
-            let pack = &get_active_profile(config)?.data().await?.modpack;
+        ModpackSubcommand::Info => {
+            let pack = &profile.data().await?.modpack;
             if let Some(ref pack) = pack {
                 print_pack(pack);
             }
         },
-        ModpackSubCommand::Add { id, install_overrides } => {
-            add(id, get_active_profile(config)?, install_overrides, &client).await?;
+        ModpackSubcommand::Add { id, install_overrides } => {
+            add(id, profile.data_mut().await?, install_overrides, &client).await?;
         },
-        ModpackSubCommand::Remove { force } => {
-            let profile = get_active_profile(config)?.data_mut().await?;
-            let Some(ref modpack) = profile.modpack else {
-                bail!(MSG_NO_PACK);
-            };
-            if force
-                || Confirm::with_theme(&*THEME)
-                    .default(true)
-                    .with_prompt(format!("Remove modpack `{}` from active profile?", mod_single_line(modpack)))
-                    .interact()?
-            {
-                profile.modpack = None;
-            }
+        ModpackSubcommand::Remove { force } => {
+            remove(profile.data_mut().await?, force)?;
         },
-        ModpackSubCommand::Configure { install_overrides } => {
-            let mp = get_active_profile(config)?
-                .data_mut()
-                .await?
-                .modpack
-                .as_mut()
-                .ok_or_else(|| anyhow!(MSG_NO_PACK))?;
+        ModpackSubcommand::Configure { install_overrides } => {
+            let mp = profile.data_mut().await?.modpack.as_mut().ok_or_else(|| anyhow!(MSG_NO_PACK))?;
             mp.install_overrides = prompt_overrides(install_overrides, mp.install_overrides)?;
         },
     }
@@ -84,20 +67,34 @@ fn prompt_overrides(initial: Option<bool>, default: bool) -> Result<bool> {
     Ok(install_overrides)
 }
 
-async fn add(id: String, profile: &mut Profile, install_overrides: Option<bool>, client: &Client) -> Result<()> {
-    let profile = profile.data_mut().await?;
-    if profile.modpack.is_some()
+async fn add(id: String, data: &mut ProfileData, install_overrides: Option<bool>, client: &Client) -> Result<()> {
+    if data.modpack.is_some()
         && !Confirm::with_theme(&*THEME)
             .default(false)
             .with_prompt("Active profile already has a modpack set. Do you want to replace it?")
             .interact()?
     {
-        return Ok(());
+        bail!("Modpack update cancelled");
     }
 
     let pack = client.get_modpack(&id).await?;
     let install_overrides = prompt_overrides(install_overrides, true)?;
-    profile.modpack.replace(Modpack::new(pack, install_overrides));
+    data.modpack.replace(Modpack::new(pack, install_overrides));
 
+    Ok(())
+}
+
+fn remove(data: &mut ProfileData, force: bool) -> Result<(), anyhow::Error> {
+    let Some(ref modpack) = data.modpack else {
+        bail!(MSG_NO_PACK);
+    };
+    if force
+        || Confirm::with_theme(&*THEME)
+            .default(true)
+            .with_prompt(format!("Remove modpack `{}` from active profile?", mod_single_line(modpack)))
+            .interact()?
+    {
+        data.modpack = None;
+    }
     Ok(())
 }

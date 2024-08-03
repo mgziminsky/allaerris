@@ -1,7 +1,6 @@
 mod cli;
-mod helpers;
-// mod download;
 mod file_picker;
+mod helpers;
 mod subcommands;
 mod tui;
 
@@ -23,8 +22,8 @@ use tokio::runtime;
 use yansi::Paint;
 
 use self::{
-    cli::{Ferium, ModpackSubCommand, ProfileSubCommand, SubCommand},
-    helpers::{consts, APP_NAME},
+    cli::{Ferium, ModpackSubcommand, ProfileSubcommand, SubCommand},
+    helpers::{consts, get_active_profile, APP_NAME},
     subcommands::{modpack, mods, profile},
     tui::const_style,
 };
@@ -74,7 +73,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
     // Alias `profiles` to `profile list`
     if let SubCommand::Profiles = cli_app.subcommand {
         cli_app.subcommand = SubCommand::Profile {
-            subcommand: Some(ProfileSubCommand::List),
+            subcommand: Some(ProfileSubcommand::List),
         };
     }
 
@@ -114,14 +113,14 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommand::Complete { .. } | SubCommand::Profiles => {
             unreachable!();
         },
-        SubCommand::Mods(subcommand) => mods::process(subcommand, &mut config, client).await?,
+        SubCommand::Mods(subcommand) => mods::process(subcommand, get_active_profile(&mut config)?, client).await?,
         SubCommand::Modpack { subcommand } => {
             let mut default_flag = false;
             let subcommand = subcommand.unwrap_or_else(|| {
                 default_flag = true;
-                ModpackSubCommand::Info
+                ModpackSubcommand::Info
             });
-            modpack::process(subcommand, &mut config, client).await?;
+            modpack::process(subcommand, get_active_profile(&mut config)?, client).await?;
             if default_flag {
                 println!(
                     "{}",
@@ -138,7 +137,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
             let mut default_flag = false;
             let subcommand = subcommand.unwrap_or_else(|| {
                 default_flag = true;
-                ProfileSubCommand::Info
+                ProfileSubcommand::Info
             });
             profile::process(subcommand, &mut config).await?;
             if default_flag {

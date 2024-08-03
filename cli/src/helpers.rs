@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Context, Ok, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use relibium::config::{Config, Profile};
 use yansi::Paint;
 

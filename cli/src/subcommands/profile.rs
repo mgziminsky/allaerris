@@ -13,18 +13,18 @@ use yansi::Paint;
 
 use self::{configure::configure, create::create, delete::delete, helpers::switch_profile};
 use crate::{
-    cli::ProfileSubCommand,
+    cli::ProfileSubcommand,
     helpers::{consts, get_active_profile},
     tui::{self, fmt_profile_simple},
 };
 
 
-pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Result<()> {
+pub async fn process(subcommand: ProfileSubcommand, config: &mut Config) -> Result<()> {
     match subcommand {
-        ProfileSubCommand::Info => {
+        ProfileSubcommand::Info => {
             tui::print_profile(get_active_profile(config)?, true).await;
         },
-        ProfileSubCommand::List => {
+        ProfileSubcommand::List => {
             if let Some(active) = config.active() {
                 let mut profiles = config.get_profiles();
                 profiles.sort_by_cached_key(|p| p.name().to_lowercase());
@@ -33,7 +33,7 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                 }
             }
         },
-        ProfileSubCommand::New {
+        ProfileSubcommand::New {
             game_version,
             loader,
             name,
@@ -44,19 +44,19 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                 "{}",
                 format!(
                     "After adding your mods, remember to run `{}` to download them!",
-                    concat!(consts!(APP_NAME), " upgrade").bold()
+                    concat!(consts!(APP_NAME), " apply").bold()
                 )
                 .yellow()
                 .wrap()
             );
         },
-        ProfileSubCommand::Add { name, path } => {
+        ProfileSubcommand::Import { name, path } => {
             let path = PathAbsolute::new(path)?;
             if !ProfileData::file_path(&path).exists() {
                 bail!(
                     "No existing profile found at `{}`\nUse `{}` to create one",
                     path.display().bold().italic(),
-                    concat!(consts!(APP_NAME), " new").bold(),
+                    concat!(consts!(APP_NAME), " profile new").bold(),
                 );
             }
             if let Err(prof) = config.add_profile(Profile::new(name, path.clone())) {
@@ -69,21 +69,21 @@ pub async fn process(subcommand: ProfileSubCommand, config: &mut Config) -> Resu
                 .inspect_err(|e| eprintln!("{:?}", e.yellow()))
                 .inspect(|()| println!("The imported profile is now active"));
         },
-        ProfileSubCommand::Remove { profile_name, switch_to } => {
+        ProfileSubcommand::Remove { profile_name, switch_to } => {
             let removed = delete(config, profile_name, switch_to)?;
             println!("Profile Removed: {}", fmt_profile_simple(&removed, 100));
             if let Ok(active) = config.active_profile() {
                 println!("Active Profile:  {}", fmt_profile_simple(active, 100));
             }
         },
-        ProfileSubCommand::Configure {
+        ProfileSubcommand::Configure {
             game_version,
             loader,
             name,
         } => {
             configure(get_active_profile(config)?, game_version, loader, name).await?;
         },
-        ProfileSubCommand::Switch { profile_name } => {
+        ProfileSubcommand::Switch { profile_name } => {
             let profiles = config.get_profiles();
             switch_profile!(config, profiles, profile_name);
         },
