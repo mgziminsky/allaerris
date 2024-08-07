@@ -26,13 +26,17 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
             if ids.is_empty() {
                 bail!("Must provide at least one project ID");
             }
-            add::add(client, profile.data_mut().await?, ids, exclude).await?;
+            let new = add::add(client, profile.data_mut().await?, ids, exclude).await?;
+            if new > 0 {
+                profile.save().await?;
+            }
         },
         Remove { mod_names } => {
             helpers::check_empty_profile(profile).await?;
             let removed = remove::remove(profile.data_mut().await?, &mod_names)?;
             if !removed.is_empty() {
                 print_mods(format_args!("Removed {} Mods", removed.len().yellow().bold()), &removed);
+                profile.save().await?;
             }
         },
         List { verbose, markdown } => {

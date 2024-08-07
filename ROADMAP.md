@@ -1,5 +1,5 @@
 # WIP
-- Detect profile of working directory tree and use it if present
+- Allow selective updates by passing project ids
 
 # Planned - In no particular order
 - Handle dependencies during add and update
@@ -8,7 +8,6 @@
 - Github use graphql. Requires API token
 - Support server/client distinction in profile
 - Support full profile deployment including installing loaders and vanilla client/server
-- Allow selective updates by passing project ids
 - Add option to immediately apply updates, or prompt to apply when not specified
 
 # Completed
@@ -17,3 +16,4 @@
 - Apply/install profile
 - Allow overriding/deleting mods from a modpack
 - Update installed mods
+- Detect profile of working directory tree and use it if present
