@@ -1,10 +1,9 @@
 # WIP
-- Add option to immediately apply updates, or prompt to apply when not specified
+- Cache management commands
 
 # Planned - In no particular order
 - Handle dependencies during add and update
 - "Scan" existing mod files and add to profile
-- Cache management commands
 - Github use graphql. Requires API token
 - Support server/client distinction in profile
 - Support full profile deployment including installing loaders and vanilla client/server
@@ -17,3 +16,4 @@
 - Update installed mods
 - Detect profile of working directory tree and use it if present
 - Allow selective updates by passing project ids
+- Add option to immediately apply updates, or prompt to apply when not specified
