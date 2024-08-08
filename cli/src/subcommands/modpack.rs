@@ -13,7 +13,7 @@ use crate::{
 
 const MSG_NO_PACK: &str = "No modpack on active profile";
 
-pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, client: Client) -> Result<()> {
+pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, client: &Client) -> Result<()> {
     match subcommand {
         ModpackSubcommand::Info => {
             let pack = &profile.data().await?.modpack;
@@ -22,7 +22,7 @@ pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, clien
             }
         },
         ModpackSubcommand::Add { id, install_overrides } => {
-            add(id, profile.data_mut().await?, install_overrides, &client).await?;
+            add(id, profile.data_mut().await?, install_overrides, client).await?;
         },
         ModpackSubcommand::Remove { force } => {
             remove(profile.data_mut().await?, force)?;

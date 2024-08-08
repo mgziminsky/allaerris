@@ -9,7 +9,7 @@ use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 
 /// Add mods with `ids` to `profile` returning the number of added/updated mods,
 /// not counting existing and unchanged mods
-pub async fn add(client: Client, profile: &mut ProfileData, ids: Vec<String>, exclude: bool) -> Result<usize> {
+pub async fn add(client: &Client, profile: &mut ProfileData, ids: Vec<String>, exclude: bool) -> Result<usize> {
     eprintln!("Fetching mod information...");
     let mods = if ids.len() == 1 {
         let m = client.get_mod(&ids[0]).await?;

@@ -123,6 +123,9 @@ pub enum MgmtCommand {
     /// the profile
     #[command(visible_aliases = ["up"])]
     Update {
+        /// Only check mods with the specified id(s)
+        ids: Vec<String>,
+
         /// Revert mods marked for updating to their installed version.
         ///
         /// Only works if updates haven't yet been applied

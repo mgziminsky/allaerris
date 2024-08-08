@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     checked_types::PathScoped,
-    client::schema::{ProjectId, VersionId},
+    client::schema::{ProjectId, ProjectIdSvcType, VersionId},
     config::{profile::ProfileData, Profile, VersionedProject},
     mgmt::lockfile::{LockFile, LockedMod, LockedPack},
     Client, ProfileManager, Result,
@@ -29,7 +29,7 @@ pub struct UpdateInfo {
 impl ProfileManager {
     /// Updates any installed profile mods without an explicit version to their
     /// latest compatible version
-    pub async fn update(&self, client: &Client, profile: &Profile) -> Result<Vec<UpdateInfo>> {
+    pub async fn update(&self, client: &Client, profile: &Profile, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<UpdateInfo>> {
         let profile_path = profile.path();
         let mut lockfile = LockFile::load(profile_path).await?;
         if lockfile.mods.is_empty() && lockfile.pack.is_none() {
@@ -37,7 +37,13 @@ impl ProfileManager {
         }
 
         let data = profile.data().await?;
-        let pending = get_updatable(data, lockfile.pack.as_ref(), &lockfile.mods);
+        let pending = {
+            let mut pending = get_updatable(data, lockfile.pack.as_ref(), &lockfile.mods);
+            if !ids.is_empty() {
+                pending.retain(|&pid, _| ids.iter().any(|id| pid == id));
+            }
+            pending
+        };
         if pending.is_empty() {
             return Ok(vec![]);
         }
