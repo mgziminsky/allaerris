@@ -19,7 +19,7 @@ mod add;
 mod list;
 mod remove;
 
-pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: Client) -> Result<()> {
+pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: &Client) -> Result<()> {
     use ModsSubcommand::*;
     match subcommand {
         Add { ids, exclude } => {
@@ -42,7 +42,7 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
         List { verbose, markdown } => {
             helpers::check_empty_profile(profile).await?;
             if verbose || markdown {
-                list::verbose(&client, profile, markdown).await?;
+                list::verbose(client, profile, markdown).await?;
             } else {
                 list::simple(profile).await?;
             }
@@ -54,10 +54,10 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
                 let manager = ProfileManager::with_channel(sender);
                 match command {
                     Apply => {
-                        manager.apply(&client, profile).await?;
+                        manager.apply(client, profile).await?;
                     },
-                    Update { revert } => {
-                        update(manager, profile, client, revert).await?;
+                    Update { ids, revert } => {
+                        update(manager, profile, client, ids, revert).await?;
                     },
                 }
             }
@@ -67,11 +67,12 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
     Ok(())
 }
 
-async fn update(manager: ProfileManager, profile: &Profile, client: Client, revert: bool) -> Result<()> {
+async fn update(manager: ProfileManager, profile: &Profile, client: &Client, ids: Vec<String>, revert: bool) -> Result<()> {
     let updates = if revert {
         manager.revert(profile).await?
     } else {
-        manager.update(&client, profile).await?
+        let ids = ids.iter().map(|id| id as _).collect::<Vec<_>>();
+        manager.update(client, profile, &ids).await?
     };
     if updates.is_empty() {
         println!("Profile is up to date");

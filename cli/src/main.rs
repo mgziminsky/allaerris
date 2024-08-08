@@ -140,14 +140,14 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
         SubCommand::Complete { .. } | SubCommand::Profiles => {
             unreachable!();
         },
-        SubCommand::Mods(subcommand) => mods::process(subcommand, profile!(), client).await?,
+        SubCommand::Mods(subcommand) => mods::process(subcommand, profile!(), &client).await?,
         SubCommand::Modpack { subcommand } => {
             let mut default_flag = false;
             let subcommand = subcommand.unwrap_or_else(|| {
                 default_flag = true;
                 ModpackSubcommand::Info
             });
-            modpack::process(subcommand, profile!(), client).await?;
+            modpack::process(subcommand, profile!(), &client).await?;
             if default_flag {
                 println!(
                     "{}",
