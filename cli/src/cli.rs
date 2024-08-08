@@ -112,6 +112,8 @@ pub enum ModsSubcommand {
 #[derive(Subcommand)]
 pub enum MgmtCommand {
     /// Download and install everything configured in the active profile
+    ///
+    /// Any pending updates will be finalized and no longer revertable.
     #[command(visible_aliases = ["install"])]
     Apply,
 
@@ -131,6 +133,10 @@ pub enum MgmtCommand {
         /// Only works if updates haven't yet been applied
         #[arg(short, long)]
         revert: bool,
+
+        /// Immediatly apply any updates. Revert will not be possible
+        #[arg(short, long, conflicts_with = "revert")]
+        apply: bool,
     },
 }
 

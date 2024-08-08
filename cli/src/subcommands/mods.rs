@@ -12,7 +12,7 @@ use yansi::Paint;
 use crate::{
     cli::{MgmtCommand, ModsSubcommand},
     helpers::{self, consts},
-    tui::{const_style, id_tag, print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, TICK_GREEN, TICK_YELLOW},
+    tui::{const_style, id_tag, print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, THEME, TICK_GREEN, TICK_YELLOW},
 };
 
 mod add;
@@ -56,8 +56,22 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
                     Apply => {
                         manager.apply(client, profile).await?;
                     },
-                    Update { ids, revert } => {
-                        update(manager, profile, client, ids, revert).await?;
+                    Update { ids, revert, apply } => {
+                        assert!(!(revert && apply), "Revert and Apply should never both be set");
+                        update(&manager, profile, client, ids, revert).await?;
+                        if apply || (!revert && prompt_apply()) {
+                            manager.apply(client, profile).await?;
+                        } else if !revert {
+                            println!(
+                                "\n{}",
+                                format_args!(
+                                    "Updates have not yet been installed! To install, run `{}`",
+                                    const_style!(concat!(consts!(APP_NAME), " apply"); bold())
+                                )
+                                .yellow()
+                                .wrap()
+                            );
+                        }
                     },
                 }
             }
@@ -67,7 +81,7 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
     Ok(())
 }
 
-async fn update(manager: ProfileManager, profile: &Profile, client: &Client, ids: Vec<String>, revert: bool) -> Result<()> {
+async fn update(manager: &ProfileManager, profile: &Profile, client: &Client, ids: Vec<String>, revert: bool) -> Result<()> {
     let updates = if revert {
         manager.revert(profile).await?
     } else {
@@ -88,19 +102,16 @@ async fn update(manager: ProfileManager, profile: &Profile, client: &Client, ids
                 up.to.1.display().bold().blue(),
             );
         }
-        if !revert {
-            println!(
-                "\n{}",
-                format_args!(
-                    "Updates have not yet been installed! To install, run `{}`",
-                    const_style!(concat!(consts!(APP_NAME), " apply"); bold())
-                )
-                .yellow()
-                .wrap()
-            );
-        }
     };
     Ok(())
+}
+
+fn prompt_apply() -> bool {
+    dialoguer::Confirm::with_theme(&*THEME)
+        .with_prompt("Install updates now?")
+        .default(false)
+        .interact()
+        .unwrap_or(false)
 }
 
 fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandle<()>) {
