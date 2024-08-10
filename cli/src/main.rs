@@ -24,7 +24,7 @@ use yansi::Paint;
 use self::{
     cli::{Ferium, ModpackSubcommand, ProfileSubcommand, SubCommand},
     helpers::{consts, get_active_profile, APP_NAME},
-    subcommands::{modpack, mods, profile},
+    subcommands::{cache, modpack, mods, profile},
     tui::const_style,
 };
 
@@ -182,6 +182,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
                 );
             }
         },
+        SubCommand::Cache { subcommand } => cache::process(subcommand.unwrap_or_default()),
     };
 
     if let Some(config) = config_.get_mut() {

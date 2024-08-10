@@ -1,5 +1,5 @@
 # WIP
-- Cache management commands
+- Support cache bypass and/or force redownload during profile apply
 
 # Planned - In no particular order
 - Handle dependencies during add and update
@@ -17,3 +17,4 @@
 - Detect profile of working directory tree and use it if present
 - Allow selective updates by passing project ids
 - Add option to immediately apply updates, or prompt to apply when not specified
+- Cache management commands
