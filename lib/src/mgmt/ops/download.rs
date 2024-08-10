@@ -44,7 +44,7 @@ impl ProfileManager {
             .into(),
         );
         let sha1 = dl.sha1();
-        if save_path.is_file() && sha1.is_some() && verify_sha1(sha1.unwrap(), save_path).await.is_ok_and(identity) {
+        if !self.force && save_path.is_file() && sha1.is_some() && verify_sha1(sha1.unwrap(), save_path).await.is_ok_and(identity) {
             self.send(DownloadProgress::Success(id).into());
             return sha1.map(Into::into);
         }

@@ -21,6 +21,11 @@ pub use self::{cache::CACHE_DIR, ops::update::UpdateInfo};
 #[derive(Debug, Clone)]
 pub struct ProfileManager {
     channel: EventChannel,
+    /// Always install/overwrite files without checking if they are already
+    /// installed
+    pub force: bool,
+    /// Don't use cache and download files directly to profile
+    pub no_cache: bool,
 }
 
 impl ProfileManager {
@@ -30,6 +35,8 @@ impl ProfileManager {
     pub fn with_channel(sender: Sender<ProgressEvent>) -> Self {
         Self {
             channel: EventChannel(sender),
+            force: false,
+            no_cache: false,
         }
     }
 

@@ -121,7 +121,16 @@ pub enum MgmtCommand {
     ///
     /// Any pending updates will be finalized and no longer revertable.
     #[command(visible_aliases = ["install"])]
-    Apply,
+    Apply {
+        /// Always download and reinstall files without checking if they are
+        /// already present
+        #[arg(short, long)]
+        force: bool,
+
+        /// Don't use cache and install files directly to profile
+        #[arg(long)]
+        no_cache: bool,
+    },
 
     /// Mark outdated mods in the active profile to be updated by the next call
     /// to apply
