@@ -51,9 +51,11 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
             use MgmtCommand::*;
             let (sender, handle) = progress_hander();
             {
-                let manager = ProfileManager::with_channel(sender);
+                let mut manager = ProfileManager::with_channel(sender);
                 match command {
-                    Apply => {
+                    Apply { force, no_cache } => {
+                        manager.force = force;
+                        manager.no_cache = no_cache;
                         manager.apply(client, profile).await?;
                     },
                     Update { ids, revert, apply } => {

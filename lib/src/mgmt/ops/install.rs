@@ -5,6 +5,7 @@ use std::{
     mem::take,
     ops::Deref,
     path::Path,
+    sync::LazyLock,
 };
 
 use anyhow::{anyhow, Context};
@@ -28,6 +29,8 @@ use crate::{
 };
 
 type Downloads = Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::JoinError>>;
+
+static MODS_PATH: LazyLock<&PathScopedRef> = LazyLock::new(|| PathScopedRef::new("mods").unwrap());
 
 
 // Public interface
@@ -82,10 +85,19 @@ impl ProfileManager {
             unversioned,
             installed,
             mut pending,
-        } = merge_sources(&data.mods, &lockfile.mods, pack.as_mut(), profile_path, &mut delete, reset).await;
+        } = merge_sources(
+            &data.mods,
+            &lockfile.mods,
+            pack.as_mut(),
+            profile_path,
+            &mut delete,
+            reset,
+            self.force,
+        )
+        .await;
 
         self.fetch_versions(client, data, unversioned, versioned, &mut pending).await;
-        let downloads = self.download_files(pending);
+        let downloads = self.download_files(pending, profile_path);
 
         self.send(ProgressEvent::Status("Installing...".to_string()));
         lockfile.mods = installed
@@ -200,7 +212,7 @@ impl ProfileManager {
                         lp.file.as_os_str(),
                         PathScopedRef::new("modpacks").ok(),
                     );
-                    if cached.exists() && verify_sha1(&lp.sha1, &cached).await.is_ok_and(identity) {
+                    if !self.force && cached.exists() && verify_sha1(&lp.sha1, &cached).await.is_ok_and(identity) {
                         self.read_pack(client, &cached).await
                     } else {
                         self.fetch_pack(client, lp, data).await.map(|(data, _)| data)
@@ -268,14 +280,18 @@ impl ProfileManager {
         }
     }
 
-    fn download_files(&self, pending: VersionSet) -> Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::JoinError>> {
+    fn download_files(&self, pending: VersionSet, profile_path: &PathAbsolute) -> Downloads {
         if !pending.is_empty() {
             self.send(ProgressEvent::Status("Downloading...".to_string()));
         }
         let ((), downloads) = TokioScope::scope_and_block(|scope| {
-            let sub = PathScopedRef::new("mods").ok();
             for v in pending {
-                let save_path = cache::version_path(&v, v.filename.parent().and_then(|p| p.file_name_path()).or(sub));
+                let sub = v.filename.parent().and_then(|p| p.file_name_path()).unwrap_or(&MODS_PATH);
+                let save_path = if self.no_cache {
+                    profile_path.join(sub)
+                } else {
+                    cache::version_path(&v, Some(sub))
+                };
                 scope.spawn(async move {
                     self.download(&*v, &save_path).await.map(|sha1| {
                         let mut v = v.into_inner();
@@ -353,7 +369,7 @@ impl ProfileManager {
                 scope.spawn(async move {
                     let target = &profile_path.join(path);
                     let path = path.to_owned();
-                    if let Ok(true) = verify_sha1(&file.hashes.sha1, target).await {
+                    if !self.force && verify_sha1(&file.hashes.sha1, target).await.unwrap_or(false) {
                         Some((file.hashes.sha1.clone(), path, false))
                     } else {
                         self.download(file, target).await.map(|sha1| (sha1, path, true))
@@ -446,6 +462,7 @@ async fn merge_sources<'a>(
     profile_path: &'a Path,
     delete: &mut BTreeSet<PathScoped>,
     reset: bool,
+    force: bool,
 ) -> ResolvedMods<'a> {
     let mut resolved = ResolvedMods {
         installed: Vec::with_capacity(locked.len()),
@@ -508,7 +525,7 @@ async fn merge_sources<'a>(
             }
         }
         let path = profile_path.join(&m.file);
-        if path.exists() && verify_sha1(&m.sha1, &path).await.is_ok_and(identity) {
+        if !force && path.exists() && verify_sha1(&m.sha1, &path).await.is_ok_and(identity) {
             versioned.remove(pid);
             pending.remove(pid);
             installed.push(m.into());
@@ -521,9 +538,6 @@ async fn merge_sources<'a>(
 
 async fn install_version(profile_path: &PathAbsolute, v: Version, cached: &Path) -> Result<LockedMod> {
     let lm = {
-        use once_cell::sync::Lazy;
-        static MODS_PATH: Lazy<&PathScopedRef> = Lazy::new(|| PathScopedRef::new("mods").unwrap());
-
         let mut lm: LockedMod = v.into();
         // put in mods subdir if not specified
         lm.file = match lm.file.parent() {
@@ -535,10 +549,12 @@ async fn install_version(profile_path: &PathAbsolute, v: Version, cached: &Path)
     };
 
     let dest = profile_path.join(&lm.file);
-    let _ = tokio::fs::create_dir_all(dest.parent().expect("dest directory should always be valid")).await;
-    tokio::fs::copy(cached, dest)
-        .await
-        .with_context(|| format!("Failed to copy downloaded mod into profile: {}", lm.file.display()))?;
+    if cached != &*dest {
+        let _ = tokio::fs::create_dir_all(dest.parent().expect("dest directory should always be valid")).await;
+        tokio::fs::copy(cached, dest)
+            .await
+            .with_context(|| format!("Failed to copy downloaded mod into profile: {}", lm.file.display()))?;
+    }
     Ok(lm)
 }
 
