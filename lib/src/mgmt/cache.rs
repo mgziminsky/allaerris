@@ -6,6 +6,8 @@ use crate::{
 };
 
 
+/// The base path where files are downloaded to before they are copied into a
+/// profile
 pub static CACHE_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
     dirs::cache_dir()
         .expect("system cache directory should be known")

@@ -52,6 +52,12 @@ pub enum SubCommand {
     /// List all the profiles with their data
     Profiles,
 
+    /// Simple cache management and info commands
+    Cache {
+        #[command(subcommand)]
+        subcommand: Option<CacheSubcommand>,
+    },
+
     /// Print shell auto completions for the specified shell
     Complete {
         /// The shell to generate auto completions for
@@ -238,4 +244,14 @@ pub enum ModpackSubcommand {
         #[arg(long, short)]
         install_overrides: Option<bool>,
     },
+}
+
+#[derive(Subcommand, Default, Clone, Copy)]
+pub enum CacheSubcommand {
+    /// Show count and total size of cached mod files
+    #[default]
+    Info,
+
+    /// Delete all files in the cache
+    Clear,
 }

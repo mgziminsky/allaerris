@@ -32,6 +32,8 @@ rfd = { version = "0.14", default-features = false, optional = true, features = 
     "xdg-portal",
     "tokio",
 ] }
+size = "0.4.1"
+walkdir = "2"
 yansi = "1"
 
 anyhow.workspace = true
