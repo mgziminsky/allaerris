@@ -161,8 +161,8 @@ impl PathScopedRef {
     }
 
     /// Delegates to [`Path::with_file_name`]
-    pub fn with_file_name<S: AsRef<OsStr>>(&self, file_name: S) -> PathScoped {
-        PathScoped(self.0.with_file_name(file_name))
+    pub fn with_file_name<S: AsRef<Self>>(&self, file_name: S) -> PathScoped {
+        PathScoped(self.0.with_file_name(file_name.as_ref().as_os_str()))
     }
 }
 
