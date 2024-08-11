@@ -67,7 +67,7 @@ impl ProfileManager {
             // Keep the current subdir if update doesn't specify
             match ulm.file.parent() {
                 Some(p) if p.as_os_str().is_empty() => {
-                    ulm.file = lm.file.with_file_name(ulm.file.as_os_str());
+                    ulm.file = lm.file.with_file_name(ulm.file);
                 },
                 _ => {},
             }
