@@ -1,11 +1,11 @@
 # WIP
-- "Scan" existing mod files and add to profile
 
 # Planned - In no particular order
 - Handle dependencies during add and update
 - Github use graphql. Requires API token
 - Support server/client distinction in profile
 - Support full profile deployment including installing loaders and vanilla client/server
+- Support any project type, not just mods and packs
 
 # Completed
 - Profile add/remove/update/show/list
@@ -18,3 +18,4 @@
 - Add option to immediately apply updates, or prompt to apply when not specified
 - Cache management commands
 - Support cache bypass and/or force redownload during profile apply
+- "Scan" existing mod files and add to profile

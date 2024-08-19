@@ -5,18 +5,15 @@
 pub mod checked_types;
 pub mod client;
 pub mod config;
-pub(crate) mod cow;
+mod cow;
 mod error;
 mod fs_util;
+mod hash;
 pub mod mgmt;
 
-use std::env;
-pub use std::error::Error as StdError;
-
-use once_cell::sync::Lazy;
+use std::{env, sync::LazyLock};
 
 // Re-export the raw clients that we wrap
-#[rustfmt::skip]
 mod exports {
     pub use curseforge;
     pub use github;
@@ -29,7 +26,7 @@ use self::checked_types::PathAbsolute;
 pub use self::{client::Client, config::Config, error::*, mgmt::ProfileManager};
 
 /// Default directory where global config files will be stored
-pub static CONF_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
+pub static CONF_DIR: LazyLock<PathAbsolute> = LazyLock::new(|| {
     dirs::config_local_dir()
         .expect("system config directory should be known")
         .join(env!("CARGO_PKG_NAME"))
@@ -37,7 +34,7 @@ pub static CONF_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
         .unwrap()
 });
 /// The minecraft instance directory used by the default minecraft launcher
-pub static DEFAULT_MINECRAFT_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
+pub static DEFAULT_MINECRAFT_DIR: LazyLock<PathAbsolute> = LazyLock::new(|| {
     let base = {
         #[cfg(not(target_os = "linux"))]
         {
@@ -81,7 +78,7 @@ use mod_export;
 
 
 #[cfg(test)]
-pub(crate) fn block_on<T>(x: impl std::future::Future<Output = T>) -> T {
+fn block_on<T>(x: impl std::future::Future<Output = T>) -> T {
     tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()

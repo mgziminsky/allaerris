@@ -153,6 +153,17 @@ pub enum MgmtCommand {
         #[arg(short, long, conflicts_with = "revert")]
         apply: bool,
     },
+    /// Attempt to lookup all unknown files non-recursively in the profile mods
+    /// folder and prompt adding them to the profile
+    Scan {
+        /// Check all files, even if they are already known to be in the profile
+        #[arg(short, long)]
+        all: bool,
+
+        /// Lock the version of added mods to the installed version
+        #[arg(short, long)]
+        lock: bool,
+    },
 }
 
 #[derive(Subcommand)]

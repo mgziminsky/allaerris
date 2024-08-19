@@ -1,26 +1,31 @@
-use std::collections::{BTreeSet, HashMap};
+use std::{
+    collections::{BTreeSet, HashMap},
+    path::{Path, PathBuf},
+};
 
 use modrinth::{
     apis::{
         projects_api::{GetProjectParams, GetProjectsParams},
-        version_files_api::GetLatestVersionsFromHashesParams,
+        version_files_api::{GetLatestVersionsFromHashesParams, VersionsFromHashesParams},
         versions_api::{GetProjectVersionsParams, GetVersionParams, GetVersionsParams},
     },
-    models::{game_version_tag::VersionType, GetLatestVersionsFromHashesBody, Project as ApiProject},
+    models::{game_version_tag::VersionType, GetLatestVersionsFromHashesBody, HashList, Project as ApiProject},
 };
 
 use super::{
+    common::{self, compute_lookup_hashes},
     schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ModrinthClient,
 };
 use crate::{
     config::{ModLoader, VersionedProject},
+    hash::Sha1Async,
     mgmt::LockedMod,
     Result,
 };
 
 impl ApiOps for ModrinthClient {
-    super::get_latest!();
+    common::get_latest!();
 
     async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
         fetch_project(self, id.get_modrinth()?).await?.try_into()
@@ -138,6 +143,36 @@ impl ApiOps for ModrinthClient {
             .collect();
 
         Ok(updates)
+    }
+
+    async fn lookup(&self, files: &[impl AsRef<Path>], out_results: &mut HashMap<PathBuf, Version>) -> Result<Vec<crate::Error>> {
+        let (hashes, errors) = compute_lookup_hashes(files, out_results, |p| async move {
+            use tokio::{fs, io};
+            let mut sha1 = Sha1Async::new();
+            io::copy(&mut fs::File::open(p).await?, &mut sha1).await?;
+            Ok(sha1.finalize_str())
+        });
+        if hashes.is_empty() {
+            return Ok(errors);
+        }
+
+        let versions = self
+            .version_files()
+            .versions_from_hashes(&VersionsFromHashesParams {
+                hash_list: Some(&HashList {
+                    hashes: hashes.keys().cloned().collect(),
+                    algorithm: modrinth::models::hash_list::Algorithm::Sha1,
+                }),
+            })
+            .await?;
+
+        for (sha1, version) in versions {
+            if let Some(path) = hashes.get(&sha1) {
+                out_results.insert(path.to_path_buf(), version.into());
+            }
+        }
+
+        Ok(errors)
     }
 }
 

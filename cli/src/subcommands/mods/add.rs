@@ -29,8 +29,18 @@ pub async fn add(client: &Client, profile: &mut ProfileData, ids: Vec<String>, e
     })
     .collect::<Vec<_>>();
 
+    let new = add_mods(profile, &mods);
+    // Show not found
+    ids.into_iter()
+        .filter(|id| !mods.iter().any(|m| &m.slug == id || m.project() == id))
+        .for_each(|id| println!("{} {} — Not Found", CROSS_RED, id.italic().bold()));
+
+    Ok(new)
+}
+
+pub(super) fn add_mods<'m>(data: &mut ProfileData, mods: impl IntoIterator<Item = &'m Mod>) -> usize {
     let mut new = 0;
-    for res in profile.add_mods(&mods) {
+    for res in data.add_mods(mods) {
         match res {
             Ok(m) | Err(m) => {
                 res.is_ok().then(|| new += 1);
@@ -38,10 +48,5 @@ pub async fn add(client: &Client, profile: &mut ProfileData, ids: Vec<String>, e
             },
         }
     }
-    // Show not found
-    ids.into_iter()
-        .filter(|id| !mods.iter().any(|m| &m.slug == id || m.project() == id))
-        .for_each(|id| println!("{} {} — Not Found", CROSS_RED, id.italic().bold()));
-
-    Ok(new)
+    new
 }

@@ -1,9 +1,10 @@
 use std::{collections::HashMap, sync::mpsc};
 
 use anyhow::{anyhow, bail, Result};
+use dialoguer::MultiSelect;
 use indicatif::{MultiProgress, ProgressBar};
 use relibium::{
-    config::Profile,
+    config::{Mod, Profile, ProjectWithVersion},
     mgmt::events::{DownloadId, DownloadProgress, ProgressEvent},
     Client, ProfileManager,
 };
@@ -12,7 +13,7 @@ use yansi::Paint;
 use crate::{
     cli::{MgmtCommand, ModsSubcommand},
     helpers::{self, consts},
-    tui::{const_style, id_tag, print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, THEME, TICK_GREEN, TICK_YELLOW},
+    tui::{const_style, ellipsize, id_tag, print_mods, CROSS_RED, PROG_BYTES, PROG_DONE, THEME, TICK_GREEN, TICK_YELLOW},
 };
 
 mod add;
@@ -75,10 +76,61 @@ pub async fn process(subcommand: ModsSubcommand, profile: &mut Profile, client: 
                             );
                         }
                     },
+                    Scan { all, lock } => {
+                        scan(manager, client, profile, all, lock).await?;
+                    },
                 }
             }
             let _ = handle.await;
         },
+    }
+    Ok(())
+}
+
+async fn scan(manager: ProfileManager, client: &Client, profile: &mut Profile, all: bool, lock: bool) -> Result<()> {
+    let found = manager.scan(client, profile, all).await?.into_iter().collect::<Vec<_>>();
+    if found.is_empty() {
+        println!("All mod files are already present in profile");
+        return Ok(());
+    }
+
+    let selection = MultiSelect::new()
+        .with_prompt("Select mods to add to profile")
+        .report(false)
+        .items_checked(
+            &found
+                .iter()
+                .map(|(p, v)| {
+                    (
+                        format!(
+                            "[{}] {:50} => {:50}",
+                            id_tag(&v.project_id),
+                            ellipsize!(< p.display().to_string(), 50).bright_blue(),
+                            ellipsize!(^ &v.title, 50).bold().cyan(),
+                        ),
+                        true,
+                    )
+                })
+                .collect::<Vec<_>>(),
+        )
+        .interact_opt()?;
+    if let Some(selected) = selection {
+        let mut found = found;
+        let mods = selected
+            .into_iter()
+            .rev()
+            .map(|i| found.swap_remove(i).1)
+            .map(|v| Mod {
+                id: ProjectWithVersion::new(v.project_id, lock.then_some(v.id)).unwrap(),
+                slug: String::new(),
+                name: format!("[SCANNED] {}", v.title),
+                exclude: false,
+            })
+            .collect::<Vec<_>>();
+        let new = add::add_mods(profile.data_mut().await?, mods.iter());
+        if new > 0 {
+            profile.save().await?;
+        }
     }
     Ok(())
 }

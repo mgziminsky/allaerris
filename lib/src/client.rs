@@ -1,5 +1,6 @@
 //! A unified api and schema around one or more Minecraft mod provider APIs.
 
+mod common;
 mod curseforge;
 mod github;
 mod modrinth;
@@ -8,7 +9,10 @@ mod service_id;
 
 pub mod schema;
 
-use std::collections::BTreeSet;
+use std::{
+    collections::{BTreeSet, HashMap},
+    path::{Path, PathBuf},
+};
 
 use self::schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType};
 pub use self::service_id::ServiceId;
@@ -28,8 +32,6 @@ pub use exported::*;
 crate::sealed!();
 
 macro_rules! api {
-    (@prox +) => (multi::combined);
-    (@prox) => (multi::proxy);
     ($(
         $(#[$attr:meta])*
         $(+$prox:tt)?$vis:vis $name:ident
@@ -51,7 +53,7 @@ macro_rules! api {
                     ClientInner::Modrinth(c) => c.$name($($arg),*).await,
                     ClientInner::Forge(c) => c.$name($($arg),*).await,
                     ClientInner::Github(c) => c.$name($($arg),*).await,
-                    ClientInner::Multi(c) => api!(@prox $($prox)?)(c, |c| c.$name($($arg),*)).await,
+                    ClientInner::Multi(c) => multi::proxy!(c; $name($($arg),*) $(+$prox $ret)?),
                 }
             }
         )*}
@@ -136,6 +138,10 @@ api! {
     pub get_latest(id: &(impl ProjectIdSvcType + ?Sized), game_version: Option<&str>, loader: Option<ModLoader>) -> Version;
 
     ++pub(crate) get_updates(game_version: &str, loader: ModLoader, mods: &[&LockedMod]) -> Vec<LockedMod>;
+
+    /// Attempt to find an associated project for all `files`.
+    /// Takes an output arg so impls don't need to search for previously matched files
+    ++pub lookup(files: &[impl AsRef<Path>], out_results: &mut HashMap<PathBuf, Version>) -> Vec<crate::Error>;
 }
 
 /// The main [`Client`] for accessing the various modding APIs
@@ -209,37 +215,3 @@ as_inner! {
     Forge,
     Github,
 }
-
-/// The default latest impl since I can't figure out how to allow bodies in the
-/// api macro
-macro_rules! get_latest {
-    () => {
-        async fn get_latest(
-            &self,
-            id: &(impl ProjectIdSvcType + ?Sized),
-            game_version: Option<&str>,
-            loader: Option<ModLoader>,
-        ) -> Result<Version> {
-            self.get_project_versions(id, game_version, loader)
-                .await?
-                .into_iter()
-                .max_by(|a, b| a.date.cmp(&b.date))
-                .ok_or(crate::error::ErrorKind::DoesNotExist.into())
-        }
-    };
-}
-use get_latest;
-
-/// The default get_version impl since I can't figure out how to allow bodies in
-/// the api macro
-macro_rules! get_version {
-    () => {
-        async fn get_version(&self, id: &(impl VersionIdSvcType + ?Sized)) -> Result<Version> {
-            self.get_versions(&[&id])
-                .await?
-                .pop()
-                .ok_or(crate::error::ErrorKind::DoesNotExist.into())
-        }
-    };
-}
-use get_version;

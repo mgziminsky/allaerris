@@ -2,6 +2,10 @@
 resolver = "2"
 members = ["cli", "lib", "*-client"]
 
+[workspace.package]
+edition = "2021"
+rust-version = "1.80.0"
+
 [workspace.dependencies]
 anyhow = "1.0"
 async-scoped = { version = "0.9", features = ["use-tokio"] }

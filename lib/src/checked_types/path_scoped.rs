@@ -23,6 +23,7 @@ pub enum PathScopeError {
 /// partially normalized as described by [`Path::components`]
 ///
 /// [`./`]: std::path::Component::CurDir
+#[allow(clippy::unsafe_derive_deserialize)] // Handled via TryFrom
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(try_from = "PathBuf")]
 pub struct PathScoped(PathBuf);
@@ -33,38 +34,43 @@ impl PathScoped {
     /// points at a parent scope
     pub fn new(path: impl AsRef<Path>) -> Result<Self, PathScopeError> {
         let path = validate_path(path.as_ref())?;
-        Ok(PathScoped(path.components().collect()))
+        // SAFETY: path was just validated
+        Ok(unsafe { Self::new_unchecked(path) })
+    }
+
+    /// Create a new [`PathScoped`] from `path` without validating it. This
+    /// will result in UB if `path` is not relative or references an outer scope
+    ///
+    /// # Safety
+    /// `path` must be relative and not reference an outer scope
+    pub unsafe fn new_unchecked(path: impl AsRef<Path>) -> Self {
+        Self(path.as_ref().components().collect())
     }
 }
 
 impl Deref for PathScoped {
     type Target = PathScopedRef;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         unsafe { PathScopedRef::cast(&self.0) }
     }
 }
 impl AsRef<PathScoped> for PathScoped {
-    #[inline]
     fn as_ref(&self) -> &Self {
         self
     }
 }
 impl AsRef<Path> for PathScoped {
-    #[inline]
     fn as_ref(&self) -> &Path {
         &self.0
     }
 }
 impl AsRef<PathScopedRef> for PathScoped {
-    #[inline]
     fn as_ref(&self) -> &PathScopedRef {
         self
     }
 }
 impl Borrow<PathScopedRef> for PathScoped {
-    #[inline]
     fn borrow(&self) -> &PathScopedRef {
         self
     }
@@ -73,13 +79,11 @@ impl Borrow<PathScopedRef> for PathScoped {
 impl FromStr for PathScoped {
     type Err = PathScopeError;
 
-    #[inline]
     fn from_str(path: &str) -> Result<Self, Self::Err> {
         Self::new(path)
     }
 }
 impl From<PathScoped> for PathBuf {
-    #[inline]
     fn from(path: PathScoped) -> Self {
         path.0
     }
@@ -89,7 +93,6 @@ macro_rules! try_from {
         impl TryFrom<$ty> for PathScoped {
             type Error = PathScopeError;
 
-            #[inline]
             fn try_from(path: $ty) -> Result<Self, Self::Error> {
                 Self::new(path)
             }
@@ -112,7 +115,6 @@ try_from! {
 pub struct PathScopedRef(Path);
 impl PathScopedRef {
     /// Private to ensure only created from a valid path
-    #[inline]
     unsafe fn cast<P: AsRef<Path> + ?Sized>(s: &P) -> &Self {
         // Copied from Path::new
         #[allow(clippy::ref_as_ptr)]
@@ -133,14 +135,12 @@ impl PathScopedRef {
 
     /// Joining with another [`PathScoped`] will always produce a valid scoped
     /// path
-    #[inline]
     pub fn join<P: AsRef<Self>>(&self, path: P) -> PathScoped {
         PathScoped(self.0.join(path.as_ref()))
     }
 
     /// Non-erroring version of [`Path::strip_prefix`] that will return `self`
     /// instead of an error when prefix does not match
-    #[inline]
     pub fn remove_prefix(&self, base: impl AsRef<Path>) -> &Self {
         self.0.strip_prefix(base).map_or(self, |p| unsafe { Self::cast(p) })
     }
@@ -169,19 +169,16 @@ impl PathScopedRef {
 impl Deref for PathScopedRef {
     type Target = Path;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 impl AsRef<PathScopedRef> for PathScopedRef {
-    #[inline]
     fn as_ref(&self) -> &Self {
         self
     }
 }
 impl AsRef<Path> for PathScopedRef {
-    #[inline]
     fn as_ref(&self) -> &Path {
         &self.0
     }
@@ -189,7 +186,6 @@ impl AsRef<Path> for PathScopedRef {
 impl ToOwned for PathScopedRef {
     type Owned = PathScoped;
 
-    #[inline]
     fn to_owned(&self) -> Self::Owned {
         PathScoped(self.0.to_path_buf())
     }

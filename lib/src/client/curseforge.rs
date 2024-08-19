@@ -1,29 +1,35 @@
-use std::collections::{BTreeSet, HashMap};
+use std::{
+    collections::{BTreeSet, HashMap},
+    path::{Path, PathBuf},
+};
 
 use curseforge::{
     apis::{
         files_api::{GetFilesParams, GetModFilesParams},
+        fingerprints_api::GetFingerprintMatchesByGameParams,
         minecraft_api::GetMinecraftVersionsParams,
         mods_api::{GetModParams, GetModsParams},
     },
-    models::{GetModFilesRequestBody, GetModsByIdsListRequestBody},
+    models::{GetFingerprintMatchesRequestBody, GetModFilesRequestBody, GetModsByIdsListRequestBody},
 };
 
 use super::{
+    common::{self, compute_lookup_hashes},
     schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ForgeClient,
 };
 use crate::{
     client::schema::{ProjectId, VersionId},
     config::{ModLoader, ProjectWithVersion, VersionedProject},
+    hash,
     mgmt::LockedMod,
     Result,
 };
 
 impl ApiOps for ForgeClient {
-    super::get_latest!();
+    common::get_latest!();
 
-    super::get_version!();
+    common::get_version!();
 
     async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
         fetch_mod(self, id).await?.try_into()
@@ -128,6 +134,33 @@ impl ApiOps for ForgeClient {
 
         Ok(updates)
     }
+
+    async fn lookup(&self, files: &[impl AsRef<Path>], out_results: &mut HashMap<PathBuf, Version>) -> Result<Vec<crate::Error>> {
+        let (fprints, errors) = compute_lookup_hashes(files, out_results, hash::forge_fingerprint);
+        if fprints.is_empty() {
+            return Ok(errors);
+        }
+
+        let versions = self
+            .fingerprints()
+            .get_fingerprint_matches_by_game(&GetFingerprintMatchesByGameParams {
+                game_id: from::MINECRAFT_GAME_ID,
+                get_fingerprint_matches_request_body: &GetFingerprintMatchesRequestBody {
+                    fingerprints: fprints.keys().copied().collect(),
+                },
+            })
+            .await?
+            .data
+            .exact_matches;
+
+        for v in versions {
+            if let Some(path) = fprints.get(&v.file.file_fingerprint) {
+                out_results.insert(path.to_path_buf(), v.file.into());
+            }
+        }
+
+        Ok(errors)
+    }
 }
 
 async fn fetch_mod(client: &ForgeClient, id: impl ProjectIdSvcType) -> Result<curseforge::models::Mod> {
@@ -167,9 +200,9 @@ mod from {
         ErrorKind,
     };
 
-    const MINECRAFT_GAME_ID: u64 = 432;
-    const MOD_CLASS_ID: u64 = 6;
-    const MODPACK_CLASS_ID: u64 = 4471;
+    pub const MINECRAFT_GAME_ID: u64 = 432;
+    pub const MOD_CLASS_ID: u64 = 6;
+    pub const MODPACK_CLASS_ID: u64 = 4471;
 
     static HOME: Lazy<Url> = Lazy::new(|| {
         "https://www.curseforge.com/minecraft/"
@@ -214,7 +247,7 @@ mod from {
     }
 
     macro_rules! try_from {
-        ($($ty:ty = $val:ident),* $(,)?) => {$(
+        ($($ty:ty = $val:path),* $(,)?) => {$(
             impl TryFrom<curseforge::models::Mod> for $ty {
                 type Error = crate::Error;
                 fn try_from(value: curseforge::models::Mod) -> Result<Self, Self::Error> {

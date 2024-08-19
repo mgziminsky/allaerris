@@ -72,13 +72,13 @@ pub struct File {
     #[serde(rename = "earlyAccessEndDate", skip_serializing_if = "Option::is_none")]
     pub early_access_end_date: Option<String>,
     #[serde(rename = "fileFingerprint")]
-    pub file_fingerprint: u64,
+    pub file_fingerprint: u32,
     #[serde(rename = "modules", default)]
     pub modules: Vec<models::FileModule>,
 }
 
 impl File {
-    pub fn new(id: u64, game_id: u64, mod_id: u64, is_available: bool, display_name: String, file_name: String, release_type: models::FileReleaseType, file_status: models::FileStatus, hashes: Vec<models::FileHash>, file_date: String, file_length: u64, download_count: u64, game_versions: Vec<String>, sortable_game_versions: Vec<models::SortableGameVersion>, dependencies: Vec<models::FileDependency>, file_fingerprint: u64, modules: Vec<models::FileModule>) -> Self {
+    pub fn new(id: u64, game_id: u64, mod_id: u64, is_available: bool, display_name: String, file_name: String, release_type: models::FileReleaseType, file_status: models::FileStatus, hashes: Vec<models::FileHash>, file_date: String, file_length: u64, download_count: u64, game_versions: Vec<String>, sortable_game_versions: Vec<models::SortableGameVersion>, dependencies: Vec<models::FileDependency>, file_fingerprint: u32, modules: Vec<models::FileModule>) -> Self {
         Self {
             id,
             game_id,
