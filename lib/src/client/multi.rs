@@ -1,57 +1,44 @@
-use std::{borrow::BorrowMut, future::Future};
-
 use super::{Client, ClientInner};
-use crate::{Error, ErrorKind, Result};
+use crate::{Error, ErrorKind};
 
-/// Call `func` for each [client](Client) in order and return the first
-/// successful result, or all of the errors if all calls fail
-pub(super) async fn proxy<'c, Ret, F, FRet>(clients: &'c [Client], func: F) -> Result<Ret>
-where
-    F: Fn(&'c Client) -> FRet,
-    FRet: Future<Output = Result<Ret>>,
-{
-    let mut err = vec![];
-    for client in clients {
-        // Need pin for recursive async calls [E0733]
-        let res = Box::pin(func(client)).await;
-        let Err(e) = res else {
-            return res;
-        };
-        err.push(e);
-    }
-    Err(ErrorKind::Multi(err).into())
-}
-
-/// Call `func` for each [client](Client) in order and return their combined
-/// results, or all of the errors if all calls fail
-///
-/// An empty result is still considered success
-pub(super) async fn combined<'c, Ret, Item, F, FRet>(clients: &'c [Client], func: F) -> Result<Ret>
-where
-    Ret: Collection<Item>,
-    F: Fn(&'c Client) -> FRet,
-    FRet: Future<Output = Result<Ret>>,
-{
-    let mut ret: Option<Ret> = None;
-    let mut errs = vec![];
-    for client in clients {
-        // Need pin for recursive async calls [E0733]
-        match Box::pin(func(client)).await {
-            Err(e) => errs.push(e),
-            Ok(res) => {
-                if let Some(ret) = ret.borrow_mut() {
-                    // Extend results from previous success
-                    ret.extend(res);
-                } else {
-                    // Otherwise replace error with success result
-                    ret = Some(res);
-                }
-            },
+// Need Box::pin for recursive async calls [E0733]
+macro_rules! proxy {
+    ($clients:expr; $name:ident($($arg:expr),*)) => {{
+        let mut err = vec![];
+        for client in $clients {
+            let res = Box::pin(client.$name($($arg),*)).await;
+            let Err(e) = res else {
+                return res;
+            };
+            err.push(e);
         }
-    }
-    ret.filter(|c| errs.is_empty() || !c.is_empty())
-        .ok_or_else(|| ErrorKind::Multi(errs).into())
+        Err(crate::ErrorKind::Multi(err).into())
+    }};
+    ($clients:expr; $name:ident($($arg:expr),*) ++ $ret:ty) => {{
+        let mut ret: Option<$ret> = None;
+        let mut errs = vec![];
+        for client in $clients {
+            match Box::pin(client.$name($($arg),*)).await {
+                Err(e) => errs.push(e),
+                Ok(res) => {
+                    use ::std::borrow::BorrowMut;
+                    if let Some(ret) = ret.borrow_mut() {
+                        // Extend results from previous success
+                        ret.extend(res);
+                    } else {
+                        // Otherwise replace error with success result
+                        ret = Some(res);
+                    }
+                },
+            }
+        }
+        // FIXME: This behavior is still sorta weird
+        ret.filter(|c| errs.is_empty() || !c.is_empty())
+            .ok_or_else(|| crate::ErrorKind::Multi(errs).into())
+    }};
 }
+pub(super) use proxy;
+
 
 impl TryFrom<Vec<Client>> for Client {
     type Error = Error;
@@ -78,28 +65,5 @@ impl TryFrom<&[Client]> for Client {
 
     fn try_from(value: &[Client]) -> super::Result<Self> {
         value.to_vec().try_into()
-    }
-}
-
-
-pub(super) trait Collection<T>: Extend<T> + IntoIterator<Item = T> {
-    fn is_empty(&self) -> bool;
-}
-impl<T> Collection<T> for Vec<T> {
-    #[inline]
-    fn is_empty(&self) -> bool {
-        Self::is_empty(self)
-    }
-}
-impl<T: std::cmp::Ord> Collection<T> for std::collections::BTreeSet<T> {
-    #[inline]
-    fn is_empty(&self) -> bool {
-        Self::is_empty(self)
-    }
-}
-impl<T: std::hash::Hash + std::cmp::Eq> Collection<T> for std::collections::HashSet<T> {
-    #[inline]
-    fn is_empty(&self) -> bool {
-        Self::is_empty(self)
     }
 }

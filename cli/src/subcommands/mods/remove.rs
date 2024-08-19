@@ -2,7 +2,7 @@ use anyhow::Result;
 use dialoguer::MultiSelect;
 use relibium::config::{profile::ProfileData, Mod};
 
-use crate::tui::{mod_single_line, THEME};
+use crate::tui::mod_single_line;
 
 /// If `to_remove` is empty, display a list of projects in the profile to select
 /// from and remove the selected ones. Otherwise, search the given strings with
@@ -19,7 +19,7 @@ pub fn remove(profile: &mut ProfileData, to_remove: &[String]) -> Result<Vec<Mod
 
 fn prompt(mods: &[Mod]) -> Result<Vec<usize>> {
     Ok(
-        match MultiSelect::with_theme(&*THEME)
+        match MultiSelect::new()
             .with_prompt("Select mods to remove")
             .items(&mods.iter().map(mod_single_line).collect::<Vec<_>>())
             .report(false)

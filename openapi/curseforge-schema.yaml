@@ -1076,7 +1076,7 @@ components:
           nullable: true
         fileFingerprint:
           type: integer
-          format: int64
+          format: int32
         modules:
           type: array
           items:
@@ -1121,7 +1121,7 @@ components:
           type: string
         fingerprint:
           type: integer
-          format: int64
+          format: int32
     FileRelationType:
       x-enum-varnames:
         - EmbeddedLibrary

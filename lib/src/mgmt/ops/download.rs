@@ -7,9 +7,9 @@ use url::Url;
 
 use crate::{
     client::schema::Version,
+    hash::{hex_decode, verify_sha1},
     mgmt::{
         events::{DownloadId, DownloadProgress, EventSouce},
-        hash::{hex_decode, verify_sha1},
         ProfileManager,
     },
     ErrorKind, Result,

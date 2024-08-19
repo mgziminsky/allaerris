@@ -1,10 +1,9 @@
-use std::{borrow::Cow, fmt::Display, ops::Range};
+use std::{borrow::Cow, fmt::Display, ops::Range, sync::LazyLock};
 
 use anyhow::anyhow;
 use dialoguer::theme::ColorfulTheme;
 use indicatif::ProgressStyle;
 use itertools::Itertools;
-use once_cell::sync::Lazy;
 use relibium::{
     client::schema::{Project, ProjectId},
     config::{Mod, Profile, VersionedProject},
@@ -36,14 +35,14 @@ pub const TICK: &str = "✓";
 pub const TICK_GREEN: Painted<&str> = Painted::new(TICK).green();
 pub const TICK_YELLOW: Painted<&str> = Painted::new(TICK).yellow();
 
-pub static THEME: Lazy<ColorfulTheme> = Lazy::new(Default::default);
-pub static PROG_BYTES: Lazy<ProgressStyle> = Lazy::new(|| {
+pub static THEME: LazyLock<ColorfulTheme> = LazyLock::new(Default::default);
+pub static PROG_BYTES: LazyLock<ProgressStyle> = LazyLock::new(|| {
     ProgressStyle::with_template(
         "{spinner} {msg:50!} {eta:>3.bold.yellow} {wide_bar:.cyan/blue} [{bytes_per_sec:.green} | {bytes:.cyan} / {total_bytes:.blue}]",
     )
     .expect("template should be valid")
 });
-pub static PROG_DONE: Lazy<ProgressStyle> = Lazy::new(|| {
+pub static PROG_DONE: LazyLock<ProgressStyle> = LazyLock::new(|| {
     ProgressStyle::with_template("{prefix:.bold} {bytes:>10.cyan} {elapsed:>3.yellow} {msg}").expect("template should be valid")
 });
 
@@ -65,7 +64,7 @@ macro_rules! max {
         }
     };
 }
-const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
+pub(crate) const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
     if len <= max {
         return 0..0;
     }
@@ -76,14 +75,16 @@ const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
 }
 macro_rules! ellipsize {
     // Ellipsis middle
-    (^ $str:ident, $max:expr) => {{
-        let r = ellipsis_mid($str.len(), $max);
-        format_args!("{}{}{}", &$str[..r.start], if r.is_empty() { "" } else { "…" }, &$str[r.end..],)
+    (^ $str:expr, $max:expr) => {{
+        let value = $str;
+        let r = crate::tui::ellipsis_mid(value.len(), $max);
+        format!("{}{}{}", &value[..r.start], if r.is_empty() { "" } else { "…" }, &value[r.end..],)
     }};
     // Ellipsis left
-    (< $str:ident, $max:expr) => {{
-        let mut i = $str.len().saturating_sub($max);
-        format_args!(
+    (< $str:expr, $max:expr) => {{
+        let value = $str;
+        let mut i = value.len().saturating_sub($max);
+        format!(
             "{}{}",
             if i > 0 {
                 i += 1;
@@ -91,21 +92,22 @@ macro_rules! ellipsize {
             } else {
                 ""
             },
-            &$str[i..]
+            &value[i..]
         )
     }};
     // Ellipsis right
-    (> $str:ident, $max:expr) => {{
-        let mut i = min!($str.len(), $max);
-        format_args!(
+    (> $str:expr, $max:expr) => {{
+        let value = $str;
+        let mut i = min!(value.len(), $max);
+        format!(
             "{1}{0}",
-            if i < $str.len() {
+            if i < value.len() {
                 i -= 1;
                 "…"
             } else {
                 ""
             },
-            &$str[..i]
+            &value[..i]
         )
     }};
 }
@@ -115,7 +117,7 @@ pub fn id_tag(id: &ProjectId) -> String {
     match id {
         ProjectId::Forge(id) => format!("{CF} {id}"),
         ProjectId::Modrinth(id) => format!("{MR} {id}"),
-        ProjectId::Github(_) => GH.to_string(),
+        ProjectId::Github((ref own, ref repo)) => format!("{GH} {own}/{repo}"),
     }
 }
 

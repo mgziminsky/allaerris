@@ -1,11 +1,15 @@
 #![allow(clippy::cast_sign_loss)]
 
-use std::collections::BTreeSet;
+use std::{
+    collections::{BTreeSet, HashMap},
+    path::{Path, PathBuf},
+};
 
 use async_scoped::TokioScope;
 use github::models::repos::Asset;
 
 use super::{
+    common,
     schema::{GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
     ApiOps, GithubClient,
 };
@@ -16,9 +20,9 @@ use crate::{
 };
 
 impl ApiOps for GithubClient {
-    super::get_latest!();
+    common::get_latest!();
 
-    super::get_version!();
+    common::get_version!();
 
     async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
         fetch_repo(self, id.get_github()?).await.map(Mod)
@@ -165,6 +169,11 @@ impl ApiOps for GithubClient {
         }
 
         Ok(updates)
+    }
+
+    async fn lookup(&self, _files: &[impl AsRef<Path>], _out_results: &mut HashMap<PathBuf, Version>) -> Result<Vec<crate::Error>> {
+        // Use Ok so multi client doesn't fail...
+        Ok(vec![ErrorKind::Unsupported.into()])
     }
 }
 

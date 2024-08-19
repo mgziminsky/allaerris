@@ -1,4 +1,4 @@
-use core::task;
+use core::task::Context;
 use std::{
     io::{self, Read, Write},
     path::Path,
@@ -42,26 +42,34 @@ verify_impl! {
     verify_sha1_sync(Sha1::new()) = std;
 }
 
-struct Sha1Async(Sha1);
+#[derive(Debug, Default)]
+pub struct Sha1Async(Sha1);
 impl Sha1Async {
-    #[inline]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     fn finalize(self) -> Output<Sha1> {
         self.0.finalize()
+    }
+
+    pub fn finalize_str(self) -> String {
+        format!("{:x}", self.0.finalize())
     }
 }
 impl tokio::io::AsyncWrite for Sha1Async {
     #[inline]
-    fn poll_write(self: Pin<&mut Self>, _: &mut task::Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
+    fn poll_write(self: Pin<&mut Self>, _: &mut Context<'_>, buf: &[u8]) -> Poll<io::Result<usize>> {
         Poll::Ready(self.get_mut().0.write(buf))
     }
 
     #[inline]
-    fn poll_flush(self: Pin<&mut Self>, _: &mut task::Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_flush(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
         Poll::Ready(self.get_mut().0.flush())
     }
 
     #[inline]
-    fn poll_shutdown(self: Pin<&mut Self>, _: &mut task::Context<'_>) -> Poll<io::Result<()>> {
+    fn poll_shutdown(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<io::Result<()>> {
         Poll::Ready(Ok(()))
     }
 }

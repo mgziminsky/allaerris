@@ -5,7 +5,7 @@ use std::{
     mem::take,
     ops::Deref,
     path::Path,
-    sync::LazyLock,
+    sync::{Arc, LazyLock},
 };
 
 use anyhow::{anyhow, Context};
@@ -16,10 +16,10 @@ use crate::{
     checked_types::{PathAbsolute, PathScoped, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
     config::{profile::ProfileData, Mod, Profile, VersionedProject},
+    hash::{verify_sha1, verify_sha1_sync, Sha1Writer},
     mgmt::{
         cache,
         events::{EventSouce, InstallType, ProgressEvent},
-        hash::{verify_sha1, verify_sha1_sync, Sha1Writer},
         lockfile::{LockFile, LockedMod, LockedPack, PathHashes},
         modpack::{modrinth::IndexFile, ModpackData},
         version::VersionSet,
@@ -243,8 +243,13 @@ impl ProfileManager {
         self.send(ProgressEvent::Status("Fetch version details...".to_string()));
         // Get the latest version of all unversioned projects
         let ((), pending) = TokioScope::scope_and_block(|scope| {
+            let semaphore = Arc::new(tokio::sync::Semaphore::const_new(10));
             for id in &unversioned {
-                scope.spawn(client.get_latest(id.as_ref(), Some(&data.game_version), Some(data.loader)));
+                let semaphore = semaphore.clone();
+                scope.spawn(async move {
+                    let _permit = semaphore.acquire().await.unwrap();
+                    client.get_latest(id.as_ref(), Some(&data.game_version), Some(data.loader)).await
+                });
             }
         });
         for res in pending {

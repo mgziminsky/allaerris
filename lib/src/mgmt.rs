@@ -3,7 +3,6 @@
 
 mod cache;
 pub mod events;
-mod hash;
 mod lockfile;
 mod modpack;
 mod ops;

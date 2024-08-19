@@ -1,5 +1,6 @@
 #![allow(missing_docs)]
 
+pub use std::error::Error as StdError;
 use std::fmt::Display;
 
 use itertools::Itertools;
