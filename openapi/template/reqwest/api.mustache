@@ -1,0 +1,336 @@
+{{>partial_header}}
+
+use crate::{
+    models::{self, *},
+    ErrorResponse, Result,
+};
+
+{{#operations.operation}}
+{{#vendorExtensions.x-group-parameters}}
+{{#hasParams}}
+/// struct for passing parameters to the method [`{{classname}}::{{operationId}}`]
+#[derive(Clone, Debug)]
+pub struct {{{operationIdCamelCase}}}Params<{{#allParams}}{{^isPrimitiveType}}{{^isEnumRef}}'l{{-index}},{{/isEnumRef}}{{/isPrimitiveType}}{{#isString}}'l{{-index}},{{/isString}}{{/allParams}}> {
+    {{#allParams}}
+    {{#description}}
+    /// {{{.}}}
+    {{/description}}
+    {{#deprecated}}
+    #[deprecated]
+    {{/deprecated}}
+    pub {{{paramName}}}: {{>_api_field}},
+    {{/allParams}}
+}
+{{/hasParams}}
+
+{{/vendorExtensions.x-group-parameters}}
+{{/operations.operation}}
+
+{{#supportMultipleResponses}}
+{{#operations.operation}}
+/// struct for typed successes of method [`{{classname}}::{{operationId}}`]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum {{{operationIdCamelCase}}}Success {
+    {{#responses}}
+    {{#is2xx}}
+    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
+    {{/is2xx}}
+    {{#is3xx}}
+    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
+    {{/is3xx}}
+    {{/responses}}
+    UnknownValue(serde_json::Value),
+}
+
+{{/operations.operation}}
+{{/supportMultipleResponses}}
+{{#operations.operation}}
+/// struct for typed errors of method [`{{classname}}::{{operationId}}`]
+#[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
+#[serde(untagged)]
+pub enum {{{operationIdCamelCase}}}Error {
+    {{#responses}}
+    {{#is4xx}}
+    #[error("{{{message}}}")]
+    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
+    {{/is4xx}}
+    {{#is5xx}}
+    #[error("{{{message}}}")]
+    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
+    {{/is5xx}}
+    {{#isDefault}}
+    DefaultResponse({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
+    {{/isDefault}}
+    {{/responses}}
+    #[error("Unrecognized Error")]
+    UnknownValue(serde_json::Value),
+}
+{{/operations.operation}}
+
+pub struct {{classname}}<'c>(pub(crate) &'c crate::ApiClient);
+impl<'c> {{classname}}<'c> {
+    {{#operations.operation}}
+    {{#description}}
+    /// {{{.}}}
+    {{/description}}
+    {{#notes}}
+    /// {{{.}}}
+    {{/notes}}
+    {{#isDeprecated}}
+    #[deprecated]
+    {{/isDeprecated}}
+    {{#vendorExtensions.x-group-parameters}}
+    pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(&self{{#hasParams}}, params: &{{{operationIdCamelCase}}}Params<{{#allParams}}{{^isPrimitiveType}}{{^isEnumRef}}'_,{{/isEnumRef}}{{/isPrimitiveType}}{{#isString}}'_,{{/isString}}{{/allParams}}>{{/hasParams}}) -> Result<{{#supportMultipleResponses}}ErrorResponse<{{{operationIdCamelCase}}}Success>{{/supportMultipleResponses}}{{^supportMultipleResponses}}{{^returnType}}(){{/returnType}}{{{returnType}}}{{/supportMultipleResponses}}> {
+        {{#hasParams}}
+        // unwrap the parameters
+        let {{{operationIdCamelCase}}}Params { {{#allParams}}{{paramName}}, {{/allParams}}} = params;
+
+        {{/hasParams}}
+    {{/vendorExtensions.x-group-parameters}}
+    {{^vendorExtensions.x-group-parameters}}
+    pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(&self{{#allParams}}, {{{paramName}}}: {{>_api_param}}{{/allParams}}) -> Result<{{#supportMultipleResponses}}ErrorResponse<{{{operationIdCamelCase}}}Success>{{/supportMultipleResponses}}{{^supportMultipleResponses}}{{^returnType}}(){{/returnType}}{{{returnType}}}{{/supportMultipleResponses}}> {
+    {{/vendorExtensions.x-group-parameters}}
+        #[allow(unused_mut)]
+        let mut local_var_req_builder = self.0.request(
+            reqwest::Method::{{{httpMethod}}},
+            format!("{{{path}}}"{{#pathParams}}, {{{baseName}}}={{#isString}}crate::urlencode({{/isString}}{{{paramName}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}{{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}{{/pathParams}}),
+        )?;
+        {{#hasAuthMethods}}
+
+        // Auth
+        #[allow(unused_mut)]
+        {
+            let auth = &self.0.auth;
+            let mut cookies = Vec::<String>::new();
+        {{#authMethods}}
+        {{#isApiKey}}
+            if let Some(val) = &auth.{{#lambda.snakecase}}{{{name}}}{{/lambda.snakecase}} {
+            {{#isKeyInHeader}}
+                let mut val = reqwest::header::HeaderValue::from_str(val)?;
+                val.set_sensitive(true);
+                local_var_req_builder = local_var_req_builder.header("{{{keyParamName}}}", val);
+            {{/isKeyInHeader}}
+            {{^isKeyInHeader}}
+                let name = crate::urlencode("{{{keyParamName}}}");
+                let val = crate::urlencode(val);
+            {{#isKeyInCookie}}
+                cookies.push(format!("{name}={val}"));
+            {{/isKeyInCookie}}
+            {{#isKeyInQuery}}
+                local_var_req_builder = local_var_req_builder.query(&[name, val]);
+            {{/isKeyInQuery}}
+            {{/isKeyInHeader}}
+            }
+        {{/isApiKey}}
+        {{#isBasicBasic}}
+            if let Some(BasicAuth{username, password}) = &auth.{{#lambda.snakecase}}{{{name}}}{{/lambda.snakecase}} {
+                local_var_req_builder = local_var_req_builder.basic_auth(username, password.as_deref());
+            }
+        {{/isBasicBasic}}
+        {{#isBasicBearer}}
+            if let Some(token) = &auth.{{#lambda.snakecase}}{{{name}}}{{/lambda.snakecase}} {
+                local_var_req_builder = local_var_req_builder.bearer_auth(token);
+            }
+        {{/isBasicBearer}}
+        {{/authMethods}}
+            if !cookies.is_empty() {
+                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+            }
+        }
+        {{/hasAuthMethods}}
+        {{#queryParams}}
+
+        {{#required}}
+        {{#isArray}}
+        local_var_req_builder = match "{{collectionFormat}}" {
+            "multi" => local_var_req_builder.query(&{{{paramName}}}.into_iter().map(|p| ("{{{baseName}}}", p)).collect()),
+            _ => local_var_req_builder.query(&[("{{{baseName}}}", &{{{paramName}}}.join(","))]),
+        };
+        {{/isArray}}
+        {{^isArray}}
+        {{^isNullable}}
+        local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}})]);
+        {{/isNullable}}
+        {{#isNullable}}
+        {{#isDeepObject}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            let params = super::parse_deep_object("{{{baseName}}}", {{{paramName}}});
+            local_var_req_builder = local_var_req_builder.query(&params);
+        };
+        {{/isDeepObject}}
+        {{^isDeepObject}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}})]);
+        };
+        {{/isDeepObject}}
+        {{/isNullable}}
+        {{/isArray}}
+        {{/required}}
+        {{^required}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            {{#isArray}}
+            local_var_req_builder = match "{{collectionFormat}}" {
+                "multi" => local_var_req_builder.query(&{{{paramName}}}.into_iter().map(|p| ("{{{baseName}}}", p))),
+                _ => local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}}.join(","))]),
+            };
+            {{/isArray}}
+            {{^isArray}}
+            {{#isDeepObject}}
+            let params = super::parse_deep_object("{{{baseName}}}", {{{paramName}}});
+            local_var_req_builder = local_var_req_builder.query(&params);
+            {{/isDeepObject}}
+            {{^isDeepObject}}
+            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}})]);
+            {{/isDeepObject}}
+            {{/isArray}}
+        }
+        {{/required}}
+        {{/queryParams}}
+        {{#hasHeaderParams}}
+        {{#headerParams}}
+        {{#required}}
+        {{^isNullable}}
+        local_var_req_builder = local_var_req_builder.header("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        {{/isNullable}}
+        {{#isNullable}}
+        local_var_req_builder = match {{{paramName}}} {
+            Some(ref {{{paramName}}}) => local_var_req_builder.header("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}}),
+            None => local_var_req_builder.header("{{{baseName}}}", ""),
+        }
+        {{/isNullable}}
+        {{/required}}
+        {{^required}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            local_var_req_builder = local_var_req_builder.header("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        }
+        {{/required}}
+        {{/headerParams}}
+        {{/hasHeaderParams}}
+        {{#isMultipart}}
+        {{#hasFormParams}}
+        let mut local_var_form = reqwest{{^supportAsync}}::blocking{{/supportAsync}}::multipart::Form::new();
+        {{#formParams}}
+        {{#isFile}}
+        {{^supportAsync}}
+        {{#required}}
+        {{^isNullable}}
+        local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}})?;
+        {{/isNullable}}
+        {{#isNullable}}
+        match {{{paramName}}} {
+            Some(ref {{{paramName}}}) => { local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}})?; },
+            None => { unimplemented!("Required nullable form file param not supported"); },
+        }
+        {{/isNullable}}
+        {{/required}}
+        {{^required}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}})?;
+        }
+        {{/required}}
+        {{/supportAsync}}
+        {{#supportAsync}}
+        // FIXME: support file upload for '{{{baseName}}}' parameter
+        {{/supportAsync}}
+        {{/isFile}}
+        {{^isFile}}
+        {{#required}}
+        {{^isNullable}}
+        local_var_form = local_var_form.text("{{{baseName}}}", serde_json::to_string({{{paramName}}})?);
+        {{/isNullable}}
+        {{#isNullable}}
+        local_var_form = match {{{paramName}}} {
+            Some(ref {{{paramName}}}) => local_var_form.text("{{{baseName}}}", serde_json::to_string({{{paramName}}})?),
+            None => local_var_form.text("{{{baseName}}}", ""),
+        }
+        {{/isNullable}}
+        {{/required}}
+        {{^required}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            local_var_form = local_var_form.text("{{{baseName}}}", serde_json::to_string({{{paramName}}})?);
+        }
+        {{/required}}
+        {{/isFile}}
+        {{/formParams}}
+        local_var_req_builder = local_var_req_builder.multipart(local_var_form);
+        {{/hasFormParams}}
+        {{/isMultipart}}
+        {{^isMultipart}}
+        {{#hasFormParams}}
+        let mut local_var_form_params = std::collections::HashMap::new();
+        {{#formParams}}
+        {{#isFile}}
+        {{#required}}
+        {{^isNullable}}
+        local_var_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content"));
+        {{/isNullable}}
+        {{#isNullable}}
+        match {{{paramName}}} {
+            Some(ref {{{paramName}}}) => { local_var_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content")); },
+            None => { unimplemented!("Required nullable file form param not supported with x-www-form-urlencoded content"); },
+        }
+        {{/isNullable}}
+        {{/required}}
+        {{^required}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            local_var_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content"));
+        }
+        {{/required}}
+        {{/isFile}}
+        {{^isFile}}
+        {{#required}}
+        {{^isNullable}}
+        local_var_form_params.insert("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        {{/isNullable}}
+        {{#isNullable}}
+        match {{{paramName}}} {
+            Some(ref {{{paramName}}}) => { local_var_form_params.insert("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}}); },
+            None => { local_var_form_params.insert("{{{baseName}}}", ""); },
+        }
+        {{/isNullable}}
+        {{/required}}
+        {{^required}}
+        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+            local_var_form_params.insert("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        }
+        {{/required}}
+        {{/isFile}}
+        {{/formParams}}
+        local_var_req_builder = local_var_req_builder.form(local_var_form_params);
+        {{/hasFormParams}}
+        {{/isMultipart}}
+        {{#hasBodyParam}}
+        {{#bodyParams}}
+        local_var_req_builder = local_var_req_builder.json({{{paramName}}});
+        {{/bodyParams}}
+        {{/hasBodyParam}}
+
+        let local_var_resp = local_var_req_builder.send(){{#supportAsync}}.await{{/supportAsync}}?;
+
+        let local_var_status = local_var_resp.status();
+        let local_var_content = local_var_resp.text(){{#supportAsync}}.await{{/supportAsync}}?;
+
+        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
+            {{^supportMultipleResponses}}
+            {{^returnType}}
+            Ok(())
+            {{/returnType}}
+            {{#returnType}}
+            serde_json::from_str(&local_var_content).map_err(Into::into)
+            {{/returnType}}
+            {{/supportMultipleResponses}}
+            {{#supportMultipleResponses}}
+            let local_var_entity = serde_json::from_str::<{{{operationIdCamelCase}}}Success>(&local_var_content).ok();
+            let local_var_result = ErrorResponse { status: local_var_status, content: local_var_content, entity: local_var_entity };
+            Ok(local_var_result.into())
+            {{/supportMultipleResponses}}
+        } else {
+            let local_var_entity = serde_json::from_str::<{{{operationIdCamelCase}}}Error>(&local_var_content).map(|e| Box::new(e) as _).ok();
+            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
+            Err(local_var_error.into())
+        }
+    }
+
+    {{/operations.operation}}
+}

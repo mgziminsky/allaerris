@@ -1,0 +1,1 @@
+{{^required}}Option<{{/required}}{{#required}}{{#isNullable}}Option<{{/isNullable}}{{/required}}{{^isPrimitiveType}}{{^isEnumRef}}&{{/isEnumRef}}{{/isPrimitiveType}}{{#isString}}&str{{/isString}}{{^isString}}{{{dataType}}}{{/isString}}{{#required}}{{#isNullable}}>{{/isNullable}}{{/required}}{{^required}}>{{/required}}

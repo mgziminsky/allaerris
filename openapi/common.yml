@@ -1,0 +1,21 @@
+# Global Opts
+generatorName: rust
+minimalUpdate: true
+templateDir: openapi/template
+library: reqwest
+
+# Rust Opts
+avoidBoxedModels: true
+bestFitInt: true
+preferUnsignedInt: true
+useSingleRequestParameter: true
+
+files:
+  reqwest/client.mustache:
+    folder: src
+    destinationFilename: client.rs
+
+typeMappings:
+  URI: ::url::Url
+  i32: u32
+  i64: usize

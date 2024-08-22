@@ -1,0 +1,13 @@
+'!include': common.yml
+inputSpec: https://docs.modrinth.com/redocusaurus/plugin-redoc-0.yaml
+packageName: modrinth-client
+outputDir:  modrinth-client
+
+parameterNameMappings:
+  'id|slug': mod_id
+  'id|username': user
+  'id|number': id
+
+nameMappings:
+  '{version}-recommended': version_recommended
+  '{version}-latest': version_latest

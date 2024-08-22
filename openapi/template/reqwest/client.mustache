@@ -1,0 +1,100 @@
+use crate::apis;
+
+use reqwest{{^supportAsync}}::blocking{{/supportAsync}}::Client;
+{{#withAWSV4Signature}}
+use aws_sigv4;
+{{/withAWSV4Signature}}
+{{#hasAuthMethods}}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Default)]
+pub struct AuthData {
+{{#authMethods}}
+    {{!-- TODO: OAuth, OpenId --}}
+    {{#description}}
+    /// {{{.}}}
+    {{/description}}
+    pub {{#lambda.snakecase}}{{{name}}}{{/lambda.snakecase}}: Option<{{#isBasicBasic}}BasicAuth{{/isBasicBasic}}{{#isBasicBearer}}String{{/isBasicBearer}}{{#isApiKey}}String{{/isApiKey}}>,
+{{/authMethods}}
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct BasicAuth {
+    username: String,
+    password: Option<String>,
+}
+{{/hasAuthMethods}}
+
+#[derive(Debug, Clone)]
+pub struct ApiClient {
+    server: reqwest::Url,
+    client: {{#supportMiddleware}}reqwest_middleware::ClientWithMiddleware{{/supportMiddleware}}{{^supportMiddleware}}Client{{/supportMiddleware}},
+    {{#hasAuthMethods}}
+    pub(crate) auth: AuthData,
+    {{/hasAuthMethods}}
+}
+
+impl ApiClient {
+    pub fn builder() -> Builder { Builder::default() }
+
+    pub fn request(&self, method: reqwest::Method, path: impl AsRef<str>) -> crate::Result<reqwest::RequestBuilder> {
+        Ok(self.client.request(method, self.server.join(path.as_ref())?))
+    }
+{{#apiInfo}}
+
+{{#apis}}
+    pub fn {{#lambda.snakecase}}{{{classVarName}}}{{/lambda.snakecase}}(&self) -> apis::{{{classname}}} {
+        apis::{{{classname}}}(&self)
+    }
+
+{{/apis}}
+{{/apiInfo}}
+}
+
+impl Default for ApiClient {
+    fn default() -> Self {
+        Self::builder().build().expect("should successfully initialize with defaults")
+    }
+}
+
+#[derive(Default)]
+pub struct Builder {
+    server: Option<reqwest::Url>,
+    user_agent: Option<String>,
+    {{#hasAuthMethods}}
+    auth: Option<AuthData>,
+    {{/hasAuthMethods}}
+}
+
+const DEFAULT_SERVER: std::cell::OnceCell<reqwest::Url> = std::cell::OnceCell::new();
+const DEFAULT_AGENT: &str = {{#httpUserAgent}}"{{{.}}}"{{/httpUserAgent}}{{^httpUserAgent}}concat!("OpenAPI-Generator/", env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")){{/httpUserAgent}};
+impl Builder {
+    pub fn build(self) -> crate::Result<ApiClient> {
+        let client = Client::builder().user_agent(self.user_agent.as_deref().unwrap_or(DEFAULT_AGENT)).build()?;
+        Ok(ApiClient {
+            server: self.server.unwrap_or_else(|| {
+                DEFAULT_SERVER.get_or_init(|| "{{{basePath}}}".parse().expect("should have valid default server")).to_owned()
+            }),
+            client: {{#supportMiddleware}}reqwest_middleware::ClientBuilder::new({{/supportMiddleware}}client{{#supportMiddleware}}).build(){{/supportMiddleware}},
+            auth: self.auth.unwrap_or_default(),
+        })
+    }
+
+    pub fn server(mut self, server: impl Into<reqwest::Url>) -> Self {
+        self.server = Some(server.into());
+        self
+    }
+
+    pub fn user_agent(mut self, user_agent: impl ToString) -> Self {
+        self.user_agent = Some(user_agent.to_string());
+        self
+    }
+    {{#hasAuthMethods}}
+
+    pub fn auth(mut self, auth: AuthData) -> Self {
+        self.auth = Some(auth);
+        self
+    }
+    {{/hasAuthMethods}}
+}
