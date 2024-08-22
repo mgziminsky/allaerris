@@ -2,7 +2,7 @@ pub mod forge;
 pub mod modrinth;
 mod version;
 
-use std::{collections::HashMap, io::Read, path::Path};
+use std::{cell::LazyCell, collections::HashMap, io::Read, path::Path};
 
 use ::modrinth::{
     apis::version_files_api::VersionsFromHashesParams,
@@ -77,10 +77,7 @@ impl ProfileManager {
             };
         }
         parse!(|index = "modrinth.index.json"| {
-            let (known, unknown) = self.parse_modrinth(
-                client.as_modrinth().ok_or(anyhow!("Modrinth modpack found, but no Modrinth client available"))?,
-                read_json!(index),
-            ).await?;
+            let (known, unknown) = self.parse_modrinth(client, read_json!(index)).await?;
             (PackMods::Modrinth { known, unknown }, PathScoped::new("overrides").unwrap())
         });
         parse!(|manifest = "manifest.json"| {
@@ -91,7 +88,8 @@ impl ProfileManager {
         Err(anyhow!("Invalid or unsupported modpack").into())
     }
 
-    async fn parse_modrinth(&self, client: &::modrinth::ApiClient, index: ModpackIndex) -> Result<(VersionSet, Vec<IndexFile>)> {
+    async fn parse_modrinth(&self, client: &Client, index: ModpackIndex) -> Result<(VersionSet, Vec<IndexFile>)> {
+        let client = LazyCell::new(|| client.as_modrinth());
         match index {
             ModpackIndex::V1 {
                 files,
@@ -126,7 +124,7 @@ impl ProfileManager {
                             continue;
                         },
                     };
-                    let Ok((pid, vid)) = f.index_version() else {
+                    let Some((pid, vid)) = f.index_version() else {
                         pending.push(f);
                         continue;
                     };
@@ -148,6 +146,7 @@ impl ProfileManager {
                     );
                 }
                 let fetched = client
+                    .ok_or(anyhow!("Modrinth modpack found, but no Modrinth client available"))?
                     .version_files()
                     .versions_from_hashes(&VersionsFromHashesParams {
                         hash_list: Some(&HashList {

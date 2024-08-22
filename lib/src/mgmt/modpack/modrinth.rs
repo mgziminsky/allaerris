@@ -82,20 +82,18 @@ pub enum DependencyType {
 
 impl IndexFile {
     /// Attempt to extract the project/version ids from a modrinth download url
-    pub fn index_version(&self) -> Result<(ProjectId, VersionId), ()> {
+    pub fn index_version(&self) -> Option<(ProjectId, VersionId)> {
         const DL_PREFIX: &str = "https://cdn.modrinth.com/data/";
-        let Some(dl) = self.downloads.iter().find(|url| url.as_str().starts_with(DL_PREFIX)) else {
-            return Err(());
-        };
+        let dl = self.downloads.iter().find(|url| url.as_str().starts_with(DL_PREFIX))?;
         let mut path = dl.path_segments().unwrap();
         macro_rules! nth_1 {
             ($ty:expr) => {
-                path.nth(1).map(ToString::to_string).map($ty).ok_or(())
+                path.nth(1).map(ToString::to_string).map($ty)
             };
         }
         let project_id = nth_1!(ProjectId::Modrinth)?;
         let id = nth_1!(VersionId::Modrinth)?;
-        Ok((project_id, id))
+        Some((project_id, id))
     }
 
     pub fn path_scoped(&self) -> Result<&PathScopedRef, PathScopeError> {

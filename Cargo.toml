@@ -36,3 +36,8 @@ module_name_repetitions = "allow"
 must_use_candidate = "allow"
 similar_names = "allow"
 wildcard_imports = "allow"
+
+[profile.release]
+codegen-units = 1
+strip = true
+lto = true

@@ -93,14 +93,12 @@ impl ApiOps for GithubClient {
             let filter = [game_version.unwrap_or_default(), loader.map(ModLoader::as_str).unwrap_or_default()];
             let check = |a: &Asset| {
                 macro_rules! check_ext {
-                    ($ext:literal) => {
-                        std::path::Path::new(&a.name)
-                            .extension()
-                            .map_or(false, |ext| ext.eq_ignore_ascii_case($ext))
+                    ($($ext:literal)||*) => {
+                        std::path::Path::extension(a.name.as_ref()).map_or(false, |ext| $(ext.eq_ignore_ascii_case($ext))||*)
                     };
                 }
                 filter.iter().all(|f| a.name.contains(f))
-                    && (check_ext!(".jar") || check_ext!(".zip"))
+                    && check_ext!(".jar" || ".zip" || ".mrpack")
                     && !a.name.ends_with("-sources.jar")
                     && !a.label.as_ref().is_some_and(|l| l == "Source code")
             };
