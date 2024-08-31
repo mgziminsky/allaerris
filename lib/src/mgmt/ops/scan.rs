@@ -9,7 +9,9 @@ use crate::{
 };
 
 impl ProfileManager {
-    /// Lookup all unknown files non-recursively in the profile mods folder
+    /// Lookup all unknown files non-recursively in the profile mods folder. If
+    /// `all` is `true`, check all files, otherwise only check files that aren't
+    /// already in `profile`
     #[allow(clippy::missing_panics_doc)]
     pub async fn scan(&self, client: &Client, profile: &Profile, all: bool) -> Result<HashMap<PathScoped, Version>> {
         let profile_path = profile.path();

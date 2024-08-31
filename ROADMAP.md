@@ -6,6 +6,7 @@
 - Support server/client distinction in profile
 - Support full profile deployment including installing loaders and vanilla client/server
 - Support any project type, not just mods and packs
+- Link mods into profile instead of copying when possible
 
 # Completed
 - Profile add/remove/update/show/list
@@ -19,3 +20,4 @@
 - Cache management commands
 - Support cache bypass and/or force redownload during profile apply
 - "Scan" existing mod files and add to profile
+- CLI for locking/unlocking mods

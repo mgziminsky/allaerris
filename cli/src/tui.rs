@@ -5,7 +5,7 @@ use dialoguer::theme::ColorfulTheme;
 use indicatif::ProgressStyle;
 use itertools::Itertools;
 use relibium::{
-    client::schema::{Project, ProjectId},
+    client::schema::{Project, ProjectId, VersionId},
     config::{Mod, Profile, VersionedProject},
 };
 use yansi::{Paint, Painted};
@@ -118,6 +118,13 @@ pub fn id_tag(id: &ProjectId) -> String {
         ProjectId::Forge(id) => format!("{CF} {id}"),
         ProjectId::Modrinth(id) => format!("{MR} {id}"),
         ProjectId::Github((ref own, ref repo)) => format!("{GH} {own}/{repo}"),
+    }
+}
+pub fn vid_tag(id: &VersionId) -> String {
+    match id {
+        VersionId::Forge(id) => format!("{CF} {id}"),
+        VersionId::Modrinth(id) => format!("{MR} {id}"),
+        VersionId::Github(id) => format!("{GH} {id}"),
     }
 }
 

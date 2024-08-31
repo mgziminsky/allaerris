@@ -8,7 +8,7 @@ use super::ProjectId;
 use crate::{
     checked_types::PathScoped,
     client::{service_id::svc_id_type, ServiceId},
-    config::ModLoader,
+    config::{ModLoader, VersionedProject},
     ErrorKind, Result,
 };
 
@@ -36,6 +36,16 @@ pub struct Version {
     pub deps: Vec<Dependency>,
     pub game_versions: Vec<String>,
     pub loaders: Vec<ModLoader>,
+}
+
+impl VersionedProject for Version {
+    fn project(&self) -> &ProjectId {
+        &self.project_id
+    }
+
+    fn version(&self) -> Option<&VersionId> {
+        Some(&self.id)
+    }
 }
 
 #[derive(Debug, Clone)]
