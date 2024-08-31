@@ -123,7 +123,7 @@ api! {
     /// Get multiple [versions](Version) details by their `ids`
     ++pub get_versions(ids: &[&dyn VersionIdSvcType]) -> Vec<Version>;
 
-    /// Get multiple [versions](Version) details by their `ids`
+    /// Get single [versions](Version) details by `ids`
     pub get_version(id: &(impl VersionIdSvcType + ?Sized)) -> Version;
 
     /// Get the latest [versions](Version) of the project with `id`

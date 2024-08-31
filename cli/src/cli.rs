@@ -70,13 +70,12 @@ pub enum SubCommand {
 pub enum ModsSubcommand {
     /// Add mods to the active profile
     Add {
-        /// The identifier(s) of the mod/project/repository
+        /// The id(s) of the mod/project/repository
         ///
         /// The Modrinth project ID is specified at the bottom of the left
         /// sidebar under 'Technical information'. You can also use the project
-        /// slug in the URL.
-        /// The CurseForge project ID is specified at the top of the right
-        /// sidebar under 'About Project'.
+        /// slug in the URL. The CurseForge project ID is specified at
+        /// the top of the right sidebar under 'About Project'.
         /// The GitHub identifier is the repository's full name, e.g.
         /// `gorilla-devs/ferium`.
         ids: Vec<String>,
@@ -103,12 +102,46 @@ pub enum ModsSubcommand {
         /// Show additional information about the mod
         #[arg(long, short)]
         verbose: bool,
+
         /// Output information in markdown format and alphabetical order
         ///
         /// Useful for creating modpack mod lists.
         /// Complements the verbose flag.
         #[arg(long, short, visible_alias = "md")]
         markdown: bool,
+    },
+
+    /// Lock the specified mods to their installed version
+    Lock {
+        /// IDs of mods to lock
+        #[arg(required_unless_present = "all")]
+        ids: Vec<String>,
+
+        /// Treat IDs as versions instead of mods
+        ///
+        /// If present in the profile, the mod associated with each version will
+        /// be locked to that version
+        #[arg[long, short]]
+        versions: bool,
+
+        /// Also update any already locked mods to the new version
+        #[arg[long, short]]
+        force: bool,
+
+        /// Lock modpack and all mods to installed version
+        #[arg[long, short, conflicts_with_all = ["ids", "versions"]]]
+        all: bool,
+    },
+
+    /// Remove the locked version from the specified mods
+    Unlock {
+        /// IDs of mods to unlock
+        #[arg(required_unless_present = "all")]
+        ids: Vec<String>,
+
+        /// Unlock modpack and all mods
+        #[arg[long, short, conflicts_with = "ids"]]
+        all: bool,
     },
 
     #[command(flatten)]
@@ -124,7 +157,7 @@ pub enum MgmtCommand {
     Apply {
         /// Always download and reinstall files without checking if they are
         /// already present
-        #[arg(short, long)]
+        #[arg(long, short)]
         force: bool,
 
         /// Don't use cache and install files directly to profile
@@ -146,22 +179,23 @@ pub enum MgmtCommand {
         /// Revert mods marked for updating to their installed version.
         ///
         /// Only works if updates haven't yet been applied
-        #[arg(short, long)]
+        #[arg(long, short)]
         revert: bool,
 
         /// Immediatly apply any updates. Revert will not be possible
-        #[arg(short, long, conflicts_with = "revert")]
+        #[arg(long, short, conflicts_with = "revert")]
         apply: bool,
     },
+
     /// Attempt to lookup all unknown files non-recursively in the profile mods
     /// folder and prompt adding them to the profile
     Scan {
         /// Check all files, even if they are already known to be in the profile
-        #[arg(short, long)]
+        #[arg(long, short)]
         all: bool,
 
         /// Lock the version of added mods to the installed version
-        #[arg(short, long)]
+        #[arg(long, short)]
         lock: bool,
     },
 }

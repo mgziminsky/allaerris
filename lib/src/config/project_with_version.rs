@@ -8,7 +8,7 @@ use crate::{
 };
 
 
-/// Represents a type that with a [project ID](ProjectId) and an optional
+/// Represents a type with a [project ID](ProjectId) and an optional
 /// [version ID](VersionId). When both are present, they MUST belong to the same
 /// service, and it is undefined behavior if they don't
 pub trait VersionedProject {
@@ -28,10 +28,19 @@ pub struct ProjectWithVersion {
 }
 
 /// Error when a [`ProjectWithVersion`] is created with values belonging to
-/// different services
+/// different service
 #[derive(Error, Debug, Copy, Clone)]
-#[error("project and version can not belong to different services")]
+#[error("project and version can not belong to different service")]
 pub struct ServiceMismatchError;
+fn validate(project: &ProjectId, version: Option<&VersionId>) -> StdResult<(), ServiceMismatchError> {
+    match (project, version) {
+        (_, None)
+        | (ProjectId::Forge(_), Some(VersionId::Forge(_)))
+        | (ProjectId::Modrinth(_), Some(VersionId::Modrinth(_)))
+        | (ProjectId::Github(_), Some(VersionId::Github(_))) => Ok(()),
+        _ => Err(ServiceMismatchError),
+    }
+}
 
 impl ProjectWithVersion {
     /// # Errors
@@ -39,14 +48,24 @@ impl ProjectWithVersion {
     /// Will error if `version` is not [`None`] and is not for the same service
     /// as `project`
     pub fn new(project: ProjectId, version: Option<VersionId>) -> StdResult<Self, ServiceMismatchError> {
-        match (&project, &version) {
-            (_, None)
-            | (ProjectId::Forge(_), Some(VersionId::Forge(_)))
-            | (ProjectId::Modrinth(_), Some(VersionId::Modrinth(_)))
-            | (ProjectId::Github(_), Some(VersionId::Github(_))) => (),
-            _ => return Err(ServiceMismatchError),
-        }
+        validate(&project, version.as_ref())?;
         Ok(Self { project, version })
+    }
+
+    /// Sets the version of this [`ProjectWithVersion`] and returns the previous
+    /// value
+    ///
+    /// # Errors
+    ///
+    /// Will error if `version` is not for the same service as `project`
+    pub fn set_version(&mut self, version: VersionId) -> StdResult<Option<VersionId>, ServiceMismatchError> {
+        validate(&self.project, Some(&version))?;
+        Ok(self.version.replace(version))
+    }
+
+    /// Sets the version to [`None`] and returns the previous value
+    pub fn unset_version(&mut self) -> Option<VersionId> {
+        self.version.take()
     }
 }
 impl From<ProjectId> for ProjectWithVersion {
@@ -55,6 +74,18 @@ impl From<ProjectId> for ProjectWithVersion {
             project: pid,
             version: None,
         }
+    }
+}
+impl From<ProjectWithVersion> for ProjectId {
+    fn from(pwv: ProjectWithVersion) -> Self {
+        pwv.project
+    }
+}
+impl TryFrom<ProjectWithVersion> for VersionId {
+    type Error = ();
+
+    fn try_from(pwv: ProjectWithVersion) -> StdResult<Self, Self::Error> {
+        pwv.version.ok_or(())
     }
 }
 
@@ -192,8 +223,33 @@ mod tests {
     }
 
     #[test]
-    fn service_mismatch() {
+    fn no_version() {
+        ProjectWithVersion::new(ProjectId::Forge(23), Option::None).expect("project without version should succeed");
+    }
+
+    #[test]
+    fn matched_version() {
+        ProjectWithVersion::new(ProjectId::Forge(23), Option::Some(VersionId::Forge(65)))
+            .expect("project with matching version should succeed");
+    }
+
+    #[test]
+    fn version_mismatch() {
         ProjectWithVersion::new(ProjectId::Forge(23), Option::Some(VersionId::Github(AssetId(65))))
-            .expect_err("project and version from different services should error");
+            .expect_err("project and version from different service should error");
+    }
+
+    #[test]
+    fn set_version_match() {
+        let mut x = ProjectWithVersion::new(ProjectId::Forge(23), Option::None).unwrap();
+        x.set_version(VersionId::Forge(65))
+            .expect("setting version from same service should succeed");
+    }
+
+    #[test]
+    fn set_version_mismatch() {
+        let mut x = ProjectWithVersion::new(ProjectId::Forge(23), Option::None).unwrap();
+        x.set_version(VersionId::Github(AssetId(65)))
+            .expect_err("setting version from different service should error");
     }
 }

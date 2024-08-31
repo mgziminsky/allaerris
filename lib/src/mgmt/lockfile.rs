@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     checked_types::PathScoped,
     client::schema::{self, ProjectId, VersionId},
-    config::{profile, ModLoader, ProjectWithVersion, VersionedProject},
+    config::{profile, ModLoader, Profile, ProjectWithVersion, VersionedProject},
     fs_util::{FsUtil, FsUtils},
     Result, StdResult,
 };
@@ -73,6 +73,21 @@ impl LockFile {
         res
     }
 }
+impl Profile {
+    /// Returns the basic info about the installed versions of the mods and
+    /// modpack for this [`Profile`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if reading the lockfile fails.
+    pub async fn installed(&self) -> Result<Vec<LockedMod>> {
+        let LockFile { mut mods, pack, .. } = LockFile::load(self.path()).await?;
+        if let Some(pack) = pack {
+            mods.push(pack.data);
+        }
+        Ok(mods)
+    }
+}
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct LockedMod {
@@ -83,14 +98,12 @@ pub struct LockedMod {
 }
 
 impl VersionedProject for LockedMod {
-    #[inline]
     fn project(&self) -> &ProjectId {
-        &self.id.project
+        self.id.project()
     }
 
-    #[inline]
     fn version(&self) -> Option<&VersionId> {
-        Some(&self.id.version)
+        self.id.version()
     }
 }
 
@@ -143,7 +156,25 @@ impl From<LockedId> for ProjectWithVersion {
         }
     }
 }
+impl From<LockedId> for ProjectId {
+    fn from(lid: LockedId) -> Self {
+        lid.project
+    }
+}
+impl From<LockedId> for VersionId {
+    fn from(lid: LockedId) -> Self {
+        lid.version
+    }
+}
+impl VersionedProject for LockedId {
+    fn project(&self) -> &ProjectId {
+        &self.project
+    }
 
+    fn version(&self) -> Option<&VersionId> {
+        Some(&self.version)
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LockedPack {

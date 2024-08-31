@@ -12,7 +12,7 @@ use crate::{
 
 svc_id_type! {
     /// The [client](crate::client) specific project id types
-    #[derive(Deserialize, Serialize, Debug, Clone, Eq, Hash)]
+    #[derive(Deserialize, Serialize, Debug, Clone, Eq, Hash, Ord)]
     #[serde(rename_all = "lowercase")]
     pub enum ProjectId {
         Forge(u64),
@@ -40,31 +40,31 @@ pub struct Project {
 
 impl Display for ProjectId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            ProjectId::Forge(id) => f.write_fmt(format_args!("{id}")),
-            ProjectId::Modrinth(id) => f.write_str(id),
-            ProjectId::Github((owner, name)) => f.write_fmt(format_args!("{}/{}", owner.to_lowercase(), name.to_lowercase())),
+        match self {
+            Self::Forge(id) => f.write_fmt(format_args!("{id}")),
+            Self::Modrinth(id) => f.write_str(id),
+            Self::Github((owner, name)) => f.write_fmt(format_args!("{}/{}", owner.to_lowercase(), name.to_lowercase())),
         }
     }
 }
 
-impl<T: ProjectIdSvcType> PartialEq<T> for ProjectId {
+impl<T: ProjectIdSvcType + ?Sized> PartialEq<T> for ProjectId {
     fn eq(&self, other: &T) -> bool {
         match self {
-            ProjectId::Forge(id) => other.get_forge().is_ok_and(|oid| *id == oid),
-            ProjectId::Modrinth(id) => other.get_modrinth().is_ok_and(|other| id == other),
-            ProjectId::Github((owner, repo)) => other
+            Self::Forge(id) => other.get_forge().is_ok_and(|oid| *id == oid),
+            Self::Modrinth(id) => other.get_modrinth().is_ok_and(|other| id == other),
+            Self::Github((owner, repo)) => other
                 .get_github()
                 .is_ok_and(|(owner_other, repo_other)| owner == owner_other && repo == repo_other),
         }
     }
 }
-impl<T: ProjectIdSvcType> PartialOrd<T> for ProjectId {
+impl<T: ProjectIdSvcType + ?Sized> PartialOrd<T> for ProjectId {
     fn partial_cmp(&self, other: &T) -> Option<std::cmp::Ordering> {
         match self {
-            ProjectId::Forge(id) => other.get_forge().ok().and_then(|oid| id.partial_cmp(&oid)),
-            ProjectId::Modrinth(id) => other.get_modrinth().ok().map(|other| id.as_str().cmp(other)),
-            ProjectId::Github((owner, repo)) => other
+            Self::Forge(id) => other.get_forge().ok().and_then(|oid| id.partial_cmp(&oid)),
+            Self::Modrinth(id) => other.get_modrinth().ok().map(|other| id.as_str().cmp(other)),
+            Self::Github((owner, repo)) => other
                 .get_github()
                 .ok()
                 .and_then(|other| (owner.as_str(), repo.as_str()).partial_cmp(&other)),
