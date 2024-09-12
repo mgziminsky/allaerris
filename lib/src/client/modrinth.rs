@@ -186,6 +186,8 @@ async fn fetch_project(client: &ModrinthClient, mod_id: &str) -> Result<ApiProje
 }
 
 mod from {
+    use std::sync::LazyLock;
+
     use modrinth::{
         models::{
             project::ProjectType, version_dependency::DependencyType as ModrinthDepType, GameVersionTag, Project as ApiProject,
@@ -193,7 +195,6 @@ mod from {
         },
         Error as ApiError, ErrorResponse,
     };
-    use once_cell::sync::Lazy;
     use reqwest::StatusCode;
     use url::Url;
 
@@ -206,7 +207,7 @@ mod from {
         ErrorKind,
     };
 
-    static HOME: Lazy<Url> = Lazy::new(|| "https://modrinth.com/".parse().expect("base url should always parse successfully"));
+    static HOME: LazyLock<Url> = LazyLock::new(|| "https://modrinth.com/".parse().expect("base url should always parse successfully"));
 
     impl From<ModrinthClient> for Client {
         fn from(value: ModrinthClient) -> Self {

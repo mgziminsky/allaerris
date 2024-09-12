@@ -1,4 +1,4 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 use crate::{
     checked_types::{PathAbsolute, PathScopedRef},
@@ -8,7 +8,7 @@ use crate::{
 
 /// The base path where files are downloaded to before they are copied into a
 /// profile
-pub static CACHE_DIR: Lazy<PathAbsolute> = Lazy::new(|| {
+pub static CACHE_DIR: LazyLock<PathAbsolute> = LazyLock::new(|| {
     dirs::cache_dir()
         .expect("system cache directory should be known")
         .join(concat!(env!("CARGO_PKG_NAME"), "-cache"))
