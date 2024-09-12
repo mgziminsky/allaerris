@@ -1,7 +1,6 @@
-use std::{collections::HashMap, ops::Deref};
+use std::{collections::HashMap, ops::Deref, sync::LazyLock};
 
 use anyhow::{Context, Result};
-use once_cell::sync::Lazy;
 use relibium::{
     client::schema::{Author, ProjectId, ProjectIdSvcType},
     config::{Mod, Profile, VersionedProject},
@@ -12,7 +11,7 @@ use yansi::Paint;
 
 use crate::tui::{print_mods, print_project_markdown, print_project_verbose};
 
-static MR_BASE: Lazy<::url::Url> = Lazy::new(|| {
+static MR_BASE: LazyLock<::url::Url> = LazyLock::new(|| {
     "https://modrinth.com/user/"
         .parse()
         .expect("base url should always parse successfully")

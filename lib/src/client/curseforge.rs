@@ -183,11 +183,12 @@ async fn fetch_mods(client: &ForgeClient, mod_ids: Vec<u64>) -> Result<Vec<curse
 }
 
 mod from {
+    use std::sync::LazyLock;
+
     use curseforge::{
         models::{File, FileDependency, FileRelationType, HashAlgo, MinecraftGameVersion, ModAuthor, ModLoaderType},
         Error as ApiError, ErrorResponse,
     };
-    use once_cell::sync::Lazy;
     use reqwest::StatusCode;
     use url::Url;
 
@@ -204,7 +205,7 @@ mod from {
     pub const MOD_CLASS_ID: u64 = 6;
     pub const MODPACK_CLASS_ID: u64 = 4471;
 
-    static HOME: Lazy<Url> = Lazy::new(|| {
+    static HOME: LazyLock<Url> = LazyLock::new(|| {
         "https://www.curseforge.com/minecraft/"
             .parse()
             .expect("base url should always parse successfully")

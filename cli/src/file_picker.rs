@@ -1,8 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{path::{Path, PathBuf}, sync::LazyLock};
 
-use once_cell::sync::Lazy;
 
-static HOME: Lazy<PathBuf> = Lazy::new(|| dirs::home_dir().expect("should be able to determine home dir"));
+static HOME: LazyLock<PathBuf> = LazyLock::new(|| dirs::home_dir().expect("should be able to determine home dir"));
 
 /// Use the system file picker to pick a file, with a `default` path (that is [not supported on linux](https://github.com/PolyMeilex/rfd/issues/42))
 #[cfg(any(feature = "gui", ide))]

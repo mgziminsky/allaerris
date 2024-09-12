@@ -40,7 +40,6 @@ anyhow.workspace = true
 async-scoped.workspace = true
 dirs.workspace = true
 itertools.workspace = true
-once_cell.workspace = true
 reqwest = { workspace = true, features = ["rustls-tls"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true

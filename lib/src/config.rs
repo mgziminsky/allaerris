@@ -10,10 +10,9 @@ mod serde;
 #[doc = "Types relating to [profile data](profile::ProfileData)\n\n"]
 pub mod profile;
 
-use std::{collections::BTreeSet, path::Path};
+use std::{collections::BTreeSet, path::Path, sync::LazyLock};
 
 use ::serde::{Deserialize, Serialize};
-use once_cell::sync::Lazy;
 
 #[doc(inline)]
 pub use self::profile::Profile;
@@ -25,7 +24,7 @@ use crate::{
 };
 
 /// Full path to the default config file
-pub static DEFAULT_CONFIG_PATH: Lazy<PathAbsolute> = Lazy::new(|| CONF_DIR.join("config.json"));
+pub static DEFAULT_CONFIG_PATH: LazyLock<PathAbsolute> = LazyLock::new(|| CONF_DIR.join("config.json"));
 
 type ProfilesList = BTreeSet<ProfileByPath>;
 
@@ -272,7 +271,7 @@ mod tests {
 
     use super::*;
 
-    static PATHS: Lazy<[PathAbsolute; 3]> = Lazy::new(|| {
+    static PATHS: LazyLock<[PathAbsolute; 3]> = LazyLock::new(|| {
         [
             PathAbsolute::new("/test/profile/path/1").unwrap(),
             PathAbsolute::new("/test/profile/path/2").unwrap(),
