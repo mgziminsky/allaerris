@@ -1,7 +1,7 @@
 use std::{collections::HashMap, ops::Deref, sync::LazyLock};
 
 use anyhow::{Context, Result};
-use relibium::{
+use ferrallay::{
     client::schema::{Author, ProjectId, ProjectIdSvcType},
     config::{Mod, Profile, VersionedProject},
     modrinth::apis::teams_api::GetTeamsParams,

@@ -1,5 +1,5 @@
 use anyhow::{bail, Result};
-use relibium::{config::Profile, Client};
+use ferrallay::{config::Profile, Client};
 use yansi::Paint;
 
 use crate::{cli::ModsSubcommand, helpers, tui::print_mods};

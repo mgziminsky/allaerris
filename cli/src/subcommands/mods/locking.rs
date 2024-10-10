@@ -1,7 +1,7 @@
 use std::{collections::HashSet, fmt::Display};
 
 use anyhow::Result;
-use relibium::{
+use ferrallay::{
     client::schema::{ProjectIdSvcType, VersionIdSvcType},
     config::{Mod, Profile, VersionedProject},
     Client,
@@ -41,7 +41,7 @@ macro_rules! not_found_msg {
 /// installed version.
 ///
 /// # Errors
-/// - Reading the [profile data](relibium::config::profile::ProfileData) fails
+/// - Reading the [profile data](ferrallay::config::profile::ProfileData) fails
 /// - Reading the lockfile with installed mod versions fails
 pub async fn lock_mods(profile: &mut Profile, ids: &[impl ProjectIdSvcType + Display], force: bool) -> Result<()> {
     let mut installed = profile.installed().await?;

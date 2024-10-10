@@ -19,7 +19,9 @@ pub enum PathScopeError {
 }
 
 /// A [`PathBuf`] wrapper that is guaranteed to be relative without directly
-/// referencing an outer scope. Leading [`./`] will be stripped and the path
+/// referencing an outer scope.
+///
+/// Leading [`./`] will be stripped and the path
 /// partially normalized as described by [`Path::components`]
 ///
 /// [`./`]: std::path::Component::CurDir

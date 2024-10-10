@@ -1,2 +1,2 @@
-ignore-interior-mutability = ["relibium::config::profile::by_path::ProfileByPath"]
+ignore-interior-mutability = ["ferrallay::config::profile::by_path::ProfileByPath"]
 doc-valid-idents = ["CurseForge", ".."]

@@ -13,7 +13,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser};
-use relibium::{
+use ferrallay::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
     config::{profile::ProfileData, Config, Profile, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
@@ -22,7 +22,7 @@ use tokio::{runtime, sync::OnceCell};
 use yansi::Paint;
 
 use self::{
-    cli::{Ferium, ModpackSubcommand, ProfileSubcommand, SubCommand},
+    cli::{Allaerris, ModpackSubcommand, ProfileSubcommand, SubCommand},
     helpers::{consts, get_active_profile, APP_NAME},
     subcommands::{cache, modpack, mods, profile},
     tui::const_style,
@@ -31,11 +31,11 @@ use self::{
 const USER_AGENT: &str = concat!(consts!(APP_NAME), "/", env!("CARGO_PKG_VERSION"), " (Github: mgziminsky)");
 
 fn main() -> ExitCode {
-    let cli = Ferium::parse();
+    let cli = Allaerris::parse();
     let runtime = {
         let mut builder = runtime::Builder::new_multi_thread();
         builder.enable_all();
-        builder.thread_name("ferium-worker");
+        builder.thread_name("allaerris-worker");
         if let Some(threads) = cli.threads {
             builder.worker_threads(threads);
         }
@@ -53,13 +53,13 @@ fn main() -> ExitCode {
 }
 
 #[allow(clippy::too_many_lines)]
-async fn actual_main(mut cli_app: Ferium) -> Result<()> {
+async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
     // The complete command should not require a config.
     // See [#139](https://github.com/gorilla-devs/ferium/issues/139) for why this might be a problem.
     if let SubCommand::Complete { shell } = cli_app.subcommand {
         clap_complete::generate(
             shell,
-            &mut Ferium::command(),
+            &mut Allaerris::command(),
             std::env::current_exe()
                 .ok()
                 .as_deref()
@@ -100,7 +100,7 @@ async fn actual_main(mut cli_app: Ferium) -> Result<()> {
 
     let config_path = &cli_app
         .config_file
-        .or_else(|| var_os("FERIUM_CONFIG_FILE").map(Into::into))
+        .or_else(|| var_os("ALLAERRIS_CONFIG_FILE").map(Into::into))
         .unwrap_or(DEFAULT_CONFIG_PATH.to_owned().into());
 
     // This craziness is because I want a lazy, async, and mut config that can be

@@ -2,12 +2,12 @@ use std::{borrow::Cow, fmt::Display, ops::Range, sync::LazyLock};
 
 use anyhow::anyhow;
 use dialoguer::theme::ColorfulTheme;
-use indicatif::ProgressStyle;
-use itertools::Itertools;
-use relibium::{
+use ferrallay::{
     client::schema::{Project, ProjectId, VersionId},
     config::{Mod, Profile, VersionedProject},
 };
+use indicatif::ProgressStyle;
+use itertools::Itertools;
 use yansi::{Paint, Painted};
 
 
@@ -202,7 +202,7 @@ pub fn print_project_verbose(proj: &Project) {
             .unwrap_or_default()
             .bright_blue()
             .underline(),
-        id_tag(&proj.id).dim(),
+        id_tag(&proj.id),
         proj.source_url.as_ref().map(url::Url::as_str).map_or_else(
             || CROSS_RED.to_string(),
             |u| format!("{} {}", TICK_GREEN, u.bright_blue().underline())

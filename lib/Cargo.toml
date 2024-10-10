@@ -1,15 +1,11 @@
 [package]
-name = "relibium"
-version = "2.0.0"
+name = "ferrallay"
+version = "0.1.0"
 edition.workspace = true
-rust-version.workspace = true
-authors = [
-    "Michael Ziminsky (Z)",
-    "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>",
-    "Daniel Hauck (SolidTux)",
-]
+repository.workspace = true
+rust-version = "1.80.0"
+authors = ["Michael Ziminsky (Z)"]
 description = "Multi-source backend for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
-repository = "https://github.com/gorilla-devs/libium"
 readme = "README.md"
 license = "MPL-2.0"
 keywords = [
@@ -25,7 +21,7 @@ paste = "1"
 serde-value = "0.7.0"
 sha1 = "0.10"
 thiserror = "1.0"
-zip = { version = "2.1", default-features = false, features = ["deflate"]}
+zip = { version = "2.2.0", default-features = false, features = ["deflate"] }
 
 anyhow.workspace = true
 async-scoped.workspace = true

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use dialoguer::MultiSelect;
-use relibium::config::{profile::ProfileData, Mod};
+use ferrallay::config::{profile::ProfileData, Mod};
 
 use crate::tui::mod_single_line;
 

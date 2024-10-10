@@ -4,7 +4,7 @@ members = ["cli", "lib", "*-client"]
 
 [workspace.package]
 edition = "2021"
-rust-version = "1.80.0"
+repository = "https://github.com/mgziminsky/allaerris"
 
 [workspace.dependencies]
 anyhow = "1.0"
