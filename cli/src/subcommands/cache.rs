@@ -1,7 +1,7 @@
 use std::fs::{self};
 
 use anyhow::{anyhow, Context, Result};
-use relibium::mgmt::CACHE_DIR;
+use ferrallay::mgmt::CACHE_DIR;
 use walkdir::WalkDir;
 use yansi::Paint;
 

@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Ok, Result};
 use dialoguer::Confirm;
-use relibium::{
+use ferrallay::{
     config::{profile::ProfileData, Modpack, Profile},
     Client,
 };

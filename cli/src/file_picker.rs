@@ -1,9 +1,12 @@
-use std::{path::{Path, PathBuf}, sync::LazyLock};
+use std::{
+    path::{Path, PathBuf},
+    sync::LazyLock,
+};
 
 
 static HOME: LazyLock<PathBuf> = LazyLock::new(|| dirs::home_dir().expect("should be able to determine home dir"));
 
-/// Use the system file picker to pick a file, with a `default` path (that is [not supported on linux](https://github.com/PolyMeilex/rfd/issues/42))
+/// Use the system file picker to pick a file, with a `default` path
 #[cfg(any(feature = "gui", ide))]
 fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathBuf> {
     rfd::FileDialog::new()

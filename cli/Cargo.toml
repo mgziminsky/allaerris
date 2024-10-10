@@ -1,18 +1,12 @@
 [package]
-name = "ferium"
+name = "allaerris"
 resolver = "2"
-version = "4.5.2"
+version = "0.1.0"
 edition.workspace = true
-rust-version.workspace = true
-authors = [
-    "Michael Ziminsky (Z)",
-    "Ilesh Thiada (theRookieCoder) <ileshkt@gmail.com>",
-    "薛詠謙 (KyleUltimate)",
-    "Daniel Hauck (SolidTux)",
-]
+repository.workspace = true
+rust-version = "1.80.0"
+authors = ["Michael Ziminsky (Z)"]
 description = "Fast CLI program for managing Minecraft mods and modpacks from Modrinth, CurseForge, and Github Releases"
-exclude = [".github", "tests", "media"]
-repository = "https://github.com/gorilla-devs/ferium"
 categories = ["command-line-utilities"]
 readme = "README.md"
 license = "MPL-2.0"
@@ -26,9 +20,9 @@ gui = ["rfd"]
 clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 dialoguer = "0.11"
+ferrallay = { version = "0.1", path = "../lib" }
 indicatif = "0.17"
-relibium = { version = "2", path = "../lib" }
-rfd = { version = "0.14", default-features = false, optional = true, features = [
+rfd = { version = "0.15", default-features = false, optional = true, features = [
     "xdg-portal",
     "tokio",
 ] }
@@ -45,10 +39,6 @@ serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 url.workspace = true
-
-
-[dev-dependencies]
-rand = "0.8"
 
 [lints]
 workspace = true

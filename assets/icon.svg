@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg width="260" height="260" viewBox="0 0 13 13" version="1.1" id="svg1" inkscape:version="1.3.2 (091e20e, 2023-11-25, custom)" sodipodi:docname="icon.svg" inkscape:export-filename="icon.png" inkscape:export-xdpi="64" inkscape:export-ydpi="64"
+  xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+  xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:svg="http://www.w3.org/2000/svg"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:cc="http://creativecommons.org/ns#">
+  <sodipodi:namedview id="base" pagecolor="#474747" bordercolor="#666666" borderopacity="1.0" inkscape:pageopacity="0.0" inkscape:pageshadow="2" inkscape:zoom="4.7240172" inkscape:cx="129.76244" inkscape:cy="125.42291" inkscape:document-units="px" inkscape:current-layer="layer1" inkscape:showpageshadow="false" inkscape:pagecheckerboard="1" inkscape:deskcolor="#000000" showgrid="true" labelstyle="default" inkscape:lockguides="false" inkscape:export-bgcolor="#00000000">
+    <inkscape:grid id="grid1" units="px" originx="0" originy="0" spacingx="1" spacingy="1" empcolor="#0099e5" empopacity="0.30196078" color="#0099e5" opacity="0.14901961" empspacing="5" dotted="false" gridanglex="30" gridanglez="30" visible="true" enabled="true" snapvisiblegridlinesonly="true" />
+  </sodipodi:namedview>
+  <metadata id="metadata1">
+    <rdf:RDF>
+      <cc:Work rdf:about="">
+        <cc:license rdf:resource="http://creativecommons.org/licenses/by-sa/4.0/" />
+      </cc:Work>
+      <cc:License rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
+        <cc:permits rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <g inkscape:groupmode="layer" id="layer1" inkscape:label="Layer 1" style="display:inline">
+    <image id="lwing" style="image-rendering:pixelated" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAYAAAB4ka1VAAAACXBIWXMAAAsSAAALEgHS3X78AAAAVElEQVQI12NkwAK+BDD8f/KJgeHZDwYGRhgHBkCCUhwQ2ukYAyMTzwYGRo19DIwggeufGb6ABEHsT78Z7sJ17bNi+L/elOEzjL/BlOEOip0YAkgAAJRhIj2V3B6TAAAAAElFTkSuQmCC" opacity="0.75" transform="matrix(0.375,0.375,0,0.5,3,4)" inkscape:label="lwing" />
+    <use id="rwing" href="#lwing" transform="matrix(-1,0,0,1,13,0)" sodipodi:insensitive="true" inkscape:label="rwing" />
+    <image id="body" x="5" y="6" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAAFCAYAAACAcVaiAAAABHNCSVQICAgIfAhkiAAAADVJREFUCJljnKTLcIcBCpgYkAATAwPDERZGBgY2JoYjTDwsDAxZlxhUGBgYGBjmGTIsgCkDAMLLBhdP7KvEAAAAAElFTkSuQmCC" style="image-rendering:pixelated" inkscape:label="body" sodipodi:insensitive="true" />
+    <image id="face" x="4" y="1" style="image-rendering:pixelated" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACNbyblAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAABGSURBVBhXY/yXo/ef4fcPBjhg5WBgYvj2nuHnk29wDOIz/Xz5n4Fjy2OwIhAN4jNxsIP5DMg043N30f8CLFARIPjw5ycDAG8+H1I1CL36AAAAAElFTkSuQmCC" inkscape:label="face" />
+    <path id="lclaw" d="M 5,6 C 5,6 4.0225253,6.3986106 3.3880317,5.5396718 L 3.0198087,5.0658797 c 0,0 1.878035,-1.0298555 -0.2382892,-2.4888633 0,0 0.2647384,0.4547109 -0.057656,1.6736953 0,0 -0.8582697,-0.5607421 -0.8319025,-1.6903359 0,0 -1.2986719,1.0824961 0.5771719,2.7297657 0,0 1.0879024,1.5686357 2.5308671,1.7098585 z" style="clip-rule:evenodd;fill:#f74c00;fill-opacity:1;fill-rule:nonzero;stroke-width:0.0117;stroke-linejoin:round;stroke-miterlimit:1.41421;stroke-dasharray:none" sodipodi:nodetypes="ccccccccc" sodipodi:insensitive="true" />
+    <use id="rclaw" href="#lclaw" transform="matrix(-1,0,0,1,13,0)" sodipodi:insensitive="true" />
+  </g>
+</svg>

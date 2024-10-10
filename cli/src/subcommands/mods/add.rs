@@ -1,5 +1,5 @@
 use anyhow::Result;
-use relibium::{
+use ferrallay::{
     config::{profile::ProfileData, Mod, VersionedProject},
     Client,
 };

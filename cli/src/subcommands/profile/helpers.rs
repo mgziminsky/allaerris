@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use anyhow::{Context, Result};
 use dialoguer::{Input, Select};
-use relibium::{
+use ferrallay::{
     checked_types::PathAbsolute,
     config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
 };
@@ -71,7 +71,7 @@ pub async fn pick_minecraft_version(default: Option<&str>) -> Result<String> {
     Ok(choice)
 }
 
-pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&'p Profile], filter: Option<String>) -> Result<Option<&'p PathAbsolute>> {
+pub fn pick_profile<'p>(msg: impl Into<String>, profiles: &'p [&Profile], filter: Option<String>) -> Result<Option<&'p PathAbsolute>> {
     let filter = filter.unwrap_or_default();
     let found: Vec<_> = profiles.iter().filter(|p| cmp_profile(p, &filter)).map(Deref::deref).collect();
     let selected = match found.len() {

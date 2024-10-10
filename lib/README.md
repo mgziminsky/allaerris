@@ -1,9 +1,8 @@
-# Libium
-Libium is the backend of [ferium](https://github.com/gorilla-devs/ferium). It helps manage Minecraft mods from Modrinth, CurseForge, and Github Releases.
+# Ferrallay
+This lib contains the core functionality of this project. It handles the bulk of the management functions for mods, config, and profiles,
+as well as providing a normalized client interface for interacting with the different supported service APIs.
 
-These are the main components of libium;
-
-- `config` deals with (surprise, surprise) the config. It defines the config structure and methods to get the config file, deserialise it, etc
-- `modpack` contains manifest/metadata structs for MR and CF modpack formats, and functions for reading these from a zip file
-- `upgrade` contains functions for fetching the latest compatible mod/modpack file, and downloading it
-- `add` contains functions to verify and add a mod to a profile
+The primary modules are:
+- [`client`](src/client.rs) - Public client interface wrapping the raw service APIs
+- [`config`](src/config.rs) - Types dealing with the configuration data that is saved/loaded to/from the filesystem
+- [`mgmt`](src/mgmt.rs) - Profile management features dealing with the actual download/install/update fuctionality

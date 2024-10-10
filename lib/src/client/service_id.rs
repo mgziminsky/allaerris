@@ -1,10 +1,10 @@
-/// Use with [`svc_id_impl`] to set any of the clients as not available for the
+/// Use with [`svc_id_type`] to set any of the clients as not available for the
 /// defined type
 #[allow(unused)]
 pub enum Unsupported {}
 
 /// Represents a known id for one of the supported [client](super::Client) APIs
-// Prefer using [svc_id_impl] to implementing manually
+// Prefer using [`svc_id_type`] to implementing manually
 #[allow(missing_docs)]
 pub trait ServiceId: super::Sealed {
     type ForgeT;

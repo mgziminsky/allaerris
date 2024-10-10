@@ -2,12 +2,12 @@ use std::{collections::HashMap, sync::mpsc};
 
 use anyhow::{anyhow, Result};
 use dialoguer::MultiSelect;
-use indicatif::{MultiProgress, ProgressBar};
-use relibium::{
+use ferrallay::{
     config::{Mod, Profile, ProjectWithVersion},
     mgmt::events::{DownloadId, DownloadProgress, ProgressEvent},
     Client, ProfileManager,
 };
+use indicatif::{MultiProgress, ProgressBar};
 use yansi::Paint;
 
 use crate::{
@@ -148,7 +148,7 @@ fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandle<()
                 },
                 Download(evt) => handle_dl(evt, &mut bars, &progress),
                 Installed { file, is_new, typ } => {
-                    use relibium::mgmt::events::InstallType::*;
+                    use ferrallay::mgmt::events::InstallType::*;
                     println!(
                         "{} {:>9}: {}",
                         if is_new { TICK_GREEN } else { TICK_YELLOW },

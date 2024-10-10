@@ -1,6 +1,6 @@
 use anyhow::Result;
 use dialoguer::{Input, Select};
-use relibium::config::{ModLoader, Profile};
+use ferrallay::config::{ModLoader, Profile};
 
 use super::helpers::{pick_minecraft_version, pick_mod_loader};
 use crate::tui::THEME;

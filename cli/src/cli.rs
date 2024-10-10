@@ -4,12 +4,12 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand, ValueHint};
 use clap_complete::Shell;
-use relibium::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
+use ferrallay::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
 
 #[derive(Parser)]
 #[command(author, version, about)]
 #[command(arg_required_else_help = true)]
-pub struct Ferium {
+pub struct Allaerris {
     #[command(subcommand)]
     pub subcommand: SubCommand,
     /// Sets the number of worker threads the tokio runtime will use.
@@ -26,7 +26,7 @@ pub struct Ferium {
     pub curseforge_api_key: Option<String>,
     /// Set the file to read the config from.
     /// This does not change the `cache` and `tmp` directories.
-    /// You can also use the environment variable `FERIUM_CONFIG_FILE`.
+    /// You can also use the environment variable `ALLAERRIS_CONFIG_FILE`.
     #[arg(long, short, visible_aliases = ["config", "conf"])]
     #[arg(value_hint(ValueHint::FilePath))]
     pub config_file: Option<PathBuf>,
@@ -243,8 +243,8 @@ pub enum ProfileSubcommand {
         switch_to: Option<String>,
     },
     /// Configure the current profile's name, Minecraft version, and mod loader
-    #[command(visible_aliases = ["config", "conf"])]
-    Configure {
+    #[command(visible_aliases = ["configure", "config", "conf"])]
+    Edit {
         /// The Minecraft version to use
         #[arg(long, short = 'v')]
         game_version: Option<String>,
@@ -289,12 +289,11 @@ pub enum ModpackSubcommand {
         #[arg(long, short)]
         force: bool,
     },
-    /// Configure the current modpack's output directory and installation of
-    /// overrides. Optionally, provide the settings to change as arguments.
+    /// Configure the profile modpack's installation of overrides
     #[command(visible_aliases = ["config", "conf"])]
     Configure {
         /// Whether to install the modpack's overrides to the output directory.
-        /// This will overwrite existing files when installing.
+        /// This may overwrite existing files when installing.
         #[arg(long, short)]
         install_overrides: Option<bool>,
     },

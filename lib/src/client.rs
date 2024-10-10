@@ -156,8 +156,8 @@ api! {
 ///
 /// # Example
 /// ```no_run
-/// # use relibium::client::*;
-/// # async fn async_main() -> relibium::Result<()> {
+/// # use ferrallay::client::*;
+/// # async fn async_main() -> ferrallay::Result<()> {
 /// // Single client
 /// let client = Client::from(ModrinthClient::default());
 /// let m = client.get_mod("mod_id").await;

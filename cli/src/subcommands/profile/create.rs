@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use anyhow::{bail, Context, Ok, Result};
 use dialoguer::{Confirm, Input};
-use relibium::{
+use ferrallay::{
     checked_types::PathAbsolute,
     config::{profile::ProfileData, ModLoader, Profile},
     Config, DEFAULT_MINECRAFT_DIR,

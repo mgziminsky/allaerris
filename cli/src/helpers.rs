@@ -1,7 +1,7 @@
 use std::ffi::OsStr;
 
 use anyhow::{anyhow, bail, Context, Result};
-use relibium::config::{Config, Profile};
+use ferrallay::config::{Config, Profile};
 use yansi::Paint;
 
 macro_rules! consts {
@@ -32,7 +32,7 @@ pub(crate) fn get_active_profile(config: &mut Config) -> Result<&mut Profile> {
     config
         .active_profile_mut()
         .map_err(|err| match err.kind() {
-            relibium::ErrorKind::NoProfiles => anyhow!(
+            ferrallay::ErrorKind::NoProfiles => anyhow!(
                 "There are no profiles configured, add a profile using `{}`",
                 format!("{APP_NAME} profile create").bold().italic()
             ),

@@ -15,9 +15,10 @@ fn name_lowercase(m: &Mod) -> String {
 }
 
 
-/// A lazy loaded profile containing the `name` and `path`. The external
-/// [profile data](ProfileData) will be loaded and cached on first access.
-/// Path is immutable after creation since it is used as the profile id
+/// A lazy loaded profile containing the `name` and `path`.
+///
+/// The external [profile data](ProfileData) will be loaded and cached on first
+/// access. Path is immutable after creation since it is used as the profile id
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub(super) name: String,

@@ -4,7 +4,7 @@ mod delete;
 mod helpers;
 
 use anyhow::{bail, Context, Result};
-use relibium::{
+use ferrallay::{
     checked_types::PathAbsolute,
     config::{profile::ProfileData, Profile},
     Config,
@@ -76,7 +76,7 @@ pub async fn process(subcommand: ProfileSubcommand, config: &mut Config) -> Resu
                 println!("Active Profile:  {}", fmt_profile_simple(active, 100));
             }
         },
-        ProfileSubcommand::Configure {
+        ProfileSubcommand::Edit {
             game_version,
             loader,
             name,

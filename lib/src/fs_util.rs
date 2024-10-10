@@ -50,6 +50,7 @@ impl FsUtils for FsUtil {
     }
 }
 
+// FIXME: This sucks. How do I make it not suck.
 #[cfg(test)]
 mod tests_impl {
     use super::*;
