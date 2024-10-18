@@ -1,5 +1,4 @@
 .gitignore
-Cargo.toml
 README.md
 src/apis/categories_api.rs
 src/apis/files_api.rs

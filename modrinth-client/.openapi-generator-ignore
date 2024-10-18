@@ -25,6 +25,5 @@
 /.travis.yml
 /Cargo.toml
 /git_push.sh
-/README.md
 /src/apis/configuration.rs
 docs/

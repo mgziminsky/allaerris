@@ -1,9 +1,9 @@
-# Originally copied from https://github.com/aternosorg/php-curseforge-api/blob/3e8ccafd131c713532d4c1a3c6047186593991a0/openapi.yaml
+# Originally copied from https://github.com/aternosorg/php-curseforge-api/blob/e583834b10f66014ba2926bbae7964c671e9253c/openapi.yaml
 openapi: 3.0.1
 info:
   title: CurseForge API
   description: HTTP API for CurseForge
-  version: 1.0.0
+  version: 1.0.240719
 servers:
   - url: https://api.curseforge.com
 tags:
@@ -947,21 +947,28 @@ components:
           format: int64
           nullable: true
     CoreApiStatus:
-      x-enum-varnames:
-        - Private
-        - Public
+      description: |
+        CoreApiStatus
+        Possible enum values:
+         * 1 = Private
+         * 2 = Public
       type: integer
       enum:
         - 1
         - 2
-    CoreStatus:
       x-enum-varnames:
-        - Draft
-        - Test
-        - PendingReview
-        - Rejected
-        - Approved
-        - Live
+        - Private
+        - Public
+    CoreStatus:
+      description: |
+        CoreStatus
+        Possible enum values:
+         * 1 = Draft
+         * 2 = Test
+         * 3 = PendingReview
+         * 4 = Rejected
+         * 5 = Approved
+         * 6 = Live
       type: integer
       enum:
         - 1
@@ -970,6 +977,13 @@ components:
         - 4
         - 5
         - 6
+      x-enum-varnames:
+        - Draft
+        - Test
+        - PendingReview
+        - Rejected
+        - Approved
+        - Live
     FeaturedModsResponse:
       type: object
       properties:
@@ -1123,13 +1137,14 @@ components:
           type: integer
           format: int32
     FileRelationType:
-      x-enum-varnames:
-        - EmbeddedLibrary
-        - OptionalDependency
-        - RequiredDependency
-        - Tool
-        - Incompatible
-        - Include
+      description: |
+        Possible enum values:
+         * 1 = EmbeddedLibrary
+         * 2 = OptionalDependency
+         * 3 = RequiredDependency
+         * 4 = Tool
+         * 5 = Incompatible
+         * 6 = Include
       type: integer
       enum:
         - 1
@@ -1138,33 +1153,47 @@ components:
         - 4
         - 5
         - 6
-    FileReleaseType:
       x-enum-varnames:
-        - Release
-        - Beta
-        - Alpha
+        - EmbeddedLibrary
+        - OptionalDependency
+        - RequiredDependency
+        - Tool
+        - Incompatible
+        - Include
+    FileReleaseType:
+      description: |
+        Possible enum values:
+         * 1 = Release
+         * 2 = Beta
+         * 3 = Alpha
       type: integer
       enum:
         - 1
         - 2
         - 3
-    FileStatus:
       x-enum-varnames:
-        - Processing
-        - ChangesRequired
-        - UnderReview
-        - Approved
-        - Rejected
-        - MalwareDetected
-        - Deleted
-        - Archived
-        - Testing
-        - Released
-        - ReadyForReview
-        - Deprecated
-        - Baking
-        - AwaitingPublishing
-        - FailedPublishing
+        - Release
+        - Beta
+        - Alpha
+    FileStatus:
+      description: |
+        Status of the file
+        Possible enum values:
+         * 1 = Processing
+         * 2 = ChangesRequired
+         * 3 = UnderReview
+         * 4 = Approved
+         * 5 = Rejected
+         * 6 = MalwareDetected
+         * 7 = Deleted
+         * 8 = Archived
+         * 9 = Testing
+         * 10 = Released
+         * 11 = ReadyForReview
+         * 12 = Deprecated
+         * 13 = Baking
+         * 14 = AwaitingPublishing
+         * 15 = FailedPublishing
       type: integer
       enum:
         - 1
@@ -1182,6 +1211,22 @@ components:
         - 13
         - 14
         - 15
+      x-enum-varnames:
+        - Processing
+        - ChangesRequired
+        - UnderReview
+        - Approved
+        - Rejected
+        - MalwareDetected
+        - Deleted
+        - Archived
+        - Testing
+        - Released
+        - ReadyForReview
+        - Deprecated
+        - Baking
+        - AwaitingPublishing
+        - FailedPublishing
     FingerprintFuzzyMatch:
       type: object
       properties:
@@ -1325,15 +1370,20 @@ components:
         slug:
           type: string
     GameVersionStatus:
-      x-enum-varnames:
-        - Approved
-        - Deleted
-        - New
+      description: |
+        Possible enum values:
+         * 1 = Approved
+         * 2 = Deleted
+         * 3 = New
       type: integer
       enum:
         - 1
         - 2
         - 3
+      x-enum-varnames:
+        - Approved
+        - Deleted
+        - New
     GameVersionType:
       type: object
       properties:
@@ -1348,13 +1398,17 @@ components:
         slug:
           type: string
     GameVersionTypeStatus:
-      x-enum-varnames:
-        - Normal
-        - Deleted
+      description: |
+        Possible enum values:
+         * 1 = Normal
+         * 2 = Deleted
       type: integer
       enum:
         - 1
         - 2
+      x-enum-varnames:
+        - Normal
+        - Deleted
     GetCategoriesResponse:
       type: object
       properties:
@@ -1512,13 +1566,18 @@ components:
             type: integer
             format: int64
     HashAlgo:
-      x-enum-varnames:
-        - Sha1
-        - Md5
+      description: |
+        Hash algorithems
+        Possible enum values:
+         * 1 = Sha1
+         * 2 = Md5
       type: integer
       enum:
         - 1
         - 2
+      x-enum-varnames:
+        - Sha1
+        - Md5
     MinecraftGameVersion:
       type: object
       properties:
@@ -1783,26 +1842,35 @@ components:
           type: string
           format: uri
     ModLoaderInstallMethod:
-      x-enum-varnames:
-        - ForgeInstaller
-        - ForgeJarInstall
-        - ForgeInstallerV2
-        - FabricInstaller
+      description: |
+        ModLoaderInstallMethod
+        Possible enum values:
+         * 1 = ForgeInstaller
+         * 2 = ForgeJarInstall
+         * 3 = ForgeInstallerV2
+         * 4 = FabricInstaller
       type: integer
       enum:
         - 1
         - 2
         - 3
         - 4
-    ModLoaderType:
       x-enum-varnames:
-        - Any
-        - Forge
-        - Cauldron
-        - LiteLoader
-        - Fabric
-        - Quilt
-        - NeoForge
+        - ForgeInstaller
+        - ForgeJarInstall
+        - ForgeInstallerV2
+        - FabricInstaller
+    ModLoaderType:
+      description: |
+        ModLoaderType
+        Possible enum values:
+         * 0 = Any
+         * 1 = Forge
+         * 2 = Cauldron
+         * 3 = LiteLoader
+         * 4 = Fabric
+         * 5 = Quilt
+         * 6 = NeoForge
       type: integer
       enum:
         - 0
@@ -1812,38 +1880,29 @@ components:
         - 4
         - 5
         - 6
+      x-enum-varnames:
+        - Any
+        - Forge
+        - Cauldron
+        - LiteLoader
+        - Fabric
+        - Quilt
+        - NeoForge
     ModsSearchSortField:
-      x-enum-varnames:
-        - Featured
-        - Popularity
-        - LastUpdated
-        - Name
-        - Author
-        - TotalDownloads
-        - Category
-        - GameVersion
-      type: integer
-      enum:
-        - 1
-        - 2
-        - 3
-        - 4
-        - 5
-        - 6
-        - 7
-        - 8
-    ModStatus:
-      x-enum-varnames:
-        - New
-        - ChangesRequired
-        - UnderSoftReview
-        - Approved
-        - Rejected
-        - ChangesMade
-        - Inactive
-        - Abandoned
-        - Deleted
-        - UnderReview
+      description: |
+        Possible enum values:
+         * 1 = Featured
+         * 2 = Popularity
+         * 3 = LastUpdated
+         * 4 = Name
+         * 5 = Author
+         * 6 = TotalDownloads
+         * 7 = Category
+         * 8 = GameVersion
+         * 9 = Early Access
+         * 10 = Featured Release
+         * 11 = Release Date
+         * 12 = Rating
       type: integer
       enum:
         - 1
@@ -1856,6 +1915,58 @@ components:
         - 8
         - 9
         - 10
+        - 11
+        - 12
+      x-enum-varnames:
+        - Featured
+        - Popularity
+        - LastUpdated
+        - Name
+        - Author
+        - TotalDownloads
+        - Category
+        - GameVersion
+        - EarlyAccess
+        - FeaturedRelease
+        - ReleaseDate
+        - Rating
+    ModStatus:
+      description: |
+        Current mod status
+        Possible enum values:
+         * 1 = New
+         * 2 = ChangesRequired
+         * 3 = UnderSoftReview
+         * 4 = Approved
+         * 5 = Rejected
+         * 6 = ChangesMade
+         * 7 = Inactive
+         * 8 = Abandoned
+         * 9 = Deleted
+         * 10 = UnderReview
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+      x-enum-varnames:
+        - New
+        - ChangesRequired
+        - UnderSoftReview
+        - Approved
+        - Rejected
+        - ChangesMade
+        - Inactive
+        - Abandoned
+        - Deleted
+        - UnderReview
     Pagination:
       type: object
       description: The response pagination information
@@ -1910,6 +2021,10 @@ components:
           nullable: true
           description: Game version type id
     SortOrder:
+      description: |
+        Possible enum values:
+         * asc = Ascending
+         * desc = Descending
       type: string
       enum:
         - asc

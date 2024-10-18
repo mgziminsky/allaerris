@@ -1,6 +1,6 @@
 [package]
 name = "curseforge-client"
-version = "1.0.0"
+version = "1.0.240719"
 authors = ["OpenAPI Generator team and contributors"]
 description = "HTTP API for CurseForge"
 # Override this license by providing a License Object in the OpenAPI.
