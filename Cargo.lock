@@ -535,7 +535,7 @@ dependencies = [
 
 [[package]]
 name = "curseforge-client"
-version = "1.0.0"
+version = "1.0.240719"
 dependencies = [
  "reqwest",
  "serde",

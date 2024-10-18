@@ -23,6 +23,7 @@
 #!docs/README.md
 
 /.travis.yml
+/Cargo.toml
 /git_push.sh
 /src/apis/configuration.rs
 docs/
