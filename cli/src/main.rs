@@ -78,9 +78,8 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
     }
 
     let client: Client = vec![
-        ModrinthClient::builder().user_agent(USER_AGENT).build()?.into(),
-        ForgeClient::builder()
-            .user_agent(USER_AGENT)
+        { const { ModrinthClient::builder(USER_AGENT) } }.build()?.into(),
+        { const { ForgeClient::builder(USER_AGENT) } }
             .auth(AuthData {
                 api_key_auth: Some(
                     cli_app

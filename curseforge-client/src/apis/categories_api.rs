@@ -9,6 +9,7 @@
  */
 
 
+#[allow(unused_imports)]
 use crate::{
     models::{self, *},
     ErrorResponse, Result,
@@ -31,11 +32,11 @@ pub struct GetCategoriesParams<> {
 #[serde(untagged)]
 pub enum GetCategoriesError {
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 
 pub struct CategoriesApi<'c>(pub(crate) &'c crate::ApiClient);
@@ -62,7 +63,10 @@ impl<'c> CategoriesApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -81,12 +85,16 @@ impl<'c> CategoriesApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetCategoriesError::Status404,
+                500 => GetCategoriesError::Status500,
+                _ => GetCategoriesError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetCategoriesError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 

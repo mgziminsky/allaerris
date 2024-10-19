@@ -9,6 +9,7 @@
  */
 
 
+#[allow(unused_imports)]
 use crate::{
     models::{self, *},
     ErrorResponse, Result,
@@ -48,44 +49,44 @@ pub struct GetFingerprintMatchesByGameParams<'l2,> {
 #[serde(untagged)]
 pub enum GetFingerprintFuzzyMatchesError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Service Unavailable")]
-    Status503(),
+    Status503,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`FingerprintsApi::get_fingerprint_fuzzy_matches_by_game`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetFingerprintFuzzyMatchesByGameError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Service Unavailable")]
-    Status503(),
+    Status503,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`FingerprintsApi::get_fingerprint_matches`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetFingerprintMatchesError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Service Unavailable")]
-    Status503(),
+    Status503,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`FingerprintsApi::get_fingerprint_matches_by_game`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetFingerprintMatchesByGameError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Service Unavailable")]
-    Status503(),
+    Status503,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 
 pub struct FingerprintsApi<'c>(pub(crate) &'c crate::ApiClient);
@@ -112,7 +113,10 @@ impl<'c> FingerprintsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         local_var_req_builder = local_var_req_builder.json(get_fuzzy_matches_request_body);
@@ -122,12 +126,16 @@ impl<'c> FingerprintsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => GetFingerprintFuzzyMatchesError::Status400,
+                503 => GetFingerprintFuzzyMatchesError::Status503,
+                _ => GetFingerprintFuzzyMatchesError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetFingerprintFuzzyMatchesError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -156,7 +164,10 @@ impl<'c> FingerprintsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         local_var_req_builder = local_var_req_builder.json(get_fuzzy_matches_request_body);
@@ -166,12 +177,16 @@ impl<'c> FingerprintsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => GetFingerprintFuzzyMatchesByGameError::Status400,
+                503 => GetFingerprintFuzzyMatchesByGameError::Status503,
+                _ => GetFingerprintFuzzyMatchesByGameError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetFingerprintFuzzyMatchesByGameError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -197,7 +212,10 @@ impl<'c> FingerprintsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         local_var_req_builder = local_var_req_builder.json(get_fingerprint_matches_request_body);
@@ -207,12 +225,16 @@ impl<'c> FingerprintsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => GetFingerprintMatchesError::Status400,
+                503 => GetFingerprintMatchesError::Status503,
+                _ => GetFingerprintMatchesError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetFingerprintMatchesError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -241,7 +263,10 @@ impl<'c> FingerprintsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         local_var_req_builder = local_var_req_builder.json(get_fingerprint_matches_request_body);
@@ -251,12 +276,16 @@ impl<'c> FingerprintsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => GetFingerprintMatchesByGameError::Status400,
+                503 => GetFingerprintMatchesByGameError::Status503,
+                _ => GetFingerprintMatchesByGameError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetFingerprintMatchesByGameError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
