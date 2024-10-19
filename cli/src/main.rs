@@ -22,7 +22,7 @@ use tokio::{runtime, sync::OnceCell};
 use yansi::Paint;
 
 use self::{
-    cli::{Allaerris, ModpackSubcommand, ProfileSubcommand, SubCommand},
+    cli::{Allaerris, ModpackSubcommand, ProfileSubcommand, Subcommand},
     helpers::{consts, get_active_profile, APP_NAME},
     subcommands::{cache, modpack, mods, profile},
     tui::const_style,
@@ -56,7 +56,7 @@ fn main() -> ExitCode {
 async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
     // The complete command should not require a config.
     // See [#139](https://github.com/gorilla-devs/ferium/issues/139) for why this might be a problem.
-    if let SubCommand::Complete { shell } = cli_app.subcommand {
+    if let Subcommand::Complete { shell } = cli_app.subcommand {
         clap_complete::generate(
             shell,
             &mut Allaerris::command(),
@@ -71,8 +71,8 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
         return Ok(());
     }
     // Alias `profiles` to `profile list`
-    if let SubCommand::Profiles = cli_app.subcommand {
-        cli_app.subcommand = SubCommand::Profile {
+    if let Subcommand::Profiles = cli_app.subcommand {
+        cli_app.subcommand = Subcommand::Profile {
             subcommand: Some(ProfileSubcommand::List),
         };
     }
@@ -108,23 +108,23 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
     // and async blocks have same issue as closures and can't be awaited more than
     // once
     let config_ = &mut OnceCell::new();
+    let load_config = || async {
+        Config::load_from(config_path)
+            .await
+            .with_context(|| format!("Failed to read config file at `{}`, using defaults", config_path.display().bold()))
+            .inspect_err(|err| eprintln!("{:?}", err.yellow().wrap()))
+            .unwrap_or_default()
+    };
     /// Lazy load the config from `config_path`
     macro_rules! config {
         () => {{
-            config_
-                .get_or_init(|| async {
-                    Config::load_from(config_path)
-                        .await
-                        .with_context(|| format!("Failed to read config file at `{}`, using defaults", config_path.display().bold()))
-                        .inspect_err(|err| eprintln!("{:?}", err.yellow().wrap()))
-                        .unwrap_or_default()
-                })
-                .await;
+            config_.get_or_init(load_config).await;
             config_.get_mut().unwrap()
         }};
     }
     /// Get the profile of the current working directory, otherwise the active
-    /// profile from the config
+    /// profile from the config. This is to avoid loading the config file unless
+    /// it's needed
     macro_rules! profile {
         () => {
             match path_profile().as_mut() {
@@ -136,11 +136,11 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
 
     // Run function(s) based on the sub(sub)command to be executed
     match cli_app.subcommand {
-        SubCommand::Complete { .. } | SubCommand::Profiles => {
+        Subcommand::Complete { .. } | Subcommand::Profiles => {
             unreachable!();
         },
-        SubCommand::Mods(subcommand) => mods::process(subcommand, profile!(), &client).await?,
-        SubCommand::Modpack { subcommand } => {
+        Subcommand::Mods(subcommand) => mods::process(subcommand, profile!(), &client).await?,
+        Subcommand::Modpack { subcommand } => {
             let mut default_flag = false;
             let subcommand = subcommand.unwrap_or_else(|| {
                 default_flag = true;
@@ -159,13 +159,14 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
                 );
             }
         },
-        SubCommand::Profile { subcommand } => {
+        Subcommand::Profile { subcommand } => {
             let mut default_flag = false;
             let subcommand = subcommand.unwrap_or_else(|| {
                 default_flag = true;
                 ProfileSubcommand::Info
             });
             match subcommand {
+                // Handle info here to avoid loading config if not needed
                 ProfileSubcommand::Info => tui::print_profile(profile!(), true).await,
                 _ => profile::process(subcommand, config!()).await?,
             }
@@ -181,7 +182,7 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
                 );
             }
         },
-        SubCommand::Cache { subcommand } => cache::process(subcommand.unwrap_or_default()),
+        Subcommand::Cache { subcommand } => cache::process(subcommand.unwrap_or_default()),
     };
 
     if let Some(config) = config_.get_mut() {
