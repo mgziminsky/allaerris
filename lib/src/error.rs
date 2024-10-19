@@ -10,20 +10,14 @@ use crate::client::schema::ProjectId;
 pub type Result<T> = std::result::Result<T, Error>;
 pub type StdResult<T, E> = std::result::Result<T, E>;
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub struct Error {
+    #[source]
     kind: ErrorKind,
 }
-
 impl Error {
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
-    }
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        self.kind.source()
     }
 }
 impl Display for Error {
@@ -33,11 +27,11 @@ impl Display for Error {
 }
 impl<E: Into<ErrorKind>> From<E> for Error {
     fn from(source: E) -> Self {
-        Error { kind: source.into() }
+        Self { kind: source.into() }
     }
 }
 
-#[derive(thiserror::Error, Debug)]
+#[derive(Debug, thiserror::Error)]
 #[error(transparent)]
 #[non_exhaustive]
 pub enum ErrorKind {
@@ -75,7 +69,7 @@ pub enum ErrorKind {
     #[error("Failed to download file: {0}")]
     DownloadFailed(url::Url),
 
-    // External API
+    // External API - From is manually implemented
     Modrinth(modrinth::Error),
     Forge(curseforge::Error),
     GitHub(github::Error),

@@ -1,5 +1,6 @@
 {{>partial_header}}
 
+#[allow(unused_imports)]
 use crate::{
     models::{self, *},
     ErrorResponse, Result,
@@ -33,14 +34,15 @@ pub struct {{{operationIdCamelCase}}}Params<{{#allParams}}{{^isPrimitiveType}}{{
 #[serde(untagged)]
 pub enum {{{operationIdCamelCase}}}Success {
     {{#responses}}
-    {{#is2xx}}
-    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
-    {{/is2xx}}
-    {{#is3xx}}
-    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
-    {{/is3xx}}
+    {{^is4xx}}
+    {{^is5xx}}
+    {{^isDefault}}
+    Status{{code}}{{#content}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}){{/content}},
+    {{/isDefault}}
+    {{/is5xx}}
+    {{/is4xx}}
     {{/responses}}
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 
 {{/operations.operation}}
@@ -51,20 +53,19 @@ pub enum {{{operationIdCamelCase}}}Success {
 #[serde(untagged)]
 pub enum {{{operationIdCamelCase}}}Error {
     {{#responses}}
-    {{#is4xx}}
+    {{^is1xx}}
+    {{^is2xx}}
+    {{^is3xx}}
+    {{^isDefault}}
     #[error("{{{message}}}")]
-    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
-    {{/is4xx}}
-    {{#is5xx}}
-    #[error("{{{message}}}")]
-    Status{{code}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
-    {{/is5xx}}
-    {{#isDefault}}
-    DefaultResponse({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}),
+    Status{{code}}{{#content}}({{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}){{/content}},
     {{/isDefault}}
+    {{/is3xx}}
+    {{/is2xx}}
+    {{/is1xx}}
     {{/responses}}
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 {{/operations.operation}}
 
@@ -144,7 +145,10 @@ impl<'c> {{classname}}<'c> {
         {{/isBasicBearer}}
         {{/authMethods}}
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         {{/hasAuthMethods}}
@@ -240,7 +244,10 @@ impl<'c> {{classname}}<'c> {
         {{/required}}
         {{/supportAsync}}
         {{#supportAsync}}
-        // FIXME: support file upload for '{{{baseName}}}' parameter
+        if let Some(ref _{{{paramName}}}) = {{{paramName}}} {
+            // FIXME
+            return Err(crate::ErrorKind::Other("File uploads not yet supported".into()))?;
+        }
         {{/supportAsync}}
         {{/isFile}}
         {{^isFile}}
@@ -320,7 +327,24 @@ impl<'c> {{classname}}<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text(){{#supportAsync}}.await{{/supportAsync}}?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                {{#responses}}
+                {{^is1xx}}
+                {{^is2xx}}
+                {{^is3xx}}
+                {{^isDefault}}
+                {{code}} => {{{operationIdCamelCase}}}Error::Status{{code}}{{#content}}(serde_json::from_str(&local_var_content)?){{/content}},
+                {{/isDefault}}
+                {{/is3xx}}
+                {{/is2xx}}
+                {{/is1xx}}
+                {{/responses}}
+                _ => {{{operationIdCamelCase}}}Error::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
+        } else {
             {{^supportMultipleResponses}}
             {{^returnType}}
             Ok(())
@@ -334,10 +358,6 @@ impl<'c> {{classname}}<'c> {
             let local_var_result = ErrorResponse { status: local_var_status, content: local_var_content, entity: local_var_entity };
             Ok(local_var_result.into())
             {{/supportMultipleResponses}}
-        } else {
-            let local_var_entity = serde_json::from_str::<{{{operationIdCamelCase}}}Error>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
         }
     }
 

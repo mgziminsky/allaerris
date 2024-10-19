@@ -9,6 +9,7 @@
  */
 
 
+#[allow(unused_imports)]
 use crate::{
     models::{self, *},
     ErrorResponse, Result,
@@ -77,57 +78,57 @@ pub struct SearchModsParams<'l4,'l5,'l11,> {
 #[serde(untagged)]
 pub enum GetFeaturedModsError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`ModsApi::get_mod`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetModError {
     #[error("Not found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`ModsApi::get_mod_description`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetModDescriptionError {
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`ModsApi::get_mods`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetModsError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`ModsApi::search_mods`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum SearchModsError {
     #[error("Bad Request")]
-    Status400(),
+    Status400,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 
 pub struct ModsApi<'c>(pub(crate) &'c crate::ApiClient);
@@ -154,7 +155,10 @@ impl<'c> ModsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         local_var_req_builder = local_var_req_builder.json(get_featured_mods_request_body);
@@ -164,12 +168,17 @@ impl<'c> ModsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => GetFeaturedModsError::Status400,
+                404 => GetFeaturedModsError::Status404,
+                500 => GetFeaturedModsError::Status500,
+                _ => GetFeaturedModsError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetFeaturedModsError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -198,7 +207,10 @@ impl<'c> ModsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -207,12 +219,16 @@ impl<'c> ModsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetModError::Status404,
+                500 => GetModError::Status500,
+                _ => GetModError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetModError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -241,7 +257,10 @@ impl<'c> ModsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -250,12 +269,16 @@ impl<'c> ModsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetModDescriptionError::Status404,
+                500 => GetModDescriptionError::Status500,
+                _ => GetModDescriptionError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetModDescriptionError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -281,7 +304,10 @@ impl<'c> ModsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
         local_var_req_builder = local_var_req_builder.json(get_mods_by_ids_list_request_body);
@@ -291,12 +317,16 @@ impl<'c> ModsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => GetModsError::Status400,
+                500 => GetModsError::Status500,
+                _ => GetModsError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetModsError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -322,7 +352,10 @@ impl<'c> ModsApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -381,12 +414,16 @@ impl<'c> ModsApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                400 => SearchModsError::Status400,
+                500 => SearchModsError::Status500,
+                _ => SearchModsError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<SearchModsError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 

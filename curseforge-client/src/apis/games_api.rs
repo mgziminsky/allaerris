@@ -9,6 +9,7 @@
  */
 
 
+#[allow(unused_imports)]
 use crate::{
     models::{self, *},
     ErrorResponse, Result,
@@ -57,53 +58,53 @@ pub struct GetVersionsV2Params<> {
 #[serde(untagged)]
 pub enum GetGameError {
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`GamesApi::get_games`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetGamesError {
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`GamesApi::get_version_types`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetVersionTypesError {
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`GamesApi::get_versions`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetVersionsError {
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 /// struct for typed errors of method [`GamesApi::get_versions_v2`]
 #[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
 #[serde(untagged)]
 pub enum GetVersionsV2Error {
     #[error("Not Found")]
-    Status404(),
+    Status404,
     #[error("Internal Server Error")]
-    Status500(),
+    Status500,
     #[error("Unrecognized Error")]
-    UnknownValue(serde_json::Value),
+    Unknown(serde_json::Value),
 }
 
 pub struct GamesApi<'c>(pub(crate) &'c crate::ApiClient);
@@ -133,7 +134,10 @@ impl<'c> GamesApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -142,12 +146,16 @@ impl<'c> GamesApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetGameError::Status404,
+                500 => GetGameError::Status500,
+                _ => GetGameError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetGameError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -173,7 +181,10 @@ impl<'c> GamesApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -190,12 +201,15 @@ impl<'c> GamesApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                500 => GetGamesError::Status500,
+                _ => GetGamesError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetGamesError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -224,7 +238,10 @@ impl<'c> GamesApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -233,12 +250,16 @@ impl<'c> GamesApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetVersionTypesError::Status404,
+                500 => GetVersionTypesError::Status500,
+                _ => GetVersionTypesError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetVersionTypesError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -267,7 +288,10 @@ impl<'c> GamesApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -276,12 +300,16 @@ impl<'c> GamesApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetVersionsError::Status404,
+                500 => GetVersionsError::Status500,
+                _ => GetVersionsError::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetVersionsError>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 
@@ -310,7 +338,10 @@ impl<'c> GamesApi<'c> {
                 local_var_req_builder = local_var_req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(reqwest::header::COOKIE, reqwest::header::HeaderValue::from_str(&cookies.join("; "))?);
+                local_var_req_builder = local_var_req_builder.header(
+                    reqwest::header::COOKIE,
+                    reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
+                );
             }
         }
 
@@ -319,12 +350,16 @@ impl<'c> GamesApi<'c> {
         let local_var_status = local_var_resp.status();
         let local_var_content = local_var_resp.text().await?;
 
-        if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+            #[allow(clippy::match_single_binding)]
+            let local_var_error = match local_var_status.as_u16() {
+                404 => GetVersionsV2Error::Status404,
+                500 => GetVersionsV2Error::Status500,
+                _ => GetVersionsV2Error::Unknown(serde_json::from_str(&local_var_content)?),
+            };
+            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
         } else {
-            let local_var_entity = serde_json::from_str::<GetVersionsV2Error>(&local_var_content).map(|e| Box::new(e) as _).ok();
-            let local_var_error = ErrorResponse { status: local_var_status, content: local_var_content, source: local_var_entity };
-            Err(local_var_error.into())
+            serde_json::from_str(&local_var_content).map_err(Into::into)
         }
     }
 

@@ -220,8 +220,8 @@ mod from {
 
     impl From<ApiError> for ErrorKind {
         fn from(value: ApiError) -> Self {
-            match value {
-                ApiError::Response(ErrorResponse { status, .. }) if status == StatusCode::NOT_FOUND => Self::DoesNotExist,
+            match value.kind() {
+                curseforge::ErrorKind::Response(ErrorResponse { status, .. }) if *status == StatusCode::NOT_FOUND => Self::DoesNotExist,
                 _ => Self::Forge(value),
             }
         }

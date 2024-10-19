@@ -1,3 +1,4 @@
+{{>partial_header}}
 use crate::apis;
 
 use reqwest{{^supportAsync}}::blocking{{/supportAsync}}::Client;
@@ -28,15 +29,19 @@ pub struct BasicAuth {
 
 #[derive(Debug, Clone)]
 pub struct ApiClient {
-    server: reqwest::Url,
     client: {{#supportMiddleware}}reqwest_middleware::ClientWithMiddleware{{/supportMiddleware}}{{^supportMiddleware}}Client{{/supportMiddleware}},
+    server: reqwest::Url,
     {{#hasAuthMethods}}
     pub(crate) auth: AuthData,
     {{/hasAuthMethods}}
 }
 
 impl ApiClient {
-    pub fn builder() -> Builder { Builder::default() }
+    /// # PANICS (Debug)
+    /// If `user_agent` is blank
+    pub const fn builder(user_agent: &str) -> Builder {
+        Builder::new(user_agent)
+    }
 
     /// `path` should always start with single `/` and will be appended to the base server url
     pub fn request(&self, method: reqwest::Method, path: impl ::std::fmt::Display) -> reqwest::RequestBuilder {
@@ -47,49 +52,54 @@ impl ApiClient {
 
 {{#apis}}
     pub fn {{#lambda.snakecase}}{{{classVarName}}}{{/lambda.snakecase}}(&self) -> apis::{{{classname}}} {
-        apis::{{{classname}}}(&self)
+        apis::{{{classname}}}(self)
     }
 
 {{/apis}}
 {{/apiInfo}}
 }
 
-impl Default for ApiClient {
-    fn default() -> Self {
-        Self::builder().build().expect("should successfully initialize with defaults")
-    }
-}
 
-#[derive(Default)]
-pub struct Builder {
+pub struct Builder<'a> {
+    user_agent: &'a str,
     server: Option<reqwest::Url>,
-    user_agent: Option<String>,
     {{#hasAuthMethods}}
     auth: Option<AuthData>,
     {{/hasAuthMethods}}
 }
 
-const DEFAULT_SERVER: std::cell::OnceCell<reqwest::Url> = std::cell::OnceCell::new();
-const DEFAULT_AGENT: &str = {{#httpUserAgent}}"{{{.}}}"{{/httpUserAgent}}{{^httpUserAgent}}concat!("OpenAPI-Generator/", env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")){{/httpUserAgent}};
-impl Builder {
+static DEFAULT_SERVER: std::sync::LazyLock<reqwest::Url> =
+    std::sync::LazyLock::new(|| reqwest::Url::parse("{{{basePath}}}").unwrap());
+impl<'a> Builder<'a> {
+    const fn new(user_agent: &'a str) -> Self {
+        let user_agent = user_agent.trim_ascii();
+        debug_assert!(!user_agent.is_empty(), "`user_agent` must NOT be blank");
+        Self {
+            user_agent,
+            server: None,
+            auth: None,
+        }
+    }
+
     pub fn build(self) -> crate::Result<ApiClient> {
-        let client = Client::builder().user_agent(self.user_agent.as_deref().unwrap_or(DEFAULT_AGENT)).build()?;
+        if self.user_agent.is_empty() {
+            return Err(crate::ErrorKind::Other("Blank user agent".into()))?;
+        }
+        let client = Client::builder()
+            .user_agent(format!(
+                concat!("{} ", env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")),
+                self.user_agent
+            ))
+            .build()?;
         Ok(ApiClient {
-            server: self.server.unwrap_or_else(|| {
-                DEFAULT_SERVER.get_or_init(|| "{{{basePath}}}".parse().expect("should have valid default server")).to_owned()
-            }),
-            client: {{#supportMiddleware}}reqwest_middleware::ClientBuilder::new({{/supportMiddleware}}client{{#supportMiddleware}}).build(){{/supportMiddleware}},
+            client{{#supportMiddleware}}: reqwest_middleware::ClientBuilder::new(client).build(){{/supportMiddleware}},
+            server: self.server.unwrap_or_else(|| DEFAULT_SERVER.clone()),
             auth: self.auth.unwrap_or_default(),
         })
     }
 
     pub fn server(mut self, server: impl Into<reqwest::Url>) -> Self {
         self.server = Some(server.into());
-        self
-    }
-
-    pub fn user_agent(mut self, user_agent: impl ToString) -> Self {
-        self.user_agent = Some(user_agent.to_string());
         self
     }
     {{#hasAuthMethods}}

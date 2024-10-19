@@ -1,5 +1,5 @@
 '!include': common.yml
-inputSpec: https://docs.modrinth.com/redocusaurus/plugin-redoc-0.yaml
+inputSpec: https://docs.modrinth.com/openapi.yaml
 packageName: modrinth-client
 outputDir:  modrinth-client
 
