@@ -230,7 +230,7 @@ mod from {
                 id: ProjectId::Modrinth(project.id),
                 name: project.title,
                 website: HOME
-                    .join(ProjTypeSlug(project.project_type).as_str())
+                    .join(proj_type_path(project.project_type))
                     .and_then(|url| url.join(&project.slug))
                     .ok(),
                 slug: project.slug,
@@ -351,16 +351,13 @@ mod from {
     }
 
 
-    struct ProjTypeSlug(ProjectType);
-    impl ProjTypeSlug {
-        pub fn as_str(&self) -> &str {
-            // Trailing slash is necessary for Url::join
-            match self.0 {
-                ProjectType::Mod => "mod/",
-                ProjectType::Modpack => "modpack/",
-                ProjectType::Resourcepack => "resourcepack/",
-                ProjectType::Shader => "shader/",
-            }
+    const fn proj_type_path(ty: ProjectType) -> &'static str {
+        // Trailing slash is necessary for Url::join
+        match ty {
+            ProjectType::Mod => "/mod/",
+            ProjectType::Modpack => "/modpack/",
+            ProjectType::Resourcepack => "/resourcepack/",
+            ProjectType::Shader => "/shader/",
         }
     }
 }

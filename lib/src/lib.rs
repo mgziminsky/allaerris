@@ -1,6 +1,6 @@
-#![warn(missing_docs)]
 //! Library for managing Minecraft mods and modpacks from Modrinth, Curseforge,
 //! and Github
+#![deny(missing_docs)]
 
 pub mod checked_types;
 pub mod client;

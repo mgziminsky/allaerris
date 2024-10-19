@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand, ValueHint};
+use clap::{Parser, ValueHint};
 use clap_complete::Shell;
 use ferrallay::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
 
@@ -11,7 +11,7 @@ use ferrallay::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
 #[command(arg_required_else_help = true)]
 pub struct Allaerris {
     #[command(subcommand)]
-    pub subcommand: SubCommand,
+    pub subcommand: Subcommand,
     /// Sets the number of worker threads the tokio runtime will use.
     /// You can also use the environment variable `TOKIO_WORKER_THREADS`.
     #[arg(long, short)]
@@ -32,8 +32,8 @@ pub struct Allaerris {
     pub config_file: Option<PathBuf>,
 }
 
-#[derive(Subcommand)]
-pub enum SubCommand {
+#[derive(clap::Subcommand)]
+pub enum Subcommand {
     #[command(flatten)]
     Mods(ModsSubcommand),
 
@@ -66,7 +66,7 @@ pub enum SubCommand {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum ModsSubcommand {
     /// Add mods to the active profile
     Add {
@@ -148,7 +148,7 @@ pub enum ModsSubcommand {
     Mgmt(MgmtCommand),
 }
 
-#[derive(Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum MgmtCommand {
     /// Download and install everything configured in the active profile
     ///
@@ -200,7 +200,7 @@ pub enum MgmtCommand {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum ProfileSubcommand {
     /// Show information about the current profile
     Info,
@@ -262,7 +262,7 @@ pub enum ProfileSubcommand {
     },
 }
 
-#[derive(Subcommand)]
+#[derive(clap::Subcommand)]
 pub enum ModpackSubcommand {
     /// Show information about the current modpack
     Info,
@@ -299,7 +299,7 @@ pub enum ModpackSubcommand {
     },
 }
 
-#[derive(Subcommand, Default, Clone, Copy)]
+#[derive(clap::Subcommand, Default, Clone, Copy)]
 pub enum CacheSubcommand {
     /// Show count and total size of cached mod files
     #[default]

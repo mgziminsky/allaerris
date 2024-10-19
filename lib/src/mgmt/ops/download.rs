@@ -26,7 +26,6 @@ pub trait Downloadable: Sync {
 
 
 impl ProfileManager {
-    #[inline]
     pub(in crate::mgmt) async fn download(&self, dl: &dyn Downloadable, save_path: &Path) -> Option<String> {
         // Limit number of concurrent downloads.
         // Should this be configurable? Maybe via an environment variable
