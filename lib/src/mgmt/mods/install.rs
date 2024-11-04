@@ -248,7 +248,7 @@ impl ProfileManager {
                 let semaphore = semaphore.clone();
                 scope.spawn(async move {
                     let _permit = semaphore.acquire().await.unwrap();
-                    client.get_latest(id.as_ref(), Some(&data.game_version), Some(data.loader)).await
+                    client.get_latest(id.as_ref(), Some(&data.game_version), data.loader.known()).await
                 });
             }
         });

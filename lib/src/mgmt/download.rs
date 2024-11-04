@@ -1,4 +1,4 @@
-use std::{convert::identity, path::Path};
+use std::{borrow::Cow, convert::identity, path::Path};
 
 use anyhow::{anyhow, Context};
 use sha1::{Digest, Sha1};
@@ -19,7 +19,7 @@ pub trait Downloadable: Sync {
     /// A unique id for identifying this download
     fn id(&self) -> DownloadId;
     fn download_url(&self) -> Option<&Url>;
-    fn title(&self) -> &str;
+    fn title(&self) -> Cow<str>;
     fn length(&self) -> u64;
     fn sha1(&self) -> Option<&str>;
 }
@@ -37,7 +37,7 @@ impl ProfileManager {
         self.send(
             DownloadProgress::Start {
                 project: id,
-                title: title.to_owned(),
+                title: (*title).to_owned(),
                 length: dl.length(),
             }
             .into(),
@@ -64,7 +64,7 @@ impl ProfileManager {
                 },
             }
         } else {
-            self.send(DownloadProgress::Fail(id, ErrorKind::DistributionDenied(title.to_owned()).into()).into());
+            self.send(DownloadProgress::Fail(id, ErrorKind::DistributionDenied(title.into_owned()).into()).into());
             None
         }
     }
@@ -113,8 +113,8 @@ impl Downloadable for Version {
         self.download_url.as_ref()
     }
 
-    fn title(&self) -> &str {
-        &self.title
+    fn title(&self) -> Cow<str> {
+        self.title.as_str().into()
     }
 
     fn length(&self) -> u64 {

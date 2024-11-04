@@ -1,11 +1,10 @@
-#![allow(missing_docs)]
-
 use std::{borrow::Borrow, convert::Infallible, fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 #[serde(rename_all = "lowercase")]
+#[allow(missing_docs)]
 pub enum ModLoader {
     Forge,
     Cauldron,
@@ -20,6 +19,7 @@ pub enum ModLoader {
 }
 
 impl ModLoader {
+    /// Variant name as a lowercase string. `Unknown` is an empty string
     pub fn as_str(self) -> &'static str {
         match self {
             ModLoader::Unknown => "",
@@ -32,10 +32,18 @@ impl ModLoader {
         }
     }
 
-    /// Returns `true` if the mod loader is [`Unknown`](ModLoader::Unknown).
+    /// Returns `true` if the mod loader is `Unknown`
     #[must_use]
     pub fn is_unknown(&self) -> bool {
         matches!(self, Self::Unknown)
+    }
+
+    /// Wraps variant in a [`Some`] except `Unknown` which returns [`None`]
+    pub fn known(self) -> Option<Self> {
+        match self {
+            ModLoader::Unknown => None,
+            _ => Some(self),
+        }
     }
 }
 

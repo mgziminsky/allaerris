@@ -38,7 +38,7 @@ impl ProfileManager {
             client.get_version(vid).await?
         } else {
             client
-                .get_latest(pack.project(), Some(&data.game_version), Some(data.loader))
+                .get_latest(pack.project(), Some(&data.game_version), data.loader.known())
                 .await?
         };
         let cache_path = cache::version_path(&pack_version, PathScopedRef::new("modpacks").ok());
