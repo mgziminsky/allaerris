@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::{
+    borrow::Cow,
     collections::HashMap,
     ffi::OsStr,
     hash::{Hash, Hasher},
@@ -13,7 +14,7 @@ use url::Url;
 use crate::{
     checked_types::{PathScopeError, PathScopedRef},
     client::schema::{ProjectId, VersionId},
-    mgmt::ops::download::Downloadable,
+    mgmt::download::Downloadable,
 };
 
 
@@ -112,13 +113,14 @@ impl Downloadable for IndexFile {
         self.downloads.first()
     }
 
-    fn title(&self) -> &str {
+    fn title(&self) -> Cow<str> {
         self.path
             .file_name()
             .map(OsStr::as_encoded_bytes)
             .and_then(|s| std::str::from_utf8(s).ok())
             .or_else(|| self.download_url().and_then(Url::path_segments).and_then(Iterator::last))
             .unwrap_or("Unknown File")
+            .into()
     }
 
     fn length(&self) -> u64 {

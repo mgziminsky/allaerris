@@ -2,10 +2,12 @@
 //! and installing of mods and resources
 
 mod cache;
+mod download;
 pub mod events;
 mod lockfile;
 mod modpack;
-mod ops;
+mod mods;
+pub mod server;
 mod version;
 
 use std::sync::mpsc::{self, Sender};
@@ -13,7 +15,7 @@ use std::sync::mpsc::{self, Sender};
 use self::events::ProgressEvent;
 // Used by client in crate-scoped update fn
 pub(crate) use self::lockfile::LockedMod;
-pub use self::{cache::CACHE_DIR, ops::update::UpdateInfo};
+pub use self::{cache::CACHE_DIR, mods::update::UpdateInfo};
 
 /// Handles the actual downloading, installing, updating, etc. of the contents
 /// of a [`profile`](crate::config::Profile)

@@ -25,7 +25,6 @@ pub struct UpdateInfo {
     pub to: (VersionId, PathScoped),
 }
 
-#[allow(clippy::missing_panics_doc)] // Map indexing should be safe
 impl ProfileManager {
     /// Updates any installed profile mods without an explicit version to their
     /// latest compatible version

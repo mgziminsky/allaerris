@@ -62,7 +62,7 @@ impl ApiOps for ModrinthClient {
             .versions()
             .get_project_versions(&GetProjectVersionsParams {
                 mod_id,
-                loaders: loader.map(|l| vec![l.as_str()]),
+                loaders: loader.and_then(ModLoader::known).map(|l| vec![l.as_str()]),
                 game_versions: game_version.map(|v| vec![v]),
                 featured: None,
             })
@@ -186,7 +186,7 @@ async fn fetch_project(client: &ModrinthClient, mod_id: &str) -> Result<ApiProje
 }
 
 mod from {
-    use std::sync::LazyLock;
+    use std::{str::FromStr, sync::LazyLock};
 
     use modrinth::{
         models::{
@@ -299,11 +299,7 @@ mod from {
                 loaders: value
                     .loaders
                     .into_iter()
-                    .filter_map(|l| match l.parse::<ModLoader>() {
-                        Ok(ModLoader::Unknown) => None,
-                        Ok(l) => Some(l),
-                        Err(_) => unreachable!(),
-                    })
+                    .filter_map(|l| ModLoader::from_str(&l).expect("infallible conversion").known())
                     .collect(),
             }
         }

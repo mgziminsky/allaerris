@@ -5,7 +5,7 @@ use std::fmt::Display;
 
 use itertools::Itertools;
 
-use crate::client::schema::ProjectId;
+use crate::{client::schema::ProjectId, config::ModLoader};
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type StdResult<T, E> = std::result::Result<T, E>;
@@ -68,6 +68,8 @@ pub enum ErrorKind {
     MissingVersion(ProjectId),
     #[error("Failed to download file: {0}")]
     DownloadFailed(url::Url),
+    #[error("Server install not supported for `{}` loader", .0.as_str())]
+    ServerUnsupported(ModLoader),
 
     // External API - From is manually implemented
     Modrinth(modrinth::Error),

@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 use crate::{
     checked_types::{PathAbsolute, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
+    config::ModLoader,
 };
 
 
@@ -31,5 +32,11 @@ pub fn versioned_path(proj_id: &ProjectId, vers_id: &VersionId, file: &std::ffi:
     path.push(proj_id.to_string());
     path.push(vers_id.to_string());
     path.push(file);
+    path
+}
+
+pub fn server_path(loader: Option<ModLoader>) -> PathAbsolute {
+    let mut path = CACHE_DIR.join("server");
+    path.push(loader.map_or("vanilla", ModLoader::as_str));
     path
 }
