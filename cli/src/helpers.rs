@@ -1,7 +1,7 @@
-use std::ffi::OsStr;
+use std::{borrow::Cow, ffi::OsStr, path::Path};
 
 use anyhow::{anyhow, bail, Context, Result};
-use ferrallay::config::{Config, Profile};
+use ferrallay::config::{profile::ProfileData, Config, Profile};
 use yansi::Paint;
 
 macro_rules! consts {
@@ -50,4 +50,15 @@ pub(crate) async fn check_empty_profile(profile: &Profile) -> Result<()> {
         );
     }
     Ok(())
+}
+
+/// Look for a profile file in `path`, or the current directory if [`None`], and
+/// its ancestors
+pub fn path_profile(path: Option<&Path>) -> Option<Profile> {
+    path.map(Cow::from)
+        .or_else(|| std::path::absolute(".").map(Into::into).ok())
+        .as_deref()
+        .map(Path::ancestors)
+        .and_then(|mut anc| anc.find(|p| ProfileData::file_path(p).exists()))
+        .map(|p| Profile::new("Local Directory".to_owned(), p.try_into().expect("Should be an absolute path")))
 }

@@ -10,7 +10,13 @@ description = "Fast CLI program for managing Minecraft mods and modpacks from Mo
 categories = ["command-line-utilities"]
 readme = "README.md"
 license = "MPL-2.0"
-keywords = ["minecraft", "mod-manager", "modrinth", "curseforge", "github"]
+keywords = [
+    "curseforge",
+    "github-releases",
+    "minecraft",
+    "mod-manager",
+    "modrinth",
+]
 
 [features]
 default = []

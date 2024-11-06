@@ -1,18 +1,22 @@
 use std::{collections::HashMap, sync::mpsc};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use dialoguer::MultiSelect;
 use ferrallay::{
-    config::{Mod, Profile, ProjectWithVersion},
-    mgmt::events::{DownloadId, DownloadProgress, ProgressEvent},
+    config::{Mod, ModLoader, Profile, ProjectWithVersion},
+    mgmt::{
+        events::{DownloadId, DownloadProgress, ProgressEvent},
+        server::Version,
+    },
     Client, ProfileManager,
 };
 use indicatif::{MultiProgress, ProgressBar};
 use yansi::Paint;
 
 use crate::{
-    cli::MgmtCommand,
+    cli::{MgmtCommand, ServerSubcommand},
     consts,
+    helpers::path_profile,
     tui::{const_style, ellipsize, id_tag, CROSS_RED, PROG_BYTES, PROG_DONE, THEME, TICK_GREEN, TICK_YELLOW},
 };
 
@@ -47,6 +51,34 @@ pub async fn process(command: MgmtCommand, client: &Client, profile: &mut Profil
             },
             Scan { all, lock } => {
                 scan(manager, client, profile, all, lock).await?;
+            },
+            Server(subcommand) => match subcommand {
+                ServerSubcommand::Install {
+                    out,
+                    loader,
+                    minecraft,
+                    version,
+                    no_cache,
+                } => {
+                    manager.no_cache = no_cache;
+                    let out = out.as_deref().unwrap_or(profile.path());
+                    let (loader, minecraft) = match path_profile(Some(out)) {
+                        Some(mut profile) if profile.data().await.is_ok() => {
+                            let data = profile.data_mut().await.unwrap();
+                            (
+                                loader.or(data.loader.known()),
+                                minecraft.or(Some(std::mem::take(&mut data.game_version))),
+                            )
+                        },
+                        _ => (loader, minecraft),
+                    };
+                    let Some(version) = version.as_deref().map(Version::Exact).or(minecraft.as_deref().map(Version::Latest)) else {
+                        bail!("Missing server version");
+                    };
+                    let loader = loader.and_then(ModLoader::known);
+                    let server = manager.server_install(loader, version, out).await?;
+                    println!("Server successfully installed at `{}`", server.display().green());
+                },
             },
         }
     }
