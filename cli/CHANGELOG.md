@@ -19,3 +19,4 @@
 - Support cache bypass and/or force redownload during profile apply
 - "Scan" existing mod files and add to profile
 - Lock/unlock mods to specific version
+- Support for server installation

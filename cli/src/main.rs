@@ -15,7 +15,7 @@ use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser};
 use ferrallay::{
     client::{Client, ForgeClient, GithubClient, ModrinthClient},
-    config::{profile::ProfileData, Config, Profile, DEFAULT_CONFIG_PATH},
+    config::{Config, DEFAULT_CONFIG_PATH},
     curseforge::client::AuthData,
 };
 use tokio::{runtime, sync::OnceCell};
@@ -23,7 +23,7 @@ use yansi::Paint;
 
 use self::{
     cli::{Allaerris, ModpackSubcommand, ProfileSubcommand, Subcommand},
-    helpers::{consts, get_active_profile, APP_NAME},
+    helpers::{consts, get_active_profile, path_profile, APP_NAME},
     subcommands::{cache, modpack, mods, profile},
     tui::const_style,
 };
@@ -127,7 +127,7 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
     /// it's needed
     macro_rules! profile {
         () => {
-            match path_profile().as_mut() {
+            match path_profile(None).as_mut() {
                 Some(prof) => prof,
                 None => get_active_profile(config!())?,
             }
@@ -190,14 +190,4 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
     }
 
     Ok(())
-}
-
-/// Look for a profile file in the current directory and its ancestors
-fn path_profile() -> Option<Profile> {
-    std::path::absolute(".")
-        .ok()
-        .as_deref()
-        .map(Path::ancestors)
-        .and_then(|mut anc| anc.find(|p| ProfileData::file_path(p).exists()))
-        .map(|p| Profile::new("Local Directory".to_owned(), p.try_into().expect("Should be an absolute path")))
 }

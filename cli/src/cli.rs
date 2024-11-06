@@ -77,7 +77,7 @@ pub enum ModsSubcommand {
         /// slug in the URL. The CurseForge project ID is specified at
         /// the top of the right sidebar under 'About Project'.
         /// The GitHub identifier is the repository's full name, e.g.
-        /// `gorilla-devs/ferium`.
+        /// `mgziminsky/allaerris`.
         ids: Vec<String>,
 
         /// Prevent the mod(s) from being installed
@@ -198,6 +198,10 @@ pub enum MgmtCommand {
         #[arg(long, short)]
         lock: bool,
     },
+
+    /// Server management commands
+    #[command(subcommand)]
+    Server(ServerSubcommand),
 }
 
 #[derive(clap::Subcommand)]
@@ -307,4 +311,39 @@ pub enum CacheSubcommand {
 
     /// Delete all files in the cache
     Clear,
+}
+
+#[derive(clap::Subcommand, Clone)]
+pub enum ServerSubcommand {
+    /// Install a minecraft server
+    ///
+    /// By default, any unspecified options will use profile values
+    Install {
+        /// Directory to install the server to [default: active profile]
+        ///
+        /// If location contains a profile, it will be used to set any
+        /// unspecified options
+        out: Option<PathBuf>,
+
+        /// The modloader to install a server for, or vanilla if not specified
+        #[arg(long, short)]
+        loader: Option<ModLoader>,
+
+        /// Install the latest server for this MC version
+        #[arg(long, short, conflicts_with = "version")]
+        minecraft: Option<String>,
+
+        /// The exact server version to install
+        ///
+        /// Version format by loader:
+        /// - Fabric|Quilt: MC+LOADER -> 1.21.3+0.16.9
+        /// - NeoForge: MC_MINOR.MC_PATCH.LOADER -> 21.1.73 <https://docs.neoforged.net/docs/gettingstarted/versioning/#neoforge>
+        /// - Forge: MC-LOADER -> 1.21.3-53.0.7
+        #[arg(long, short, verbatim_doc_comment)]
+        version: Option<String>,
+
+        /// Don't use cache and download all files directly to output directory
+        #[arg(long)]
+        no_cache: bool,
+    },
 }

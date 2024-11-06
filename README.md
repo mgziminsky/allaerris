@@ -17,14 +17,18 @@ Since I needed a project to keep me busy and practice with, I decided to basical
 
 I mainly wanted something that provided more control over profile mods, especially when using a modpack. The primary features/differences from [ferium] are:
 
-- Allow overriding/excluding mods from a modpack
+- Allow overriding and/or excluding mods from a modpack
 - Support locking mods to a specific version
 - Selectively update installed mods/packs
 - Keep track of installed files for cleaner updates
-- Won't touch files from other sources to support easy manual customization
+- Don't touch files from other sources to support easy manual customization
 - Detect profile of working directory tree and use it when present
 - Globally cached file downloads
 - API clients generated from OpenAPI specs to support full functionality
+- Support for installing server launchers
+
+![Static Badge](https://img.shields.io/badge/XMR-gray?logo=monero)
+`84s5qn5gxEAM3mNSGjsb6k5xTDpsFuruRgt6yVkbyDzuc56nyuga3mrdnZoq3vWUyi1fRLYciTNiPUL4zvBrESgYEhCZWzA`
 
 
 [gorilla-devs]: https://github.com/gorilla-devs

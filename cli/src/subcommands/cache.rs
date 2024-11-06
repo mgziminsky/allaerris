@@ -1,4 +1,4 @@
-use std::fs::{self};
+use std::{collections::BTreeMap, fs};
 
 use anyhow::{anyhow, Context, Result};
 use ferrallay::mgmt::CACHE_DIR;
@@ -16,29 +16,53 @@ pub fn process(subcommand: CacheSubcommand) {
 }
 
 fn info() {
-    let mut count = 0usize;
-    let mut size = 0;
+    println!("\nLocation: {}", CACHE_DIR.display().bright_blue().bold());
+
+    let mut totals = BTreeMap::new();
     let files = WalkDir::new(&*CACHE_DIR)
         .min_depth(1)
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| e.file_type().is_file());
     for file in files {
-        count += 1;
-        if let Ok(meta) = file.metadata() {
-            size += meta.len();
-        }
+        let sub = { file.path().components().rev() }
+            .nth(file.depth() - 1)
+            .expect("depth is smaller than path")
+            .as_os_str()
+            .to_owned();
+        let size = file.metadata().map(|m| m.len()).unwrap_or_default();
+        totals
+            .entry(sub)
+            .and_modify(|(count, total)| {
+                *count += 1;
+                *total += size;
+            })
+            .or_insert((1usize, size));
+    }
+
+    let mut total_count = 0;
+    let mut total_size = 0;
+    for (sub, (count, size)) in totals {
+        total_count += count;
+        total_size += size;
+        println!(
+            "\
+--- {} ---
+Files: {}
+ Size: {}",
+            sub.to_string_lossy().yellow(),
+            count.bright_green().bold(),
+            ::size::Size::from_bytes(size).cyan().bold(),
+        );
     }
 
     println!(
-        "
-  Location: {}
-File Count: {}
-Total Size: {}
-",
-        CACHE_DIR.display().bright_blue().bold(),
-        count.bright_green().bold(),
-        ::size::Size::from_bytes(size).cyan().bold(),
+        "\
+--- Total ---
+Files: {}
+ Size: {}",
+        total_count.bright_green().bold(),
+        ::size::Size::from_bytes(total_size).cyan().bold(),
     );
 }
 
