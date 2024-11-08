@@ -21,7 +21,7 @@ paste = "1"
 quick-xml = { version = "0.37.0", default-features = false, features = ["serialize"] }
 serde-value = "0.7.0"
 sha1 = "0.10"
-thiserror = "1.0"
+thiserror = "2.0"
 zip = { version = "2.2.0", default-features = false, features = ["deflate"] }
 
 anyhow.workspace = true
