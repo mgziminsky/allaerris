@@ -78,7 +78,7 @@ impl ProjectIdSvcType for ProjectId {
         if let Self::Forge(v) = self {
             Ok(*v)
         } else {
-            Err(crate::ErrorKind::WrongService)?
+            Err(crate::ErrorKind::WrongService(self.to_string()))?
         }
     }
 
@@ -87,7 +87,7 @@ impl ProjectIdSvcType for ProjectId {
         if let Self::Modrinth(v) = self {
             Ok(v)
         } else {
-            Err(crate::ErrorKind::WrongService)?
+            Err(crate::ErrorKind::WrongService(self.to_string()))?
         }
     }
 
@@ -96,7 +96,7 @@ impl ProjectIdSvcType for ProjectId {
         if let Self::Github((o, r)) = self {
             Ok((o, r))
         } else {
-            Err(crate::ErrorKind::WrongService)?
+            Err(crate::ErrorKind::WrongService(self.to_string()))?
         }
     }
 }

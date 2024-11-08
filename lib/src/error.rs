@@ -46,12 +46,12 @@ pub enum ErrorKind {
     NoClients,
     #[error("The project is not a {0}")]
     WrongType(&'static str),
-    #[error("Project does not belong to requested API client")]
-    WrongService,
+    #[error("Project `{0}` does not belong to requested API client")]
+    WrongService(String),
     #[error("Operation not supported by this API")]
     Unsupported,
-    #[error("All clients in the Multi client failed operation:\n\t{}", .0.iter().join("\n\t"))]
-    Multi(Vec<Error>),
+    #[error("All clients in the Multi client failed `{}` operation:\n\t{}", .0, .1.iter().join("\n\t"))]
+    Multi(&'static str, Vec<Error>),
 
     // Config
     #[error("No profiles have been registered")]

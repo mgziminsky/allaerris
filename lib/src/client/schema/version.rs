@@ -98,7 +98,7 @@ impl VersionIdSvcType for VersionId {
         if let Self::Forge(v) = self {
             Ok(*v)
         } else {
-            Err(crate::ErrorKind::WrongService)?
+            Err(crate::ErrorKind::WrongService(self.to_string()))?
         }
     }
 
@@ -107,7 +107,7 @@ impl VersionIdSvcType for VersionId {
         if let Self::Modrinth(v) = self {
             Ok(v)
         } else {
-            Err(crate::ErrorKind::WrongService)?
+            Err(crate::ErrorKind::WrongService(self.to_string()))?
         }
     }
 
@@ -116,7 +116,7 @@ impl VersionIdSvcType for VersionId {
         if let Self::Github(v) = self {
             Ok(*v)
         } else {
-            Err(crate::ErrorKind::WrongService)?
+            Err(crate::ErrorKind::WrongService(self.to_string()))?
         }
     }
 }
