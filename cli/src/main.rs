@@ -77,25 +77,26 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
         };
     }
 
-    let client: Client = vec![
+    let mut client: Vec<Client> = vec![
         { const { ModrinthClient::builder(USER_AGENT) } }.build()?.into(),
-        { const { ForgeClient::builder(USER_AGENT) } }
-            .auth(AuthData {
-                api_key_auth: Some(
-                    cli_app
-                        .curseforge_api_key
-                        .or_else(|| var("CURSEFORGE_API_KEY").ok())
-                        .unwrap_or("FIXME-GET-FORGE-KEY".to_owned()),
-                ),
-            })
-            .build()?
-            .into(),
         GithubClient::builder()
             .personal_token(cli_app.github_token.or_else(|| var("GITHUB_TOKEN").ok()).unwrap_or_default())
             .build()?
             .into(),
-    ]
-    .try_into()?;
+    ];
+    if let Some(api_key) = cli_app.curseforge_api_key.or_else(|| var("CURSEFORGE_API_KEY").ok()) {
+        client.push(
+            { const { ForgeClient::builder(USER_AGENT) } }
+                .auth(AuthData {
+                    api_key_auth: Some(api_key),
+                })
+                .build()?
+                .into(),
+        );
+    } else {
+        eprintln!("{}", "No Curseforge API key provided, client disabled".yellow());
+    }
+    let client = client.try_into()?;
 
     let config_path = &cli_app
         .config_file
