@@ -5,7 +5,7 @@
 [![licence badge](https://img.shields.io/github/license/mgziminsky/allaerris)](LICENSE.txt)
 [![ci.yml](https://github.com/mgziminsky/allaerris/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
 
-<div align="initial">
+<div align="left">
 
 Another Minecraft mod manager, heavily inspired by [ferium].
 The project names are a [portmanteau] of [ferris] and [allay].
