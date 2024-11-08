@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::mpsc};
 
-use anyhow::{anyhow, bail, Result};
+use anyhow::{bail, Result};
 use dialoguer::MultiSelect;
 use ferrallay::{
     config::{Mod, ModLoader, Profile, ProjectWithVersion},
@@ -196,7 +196,7 @@ fn progress_hander() -> (mpsc::Sender<ProgressEvent>, tokio::task::JoinHandle<()
                     println!("{}   Deleted: {}", TICK_GREEN, file.display());
                 },
                 Error(err) => {
-                    eprintln!("{:?}", anyhow!(err).red());
+                    eprintln!("{}", err.red());
                 },
             }
         }

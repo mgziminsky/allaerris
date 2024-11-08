@@ -12,7 +12,7 @@ macro_rules! proxy {
             };
             err.push(e);
         }
-        Err(crate::ErrorKind::Multi(err).into())
+        Err(crate::ErrorKind::Multi(stringify!($name), err).into())
     }};
     ($clients:expr; $name:ident($($arg:expr),*) ++ $ret:ty) => {{
         let mut ret: Option<$ret> = None;
@@ -34,7 +34,7 @@ macro_rules! proxy {
         }
         // FIXME: This behavior is still sorta weird
         ret.filter(|c| errs.is_empty() || !c.is_empty())
-            .ok_or_else(|| crate::ErrorKind::Multi(errs).into())
+            .ok_or_else(|| crate::ErrorKind::Multi(stringify!($name), errs).into())
     }};
 }
 pub(super) use proxy;
