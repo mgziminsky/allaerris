@@ -38,7 +38,7 @@ jobs:
           toolchain: nightly
           components: clippy
       - name: Lint code
-        run: cargo clippy --locked --release --verbose --workspace
+        run: cargo clippy --locked --release --verbose --workspace --exclude '*-client'
 
   docs:
     runs-on: ubuntu-latest

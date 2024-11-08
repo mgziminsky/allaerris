@@ -159,14 +159,14 @@ api! {
 /// # use ferrallay::client::*;
 /// # async fn async_main() -> ferrallay::Result<()> {
 /// // Single client
-/// let client = Client::from(ModrinthClient::default());
+/// let client = Client::from(ModrinthClient::builder("<USER_AGENT>").build()?);
 /// let m = client.get_mod("mod_id").await;
 /// assert!(matches!(m, Err(_)));
 ///
 /// // Or with multiple clients
 /// let client: Client = vec![
-///     ModrinthClient::default().into(),
-///     ForgeClient::default().into(),
+///     ModrinthClient::builder("<USER_AGENT>").build()?.into(),
+///     ForgeClient::builder("<USER_AGENT>").build()?.into(),
 ///     GithubClient::builder().build()?.into(),
 /// ]
 /// .try_into()?;
