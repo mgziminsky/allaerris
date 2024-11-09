@@ -369,7 +369,7 @@ pub enum UnfollowProjectError {
 }
 
 pub struct ProjectsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> ProjectsApi<'c> {
+impl ProjectsApi<'_> {
     /// Modrinth allows you to upload files of up to 5MiB to a project's gallery.
     pub async fn add_gallery_image(&self, params: &AddGalleryImageParams<'_,'_,'_,'_,>) -> Result<()> {
         // unwrap the parameters

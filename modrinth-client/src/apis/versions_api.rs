@@ -182,7 +182,7 @@ pub enum ScheduleVersionError {
 }
 
 pub struct VersionsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> VersionsApi<'c> {
+impl VersionsApi<'_> {
     /// Project files are attached. `.mrpack` and `.jar` files are accepted.
     pub async fn add_files_to_version(&self, params: &AddFilesToVersionParams<'_,'_,>) -> Result<()> {
         // unwrap the parameters

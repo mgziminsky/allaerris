@@ -98,7 +98,7 @@ pub enum VersionListError {
 }
 
 pub struct TagsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> TagsApi<'c> {
+impl TagsApi<'_> {
     /// Gets an array of categories, their icons, and applicable project types
     pub async fn category_list(&self) -> Result<Vec<models::CategoryTag>> {
         #[allow(unused_mut)]

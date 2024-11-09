@@ -108,7 +108,7 @@ pub enum GetVersionsV2Error {
 }
 
 pub struct GamesApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> GamesApi<'c> {
+impl GamesApi<'_> {
     /// Get a single game. A private game is only accessible by its respective API key.
     pub async fn get_game(&self, params: &GetGameParams<>) -> Result<models::GetGameResponse> {
         // unwrap the parameters

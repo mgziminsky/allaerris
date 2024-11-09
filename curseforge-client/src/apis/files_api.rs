@@ -125,7 +125,7 @@ pub enum GetModFilesError {
 }
 
 pub struct FilesApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> FilesApi<'c> {
+impl FilesApi<'_> {
     /// Get a list of files.
     pub async fn get_files(&self, params: &GetFilesParams<'_,>) -> Result<models::GetFilesResponse> {
         // unwrap the parameters

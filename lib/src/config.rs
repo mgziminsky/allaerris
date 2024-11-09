@@ -286,7 +286,7 @@ mod tests {
         }
     }
 
-    fn _test_config() -> Config {
+    fn test_config() -> Config {
         Config {
             active: Some(PATHS[2].clone()),
             profiles: zip(NAMES, &*PATHS)
@@ -295,8 +295,8 @@ mod tests {
                 .collect(),
         }
     }
-    fn _test_ser_data() -> (Config, Vec<Token>) {
-        let config = _test_config();
+    fn test_ser_data() -> (Config, Vec<Token>) {
+        let config = test_config();
         let mut tokens = vec![
             Token::Struct { name: "Config", len: 2 },
             Token::Str("active"),
@@ -317,8 +317,8 @@ mod tests {
 
         (config, tokens)
     }
-    fn _test_de_data() -> (Config, Vec<Token>) {
-        let (config, mut tokens) = _test_ser_data();
+    fn test_de_data() -> (Config, Vec<Token>) {
+        let (config, mut tokens) = test_ser_data();
         if let Token::Struct { name, .. } = tokens.first_mut().unwrap() {
             *name = "ConfigDe";
         }
@@ -328,14 +328,14 @@ mod tests {
 
     #[test]
     fn serialize() {
-        let (config, tokens) = _test_ser_data();
+        let (config, tokens) = test_ser_data();
         eprintln!("{}", serde_json::to_string_pretty(&config).unwrap());
         assert_ser_tokens(&config, &tokens);
     }
 
     #[test]
     fn deserialize_all() {
-        let (config, tokens) = _test_de_data();
+        let (config, tokens) = test_de_data();
         assert_de_tokens(&config, &tokens);
     }
 
@@ -343,7 +343,7 @@ mod tests {
     /// listed profile automatically
     #[test]
     fn deserialize_no_active() {
-        let (mut config, mut tokens) = _test_de_data();
+        let (mut config, mut tokens) = test_de_data();
         config.active.replace(PATHS[0].clone()); // Set active_profile to first path
         tokens.drain(1..=3); // Remove active_profile from tokens
         assert_de_tokens(&config, &tokens);
@@ -353,7 +353,7 @@ mod tests {
     /// then it should get set to the first listed profile automatically
     #[test]
     fn deserialize_bad_active() {
-        let (mut config, mut tokens) = _test_de_data();
+        let (mut config, mut tokens) = test_de_data();
         config.active.replace(PATHS[0].clone()); // Set active_profile to first path
         tokens[3] = Token::Str("/some/invalid/path"); // Set active_profile token to path not in profiles
         assert_de_tokens(&config, &tokens);
@@ -361,7 +361,7 @@ mod tests {
 
     #[test]
     fn set_active_invalid() {
-        let mut c = _test_config();
+        let mut c = test_config();
         let res = c.set_active(PathAbsolute::new("/some/invalid/path").unwrap());
         assert!(
             matches!(res, Err(ref e) if matches!(e.kind(), ErrorKind::UnknownProfile)),

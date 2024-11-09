@@ -169,7 +169,7 @@ pub enum WithdrawPayoutError {
 }
 
 pub struct UsersApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> UsersApi<'c> {
+impl UsersApi<'_> {
     /// The new avatar may be up to 2MiB in size.
     pub async fn change_user_icon(&self, params: &ChangeUserIconParams<'_,>) -> Result<()> {
         // unwrap the parameters

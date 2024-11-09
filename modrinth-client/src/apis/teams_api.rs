@@ -162,7 +162,7 @@ pub enum TransferTeamOwnershipError {
 }
 
 pub struct TeamsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> TeamsApi<'c> {
+impl TeamsApi<'_> {
     pub async fn add_team_member(&self, params: &AddTeamMemberParams<'_,'_,>) -> Result<()> {
         // unwrap the parameters
         let AddTeamMemberParams { id, user_identifier, } = params;

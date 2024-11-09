@@ -90,7 +90,7 @@ pub enum GetFingerprintMatchesByGameError {
 }
 
 pub struct FingerprintsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> FingerprintsApi<'c> {
+impl FingerprintsApi<'_> {
     /// Get mod files that match a list of fingerprints using fuzzy matching.
     pub async fn get_fingerprint_fuzzy_matches(&self, params: &GetFingerprintFuzzyMatchesParams<'_,>) -> Result<models::GetFingerprintFuzzyMatchesResponse> {
         // unwrap the parameters

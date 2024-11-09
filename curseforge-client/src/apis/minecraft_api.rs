@@ -87,7 +87,7 @@ pub enum GetSpecificMinecraftVersionError {
 }
 
 pub struct MinecraftApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> MinecraftApi<'c> {
+impl MinecraftApi<'_> {
     /// Get Minecraft ModLoaders
     pub async fn get_minecraft_mod_loaders(&self, params: &GetMinecraftModLoadersParams<'_,>) -> Result<models::ApiResponseOfListOfMinecraftModLoaderIndex> {
         // unwrap the parameters

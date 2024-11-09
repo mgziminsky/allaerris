@@ -70,7 +70,7 @@ pub enum {{{operationIdCamelCase}}}Error {
 {{/operations.operation}}
 
 pub struct {{classname}}<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> {{classname}}<'c> {
+impl {{classname}}<'_> {
     {{#operations.operation}}
     {{#description}}
     /// {{{.}}}
