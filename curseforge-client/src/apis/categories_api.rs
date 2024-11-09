@@ -40,7 +40,7 @@ pub enum GetCategoriesError {
 }
 
 pub struct CategoriesApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> CategoriesApi<'c> {
+impl CategoriesApi<'_> {
     /// Get all available classes and categories of the specified game. Specify a game id for a list of all game categories, or a class id for a list of categories under that class.
     pub async fn get_categories(&self, params: &GetCategoriesParams<>) -> Result<models::GetCategoriesResponse> {
         // unwrap the parameters

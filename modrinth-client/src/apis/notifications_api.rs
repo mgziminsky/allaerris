@@ -144,7 +144,7 @@ pub enum ReadNotificationsError {
 }
 
 pub struct NotificationsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> NotificationsApi<'c> {
+impl NotificationsApi<'_> {
     pub async fn delete_notification(&self, params: &DeleteNotificationParams<'_,>) -> Result<()> {
         // unwrap the parameters
         let DeleteNotificationParams { id, } = params;

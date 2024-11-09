@@ -132,7 +132,7 @@ pub enum SearchModsError {
 }
 
 pub struct ModsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> ModsApi<'c> {
+impl ModsApi<'_> {
     /// Get a list of featured, popular and recently updated mods.
     pub async fn get_featured_mods(&self, params: &GetFeaturedModsParams<'_,>) -> Result<models::GetFeaturedModsResponse> {
         // unwrap the parameters

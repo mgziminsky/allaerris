@@ -219,7 +219,7 @@ impl ModpackData {
 
 /// Unit wrapper around lib `ZipFile` only exposing [`Read`] trait
 pub struct ZipFile<'a>(zip::read::ZipFile<'a>);
-impl<'a> Read for ZipFile<'a> {
+impl Read for ZipFile<'_> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
         self.0.read(buf)

@@ -181,7 +181,7 @@ pub enum SubmitReportError {
 }
 
 pub struct ThreadsApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> ThreadsApi<'c> {
+impl ThreadsApi<'_> {
     pub async fn delete_thread_message(&self, params: &DeleteThreadMessageParams<'_,>) -> Result<()> {
         // unwrap the parameters
         let DeleteThreadMessageParams { id, } = params;

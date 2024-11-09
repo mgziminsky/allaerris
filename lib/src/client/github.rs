@@ -84,7 +84,7 @@ impl ApiOps for GithubClient {
         game_version: Option<&str>,
         loader: Option<ModLoader>,
     ) -> Result<Vec<Version>> {
-        async fn _get_project_versions(
+        async fn get_project_versions(
             this: &GithubClient,
             (owner, repo): (&str, &str),
             game_version: Option<&str>,
@@ -135,7 +135,7 @@ impl ApiOps for GithubClient {
 
             Ok(files)
         }
-        _get_project_versions(self, id.get_github()?, game_version, loader).await
+        get_project_versions(self, id.get_github()?, game_version, loader).await
     }
 
     async fn get_game_versions(&self) -> Result<BTreeSet<GameVersion>> {

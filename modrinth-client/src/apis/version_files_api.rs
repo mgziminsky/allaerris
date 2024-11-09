@@ -114,7 +114,7 @@ pub enum VersionsFromHashesError {
 }
 
 pub struct VersionFilesApi<'c>(pub(crate) &'c crate::ApiClient);
-impl<'c> VersionFilesApi<'c> {
+impl VersionFilesApi<'_> {
     pub async fn delete_file_from_hash(&self, params: &DeleteFileFromHashParams<'_,'_,'_,>) -> Result<()> {
         // unwrap the parameters
         let DeleteFileFromHashParams { hash, algorithm, version_id, } = params;
