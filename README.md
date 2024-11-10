@@ -3,7 +3,7 @@
 
 [![rust badge](https://img.shields.io/static/v1?label=Made%20with&message=Rust&logo=rust&labelColor=e82833&color=b11522)](https://www.rust-lang.org)
 [![licence badge](https://img.shields.io/github/license/mgziminsky/allaerris)](LICENSE.txt)
-[![ci.yml](https://github.com/mgziminsky/allaerris/actions/workflows/ci.yml/badge.svg)](.github/workflows/ci.yml)
+[![CI](https://github.com/mgziminsky/allaerris/actions/workflows/ci.yml/badge.svg)](https://github.com/mgziminsky/allaerris/actions/workflows/ci.yml)
 
 <div align="left">
 

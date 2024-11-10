@@ -27,6 +27,8 @@ jobs:
     permissions:
       actions: read
       contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - id: find-id
         run: |
