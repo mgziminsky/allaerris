@@ -195,15 +195,18 @@ impl ProfileManager {
         match (lockfile.pack.as_mut(), &data.modpack) {
             (None, None) => Ok(None),
             (Some(lp), None) => {
+                self.send(ProgressEvent::Status("Modpack removed, deleting pack files".to_owned()));
                 delete_overrides!(lp);
                 Ok(None)
             },
             (Some(lp), Some(pack)) => {
-                if pack.version().is_some_and(|v| v != &lp.id.version) {
+                if pack.project() != lp.project() || pack.version().is_some_and(|v| v != &lp.id.version) {
+                    self.send(ProgressEvent::Status("Modpack changed, deleting old pack files".to_owned()));
                     delete_overrides!(lp);
                     fetch_replace!(pack)
                 } else {
                     if !pack.install_overrides {
+                        self.send(ProgressEvent::Status("Modpack overrides are disabled".to_owned()));
                         delete_overrides!(lp);
                     }
                     let cached = cache::versioned_path(

@@ -8,7 +8,7 @@ use ::modrinth::{
     apis::version_files_api::VersionsFromHashesParams,
     models::{hash_list::Algorithm, HashList},
 };
-use anyhow::anyhow;
+use anyhow::{anyhow, Context};
 use tokio::fs::File;
 use zip::ZipArchive;
 
@@ -21,7 +21,7 @@ use crate::{
     checked_types::{PathScoped, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
     config::{profile::ProfileData, ModLoader, VersionedProject},
-    Client, ProfileManager, Result,
+    Client, ErrorKind, ProfileManager, Result,
 };
 
 type PackArchive = ZipArchive<std::fs::File>;
@@ -39,7 +39,8 @@ impl ProfileManager {
         } else {
             client
                 .get_latest(pack.project(), Some(&data.game_version), data.loader.known())
-                .await?
+                .await
+                .with_context(|| ErrorKind::MissingVersion(pack.project().clone()))?
         };
         let cache_path = cache::version_path(&pack_version, PathScopedRef::new("modpacks").ok());
         let Some(sha1) = self.download(&pack_version, &cache_path).await else {
