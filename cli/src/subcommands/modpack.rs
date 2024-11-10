@@ -20,6 +20,7 @@ pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, clien
             if let Some(ref pack) = pack {
                 print_pack(pack);
             }
+            return Ok(());
         },
         ModpackSubcommand::Add { id, install_overrides } => {
             add(id, profile.data_mut().await?, install_overrides, client).await?;
@@ -32,7 +33,7 @@ pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, clien
             mp.install_overrides = prompt_overrides(install_overrides, mp.install_overrides)?;
         },
     }
-    Ok(())
+    profile.save().await.map_err(Into::into)
 }
 
 fn print_pack(pack: &Modpack) {
@@ -84,7 +85,7 @@ async fn add(id: String, data: &mut ProfileData, install_overrides: Option<bool>
     Ok(())
 }
 
-fn remove(data: &mut ProfileData, force: bool) -> Result<(), anyhow::Error> {
+fn remove(data: &mut ProfileData, force: bool) -> anyhow::Result<()> {
     let Some(ref modpack) = data.modpack else {
         bail!(MSG_NO_PACK);
     };

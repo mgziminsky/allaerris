@@ -6,6 +6,9 @@
 ## [Unreleased]
 
 
+## [0.1.1]
+- Fix modpack changes not saving
+
 ## [0.1.0] - Initial Release
 - Profile add/remove/update/show/list
 - Mods/Modpack add/remove/list
