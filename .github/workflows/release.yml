@@ -19,11 +19,37 @@ jobs:
           changelog: cli/CHANGELOG.md
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  upload-assets:
-    needs: create-release
+  cached-assets:
+    needs:
+      - create-release
+    runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
+      actions: read
       contents: write
-    secrets: inherit
+    steps:
+      - id: find-id
+        run: |
+          echo -n run_id= >> $GITHUB_OUTPUT
+          gh api '/repos/{owner}/{repo}/actions/runs' -X GET \
+            -f status=success -f head_sha=${{ github.sha }} \
+            -q '.workflow_runs | map(select(.path == ".github/workflows/ci.yml")) | max_by(.run_started_at).id' >> $GITHUB_OUTPUT
+      - run: test -n '${{ steps.find-id.outputs.id }}'
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+          run-id: ${{ steps.find-id.outputs.id }}
+      - run: gh release upload ${{ github.ref }} artifacts/*
+
+  build-assets:
+    if: needs.cached-assets.conclusion != 'success'
     uses: ./.github/workflows/build.yml
     with:
       dry-run: false
+    permissions:
+      contents: write
+    secrets: inherit
+    needs:
+      - create-release
+      - cached-assets
