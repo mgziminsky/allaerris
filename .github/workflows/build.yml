@@ -1,0 +1,47 @@
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      dry-run:
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: aarch64-unknown-linux-gnu }
+          - { os: ubuntu-latest, target: aarch64-unknown-linux-musl }
+          - { os: ubuntu-latest, target: arm-unknown-linux-gnueabihf }
+          - { os: ubuntu-latest, target: arm-unknown-linux-musleabihf }
+          - { os: ubuntu-latest, target: i686-unknown-linux-gnu }
+          - { os: ubuntu-latest, target: i686-unknown-linux-musl }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl }
+
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: macos-latest, target: x86_64-apple-darwin }
+
+          - { os: windows-latest, target: i686-pc-windows-msvc }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@cross
+      - name: Build
+        id: build-artifact
+        uses: taiki-e/upload-rust-binary-action@v1
+        with:
+          bin: allaerris
+          target: ${{ matrix.target }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checksum: sha256
+          dry-run: ${{ inputs.dry-run }}
+      - name: Save Artifacts
+        if: ${{ inputs.dry-run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ steps.build-artifact.outputs.archive }}.*

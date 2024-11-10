@@ -20,7 +20,6 @@ keywords = [
 
 [features]
 default = []
-gui = ["rfd"]
 
 [dependencies]
 clap = { version = "4.5", features = ["derive"] }
@@ -28,10 +27,6 @@ clap_complete = "4.5"
 dialoguer = "0.11"
 ferrallay = { version = "0.1", path = "../lib" }
 indicatif = "0.17"
-rfd = { version = "0.15", default-features = false, optional = true, features = [
-    "xdg-portal",
-    "tokio",
-] }
 size = "0.4.1"
 walkdir = "2"
 yansi = "1"

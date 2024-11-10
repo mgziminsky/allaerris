@@ -6,18 +6,7 @@ use std::{
 
 static HOME: LazyLock<PathBuf> = LazyLock::new(|| dirs::home_dir().expect("should be able to determine home dir"));
 
-/// Use the system file picker to pick a file, with a `default` path
-#[cfg(any(feature = "gui", ide))]
-fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathBuf> {
-    rfd::FileDialog::new()
-        .set_can_create_directories(true)
-        .set_directory(default)
-        .set_title(prompt)
-        .pick_folder()
-}
-
 /// Use a terminal input to pick a file, with a `default` path
-#[cfg(not(feature = "gui"))]
 fn show_folder_picker(default: &Path, prompt: impl Into<String>) -> Option<PathBuf> {
     dialoguer::Input::with_theme(&*crate::tui::THEME)
         .default(default.display().to_string())

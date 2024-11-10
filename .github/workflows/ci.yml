@@ -1,24 +1,26 @@
-name: ci
+name: CI
 on:
   workflow_dispatch:
   pull_request:
   push:
     paths:
-      - Cargo.lock
+      - "**/Cargo.lock"
       - "**/Cargo.toml"
       - "*.toml"
       - "**.rs"
       - .github/workflows/ci.yml
+      - .github/workflows/build.yml
     branches:
       - main
   schedule:
-    - cron: "03 02 01 * *"
+    - cron: "03 02 * * 06"
 
 permissions:
   contents: read
 
 jobs:
   rustfmt:
+    if: ${{ github.event_name != "schedule" }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +40,7 @@ jobs:
           toolchain: nightly
           components: clippy
       - name: Lint code
-        run: cargo clippy --no-deps --locked --release --verbose --workspace --all-features --all-targets
+        run: cargo clippy --no-deps --locked --verbose --workspace --all-features --all-targets
 
   docs:
     runs-on: ubuntu-latest
@@ -46,9 +48,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Check documentation
-        run: cargo doc --no-deps --document-private-items --locked --release --verbose --workspace
+        run: cargo doc --no-deps --document-private-items --locked --verbose --workspace
 
-  build_and_test:
+  test:
     strategy:
       fail-fast: false
       matrix:
@@ -68,7 +70,10 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
-      - name: build
-        run: cargo build --locked --release --verbose --workspace
       - name: test
-        run: cargo test --locked --release --verbose --workspace
+        run: cargo test --locked --release --verbose --workspace --all-features --all-targets --no-fail-fast
+
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      dry-run: true

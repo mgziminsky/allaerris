@@ -23,42 +23,7 @@ jobs:
     needs: create-release
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - { os: ubuntu-latest, target: aarch64-unknown-linux-gnu   , no-gui: true }
-          - { os: ubuntu-latest, target: aarch64-unknown-linux-musl  , no-gui: true }
-          - { os: ubuntu-latest, target: arm-unknown-linux-gnueabihf , no-gui: true }
-          - { os: ubuntu-latest, target: arm-unknown-linux-musleabihf, no-gui: true }
-          - { os: ubuntu-latest, target: i686-unknown-linux-gnu }
-          - { os: ubuntu-latest, target: i686-unknown-linux-musl }
-          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
-          - { os: ubuntu-latest, target: x86_64-unknown-linux-musl }
-
-          - { os: macos-latest, target: aarch64-apple-darwin }
-          - { os: macos-latest, target: x86_64-apple-darwin  }
-
-          - { os: windows-latest, target: i686-pc-windows-msvc   }
-          - { os: windows-latest, target: x86_64-pc-windows-msvc }
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@cross
-      - name: Build Default
-        uses: taiki-e/upload-rust-binary-action@v1
-        with:
-          bin: allaerris
-          target: ${{ matrix.target }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checksum: sha256
-      - name: Build GUI
-        if: ${{ ! matrix.no-gui }}
-        uses: taiki-e/upload-rust-binary-action@v1
-        with:
-          bin: allaerris
-          target: ${{ matrix.target }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checksum: sha256
-          features: gui
-          archive: $bin-$target-gui
+    secrets: inherit
+    uses: ./.github/workflows/build.yml
+    with:
+      dry-run: false
