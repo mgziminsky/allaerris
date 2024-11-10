@@ -62,5 +62,5 @@ pub async fn configure(profile: &mut Profile, game_version: Option<String>, load
         }
     }
 
-    Ok(())
+    profile.save().await.map_err(Into::into)
 }

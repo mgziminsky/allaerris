@@ -11,7 +11,8 @@ use ferrallay::{
 };
 use yansi::Paint;
 
-use self::{configure::configure, create::create, delete::delete, helpers::switch_profile};
+pub use self::configure::configure;
+use self::{create::create, delete::delete, helpers::switch_profile};
 use crate::{
     cli::ProfileSubcommand,
     helpers::{consts, get_active_profile},

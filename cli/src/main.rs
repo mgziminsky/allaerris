@@ -167,8 +167,15 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
                 ProfileSubcommand::Info
             });
             match subcommand {
-                // Handle info here to avoid loading config if not needed
+                // Handle here to avoid loading config if not needed
                 ProfileSubcommand::Info => tui::print_profile(profile!(), true).await,
+                ProfileSubcommand::Edit {
+                    game_version,
+                    loader,
+                    name,
+                } => {
+                    profile::configure(profile!(), game_version, loader, name).await?;
+                },
                 _ => profile::process(subcommand, config!()).await?,
             }
             if default_flag {
