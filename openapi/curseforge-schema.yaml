@@ -31,6 +31,8 @@ paths:
           schema:
             type: integer
             format: int32
+            minimum: 0
+            maximum: 10000
         - name: pageSize
           in: query
           description: >-
@@ -40,6 +42,8 @@ paths:
           schema:
             type: integer
             format: int32
+            minimum: 0
+            maximum: 50
       responses:
         '200':
           description: OK
@@ -68,6 +72,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -98,6 +103,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -128,6 +134,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -165,6 +172,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -196,6 +204,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: classId
           in: query
           description: A class unique id
@@ -203,6 +212,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: classesOnly
           in: query
           description: A flag used to only return classes
@@ -237,6 +247,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: classId
           in: query
           description: Filter by section id (discoverable via Categories)
@@ -244,6 +255,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: categoryId
           in: query
           description: Filter by category id
@@ -251,6 +263,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: gameVersion
           in: query
           description: Filter by game version string
@@ -294,6 +307,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: authorId
           in: query
           description: >-
@@ -302,6 +316,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: slug
           in: query
           description: >-
@@ -319,6 +334,8 @@ paths:
           schema:
             type: integer
             format: int32
+            minimum: 0
+            maximum: 10000
         - name: pageSize
           in: query
           description: >-
@@ -328,6 +345,8 @@ paths:
           schema:
             type: integer
             format: int32
+            minimum: 0
+            maximum: 50
       responses:
         '200':
           description: OK
@@ -356,6 +375,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -438,6 +458,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -466,6 +487,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: fileId
           in: path
           description: The file id.
@@ -473,6 +495,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -501,6 +524,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: gameVersion
           in: query
           description: Filter by game version string
@@ -524,6 +548,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: index
           in: query
           description: >-
@@ -533,6 +558,8 @@ paths:
           schema:
             type: integer
             format: int32
+            minimum: 0
+            maximum: 10000
         - name: pageSize
           in: query
           description: >-
@@ -542,6 +569,8 @@ paths:
           schema:
             type: integer
             format: int32
+            minimum: 0
+            maximum: 50
       responses:
         '200':
           description: OK
@@ -598,6 +627,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: fileId
           in: path
           description: The file id.
@@ -605,6 +635,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -633,6 +664,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
         - name: fileId
           in: path
           description: The file id.
@@ -640,6 +672,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       responses:
         '200':
           description: OK
@@ -694,6 +727,7 @@ paths:
           schema:
             type: integer
             format: int64
+            minimum: 0
       requestBody:
         required: true
         content:
@@ -754,6 +788,7 @@ paths:
           schema:
               type: integer
               format: int64
+              minimum: 0
       requestBody:
         required: true
         content:
@@ -915,9 +950,11 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         gameId:
           type: integer
           format: int64
+          minimum: 0
         name:
           type: string
         slug:
@@ -937,14 +974,17 @@ components:
         classId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
         parentCategoryId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
         displayIndex:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
     CoreApiStatus:
       description: |
@@ -1005,14 +1045,17 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
           description: The file id
         gameId:
           type: integer
           format: int64
+          minimum: 0
           description: The game id related to the mod that this file belongs to
         modId:
           type: integer
           format: int64
+          minimum: 0
           description: The mod id
         isAvailable:
           type: boolean
@@ -1039,10 +1082,12 @@ components:
         fileLength:
           type: integer
           format: int64
+          minimum: 0
           description: The file length in bytes
         downloadCount:
           type: integer
           format: int64
+          minimum: 0
           description: The number of downloads for the file
         downloadUrl:
           type: string
@@ -1069,10 +1114,12 @@ components:
         parentProjectFileId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
         alternateFileId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
         isServerPack:
           type: boolean
@@ -1080,6 +1127,7 @@ components:
         serverPackFileId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
         isEarlyAccessContent:
           type: boolean
@@ -1091,6 +1139,7 @@ components:
         fileFingerprint:
           type: integer
           format: int32
+          minimum: 0
         modules:
           type: array
           items:
@@ -1101,6 +1150,7 @@ components:
         modId:
           type: integer
           format: int64
+          minimum: 0
         relationType:
           $ref: '#/components/schemas/FileRelationType'
     FileHash:
@@ -1118,6 +1168,7 @@ components:
         fileId:
           type: integer
           format: int64
+          minimum: 0
         filename:
           type: string
         releaseType:
@@ -1125,6 +1176,7 @@ components:
         gameVersionTypeId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
         modLoader:
           $ref: '#/components/schemas/ModLoaderType'
@@ -1136,6 +1188,7 @@ components:
         fingerprint:
           type: integer
           format: int32
+          minimum: 0
     FileRelationType:
       description: |
         Possible enum values:
@@ -1233,6 +1286,7 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         file:
           $ref: '#/components/schemas/File'
         latestFiles:
@@ -1244,6 +1298,7 @@ components:
           items:
             type: integer
             format: int32
+            minimum: 0
     FingerprintFuzzyMatchResult:
       type: object
       properties:
@@ -1257,6 +1312,7 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         file:
           $ref: '#/components/schemas/File'
         latestFiles:
@@ -1277,27 +1333,30 @@ components:
           items:
             type: integer
             format: int32
+            minimum: 0
         partialMatches:
           type: array
           items:
             $ref: '#/components/schemas/FingerprintMatch'
         partialMatchFingerprints:
           type: object
-        additionalProperties:
-          type: array
-          items:
-            type: integer
-            format: int64
+          additionalProperties:
+            type: array
+            items:
+              type: integer
+              format: int64
         installedFingerprints:
           type: array
           items:
             type: integer
             format: int32
+            minimum: 0
         unmatchedFingerprints:
           type: array
           items:
             type: integer
             format: int32
+            minimum: 0
     FolderFingerprint:
       type: object
       properties:
@@ -1308,12 +1367,14 @@ components:
           items:
             type: integer
             format: int32
+            minimum: 0
     Game:
       type: object
       properties:
         id:
           type: integer
           format: int64
+          minimum: 0
         name:
           type: string
         slug:
@@ -1345,6 +1406,7 @@ components:
         type:
           type: integer
           format: int32
+          minimum: 0
         versions:
           type: array
           items:
@@ -1355,6 +1417,7 @@ components:
         type:
           type: integer
           format: int32
+          minimum: 0
         versions:
           type: array
           items:
@@ -1365,6 +1428,7 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         name:
           type: string
         slug:
@@ -1390,9 +1454,11 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         gameId:
           type: integer
           format: int64
+          minimum: 0
         name:
           type: string
         slug:
@@ -1521,14 +1587,17 @@ components:
         gameId:
           type: integer
           format: int64
+          minimum: 0
         excludedModIds:
           type: array
           items:
             type: integer
             format: int64
+            minimum: 0
         gameVersionTypeId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
     GetFingerprintMatchesRequestBody:
       type: object
@@ -1539,12 +1608,14 @@ components:
           items:
             type: integer
             format: int32
+            minimum: 0
     GetFuzzyMatchesRequestBody:
       type: object
       properties:
         gameId:
           type: integer
           format: int64
+          minimum: 0
         fingerprints:
           type: array
           items:
@@ -1557,6 +1628,7 @@ components:
           items:
             type: integer
             format: int64
+            minimum: 0
     GetModsByIdsListRequestBody:
       type: object
       properties:
@@ -1565,6 +1637,7 @@ components:
           items:
             type: integer
             format: int64
+            minimum: 0
     HashAlgo:
       description: |
         Hash algorithems
@@ -1584,9 +1657,11 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         gameVersionId:
           type: integer
           format: int64
+          minimum: 0
         versionString:
           type: string
         jarDownloadUrl:
@@ -1603,6 +1678,7 @@ components:
         gameVersionTypeId:
           type: integer
           format: int64
+          minimum: 0
         gameVersionStatus:
           $ref: '#/components/schemas/GameVersionStatus'
         gameVersionTypeStatus:
@@ -1629,12 +1705,15 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         gameVersionId:
           type: integer
           format: int64
+          minimum: 0
         minecraftGameVersionId:
           type: integer
           format: int64
+          minimum: 0
         forgeVersion:
           type: string
         name:
@@ -1670,9 +1749,11 @@ components:
         modLoaderGameVersionId:
           type: integer
           format: int64
+          minimum: 0
         modLoaderGameVersionTypeId:
           type: integer
           format: int64
+          minimum: 0
         modLoaderGameVersionStatus:
           $ref: '#/components/schemas/GameVersionStatus'
         modLoaderGameVersionTypeStatus:
@@ -1680,9 +1761,11 @@ components:
         mcGameVersionId:
           type: integer
           format: int64
+          minimum: 0
         mcGameVersionTypeId:
           type: integer
           format: int64
+          minimum: 0
         mcGameVersionStatus:
           $ref: '#/components/schemas/GameVersionStatus'
         mcGameVersionTypeStatus:
@@ -1695,10 +1778,12 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
           description: The mod id
         gameId:
           type: integer
           format: int64
+          minimum: 0
           description: The game id this mod is for
         name:
           type: string
@@ -1716,6 +1801,7 @@ components:
         downloadCount:
           type: integer
           format: int64
+          minimum: 0
           description: Number of downloads for the mod
         isFeatured:
           format: boolean
@@ -1723,6 +1809,7 @@ components:
         primaryCategoryId:
           type: integer
           format: int64
+          minimum: 0
           description: The main category of the mod as it was chosen by the mod author
         categories:
           type: array
@@ -1732,6 +1819,7 @@ components:
         classId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
           description: The class id this mod belongs to
         authors:
@@ -1749,6 +1837,7 @@ components:
         mainFileId:
           type: integer
           format: int64
+          minimum: 0
           description: The id of the main file of the mod
         latestFiles:
           type: array
@@ -1779,6 +1868,7 @@ components:
         gamePopularityRank:
           type: integer
           format: int32
+          minimum: 0
           description: The mod popularity rank for the game
         isAvailable:
           type: boolean
@@ -1788,6 +1878,7 @@ components:
         thumbsUpCount:
           type: integer
           format: int32
+          minimum: 0
           description: The mod's thumbs up count
     ModAsset:
       type: object
@@ -1795,9 +1886,11 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         modId:
           type: integer
           format: int64
+          minimum: 0
         title:
           type: string
         description:
@@ -1814,6 +1907,7 @@ components:
         id:
           type: integer
           format: int64
+          minimum: 0
         name:
           type: string
         url:
@@ -1974,20 +2068,24 @@ components:
         index:
           type: integer
           format: int32
+          minimum: 0
           description: >-
             A zero based index of the first item that is included in the
             response
         pageSize:
           type: integer
           format: int32
+          minimum: 0
           description: The requested number of items to be included in the response
         resultCount:
           type: integer
           format: int32
+          minimum: 0
           description: The actual number of items that were included in the response
         totalCount:
           type: integer
           format: int64
+          minimum: 0
           description: The total number of items available by the request
     SearchModsResponse:
       type: object
@@ -2018,6 +2116,7 @@ components:
         gameVersionTypeId:
           type: integer
           format: int64
+          minimum: 0
           nullable: true
           description: Game version type id
     SortOrder:

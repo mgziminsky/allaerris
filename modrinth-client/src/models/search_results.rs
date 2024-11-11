@@ -18,18 +18,18 @@ pub struct SearchResults {
     pub hits: Vec<models::ProjectResult>,
     /// The number of results that were skipped by the query
     #[serde(rename = "offset")]
-    pub offset: u32,
+    pub offset: i32,
     /// The number of results that were returned by the query
     #[serde(rename = "limit")]
-    pub limit: u32,
+    pub limit: i32,
     /// The total number of results that match the query
     #[serde(rename = "total_hits")]
-    pub total_hits: u32,
+    pub total_hits: i32,
 }
 
 impl SearchResults {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(hits: Vec<models::ProjectResult>, offset: u32, limit: u32, total_hits: u32) -> Self {
+    pub fn new(hits: Vec<models::ProjectResult>, offset: i32, limit: i32, total_hits: i32) -> Self {
         Self {
             hits,
             offset,

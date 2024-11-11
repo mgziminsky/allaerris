@@ -16,7 +16,7 @@ use crate::models;
 pub struct UserPayoutData {
     /// The payout balance available for the user to withdraw (note, you cannot modify this in a PATCH request)
     #[serde(rename = "balance")]
-    pub balance: u32,
+    pub balance: i32,
     /// The wallet that the user has selected
     #[serde(rename = "payout_wallet")]
     pub payout_wallet: PayoutWallet,
@@ -31,7 +31,7 @@ pub struct UserPayoutData {
 impl UserPayoutData {
     /// Various data relating to the user's payouts status (you can only see your own)
     #[allow(clippy::too_many_arguments)]
-    pub fn new(balance: u32, payout_wallet: PayoutWallet, payout_wallet_type: PayoutWalletType, payout_address: String) -> Self {
+    pub fn new(balance: i32, payout_wallet: PayoutWallet, payout_wallet_type: PayoutWalletType, payout_address: String) -> Self {
         Self {
             balance,
             payout_wallet,

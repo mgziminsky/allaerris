@@ -36,13 +36,13 @@ pub struct ProjectResult {
     pub project_type: ProjectType,
     /// The total number of downloads of the project
     #[serde(rename = "downloads")]
-    pub downloads: u32,
+    pub downloads: i32,
     /// The URL of the project's icon
     #[serde(rename = "icon_url", skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<String>,
     /// The RGB color of the project, automatically generated from the project icon
     #[serde(rename = "color", skip_serializing_if = "Option::is_none")]
-    pub color: Option<u32>,
+    pub color: Option<i32>,
     /// The ID of the moderation thread associated with this project
     #[serde(rename = "thread_id")]
     pub thread_id: String,
@@ -62,7 +62,7 @@ pub struct ProjectResult {
     pub versions: Vec<String>,
     /// The total number of users following the project
     #[serde(rename = "follows")]
-    pub follows: u32,
+    pub follows: i32,
     /// The date the project was added to search
     #[serde(rename = "date_created")]
     pub date_created: String,
@@ -85,7 +85,7 @@ pub struct ProjectResult {
 
 impl ProjectResult {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(slug: String, title: String, description: String, categories: Vec<String>, client_side: ClientSide, server_side: ServerSide, project_type: ProjectType, downloads: u32, thread_id: String, monetization_status: MonetizationStatus, project_id: String, author: String, display_categories: Vec<String>, versions: Vec<String>, follows: u32, date_created: String, date_modified: String, latest_version: String, license: String, gallery: Vec<String>) -> Self {
+    pub fn new(slug: String, title: String, description: String, categories: Vec<String>, client_side: ClientSide, server_side: ServerSide, project_type: ProjectType, downloads: i32, thread_id: String, monetization_status: MonetizationStatus, project_id: String, author: String, display_categories: Vec<String>, versions: Vec<String>, follows: i32, date_created: String, date_modified: String, latest_version: String, license: String, gallery: Vec<String>) -> Self {
         Self {
             slug,
             title,

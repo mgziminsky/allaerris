@@ -26,14 +26,15 @@ pub struct VersionFile {
     pub primary: bool,
     /// The size of the file in bytes
     #[serde(rename = "size")]
-    pub size: u32,
+    pub size: i32,
     /// The type of the additional file, used mainly for adding resource packs to datapacks
     #[serde(rename = "file_type", skip_serializing_if = "Option::is_none")]
     pub file_type: Option<FileType>,
 }
 
 impl VersionFile {
-    pub fn new(hashes: models::VersionFileHashes, url: ::url::Url /* MANUAL CHANGE */, filename: String, primary: bool, size: u32) -> Self {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(hashes: models::VersionFileHashes, url: ::url::Url /* MANUAL CHANGE */, filename: String, primary: bool, size: i32) -> Self {
         Self {
             hashes,
             url,

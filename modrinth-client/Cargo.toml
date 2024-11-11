@@ -1,5 +1,6 @@
 [package]
 name = "modrinth-client"
+# b5011f4
 version = "2.7.0"
 rust-version = "1.80.0"
 authors = ["support@modrinth.com"]

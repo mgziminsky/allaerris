@@ -17,18 +17,18 @@ pub struct ModifyTeamMemberBody {
     pub role: String,
     /// The user's permissions in bitfield format  In order from first to tenth bit, the bits are: - UPLOAD_VERSION - DELETE_VERSION - EDIT_DETAILS - EDIT_BODY - MANAGE_INVITES - REMOVE_MEMBER - EDIT_MEMBER - DELETE_PROJECT - VIEW_ANALYTICS - VIEW_PAYOUTS 
     #[serde(rename = "permissions")]
-    pub permissions: u32,
+    pub permissions: i32,
     /// The split of payouts going to this user. The proportion of payouts they get is their split divided by the sum of the splits of all members.
     #[serde(rename = "payouts_split")]
-    pub payouts_split: u32,
+    pub payouts_split: i32,
     /// The order of the team member.
     #[serde(rename = "ordering")]
-    pub ordering: u32,
+    pub ordering: i32,
 }
 
 impl ModifyTeamMemberBody {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(role: String, permissions: u32, payouts_split: u32, ordering: u32) -> Self {
+    pub fn new(role: String, permissions: i32, payouts_split: i32, ordering: i32) -> Self {
         Self {
             role,
             permissions,

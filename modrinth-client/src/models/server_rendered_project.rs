@@ -36,13 +36,13 @@ pub struct ServerRenderedProject {
     pub project_type: ProjectType,
     /// The total number of downloads of the project
     #[serde(rename = "downloads")]
-    pub downloads: u32,
+    pub downloads: i32,
     /// The URL of the project's icon
     #[serde(rename = "icon_url", skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<String>,
     /// The RGB color of the project, automatically generated from the project icon
     #[serde(rename = "color", skip_serializing_if = "Option::is_none")]
-    pub color: Option<u32>,
+    pub color: Option<i32>,
     /// The ID of the moderation thread associated with this project
     #[serde(rename = "thread_id")]
     pub thread_id: String,
@@ -52,7 +52,7 @@ pub struct ServerRenderedProject {
 
 impl ServerRenderedProject {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(slug: String, title: String, description: String, categories: Vec<String>, client_side: ClientSide, server_side: ServerSide, project_type: ProjectType, downloads: u32, thread_id: String, monetization_status: MonetizationStatus) -> Self {
+    pub fn new(slug: String, title: String, description: String, categories: Vec<String>, client_side: ClientSide, server_side: ServerSide, project_type: ProjectType, downloads: i32, thread_id: String, monetization_status: MonetizationStatus) -> Self {
         Self {
             slug,
             title,

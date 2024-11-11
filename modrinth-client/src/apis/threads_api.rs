@@ -25,7 +25,7 @@ pub struct DeleteThreadMessageParams<'l1,> {
 /// struct for passing parameters to the method [`ThreadsApi::get_open_reports`]
 #[derive(Clone, Debug)]
 pub struct GetOpenReportsParams<> {
-    pub count: Option<u32>,
+    pub count: Option<i32>,
 }
 
 /// struct for passing parameters to the method [`ThreadsApi::get_report`]

@@ -63,13 +63,13 @@ pub struct Project {
     pub project_type: ProjectType,
     /// The total number of downloads of the project
     #[serde(rename = "downloads")]
-    pub downloads: u32,
+    pub downloads: i32,
     /// The URL of the project's icon
     #[serde(rename = "icon_url", skip_serializing_if = "Option::is_none")]
     pub icon_url: Option<url::Url>, // MANUAL CHANGE - url::Url
     /// The RGB color of the project, automatically generated from the project icon
     #[serde(rename = "color", skip_serializing_if = "Option::is_none")]
-    pub color: Option<u32>,
+    pub color: Option<i32>,
     /// The ID of the moderation thread associated with this project
     #[serde(rename = "thread_id")]
     pub thread_id: String,
@@ -102,7 +102,7 @@ pub struct Project {
     pub queued: Option<String>,
     /// The total number of users following the project
     #[serde(rename = "followers")]
-    pub followers: u32,
+    pub followers: i32,
     #[serde(rename = "license")]
     pub license: models::ProjectLicense,
     /// A list of the version IDs of the project (will never be empty unless `draft` status)
@@ -121,7 +121,7 @@ pub struct Project {
 
 impl Project {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(slug: String, title: String, description: String, categories: Vec<String>, client_side: ClientSide, server_side: ServerSide, body: String, status: Status, additional_categories: Vec<String>, donation_urls: Vec<models::ProjectDonationUrl>, project_type: ProjectType, downloads: u32, thread_id: String, monetization_status: MonetizationStatus, id: String, team: String, published: String, updated: String, followers: u32, license: models::ProjectLicense, versions: Vec<String>, game_versions: Vec<String>, loaders: Vec<String>, gallery: Vec<models::GalleryImage>) -> Self {
+    pub fn new(slug: String, title: String, description: String, categories: Vec<String>, client_side: ClientSide, server_side: ServerSide, body: String, status: Status, additional_categories: Vec<String>, donation_urls: Vec<models::ProjectDonationUrl>, project_type: ProjectType, downloads: i32, thread_id: String, monetization_status: MonetizationStatus, id: String, team: String, published: String, updated: String, followers: i32, license: models::ProjectLicense, versions: Vec<String>, game_versions: Vec<String>, loaders: Vec<String>, gallery: Vec<models::GalleryImage>) -> Self {
         Self {
             slug,
             title,

@@ -19,7 +19,7 @@ checksum = "512761e0bb2578dd7380c6baaa0f4ce03e84f95e960231d1dec8bf4d7d6e2627"
 
 [[package]]
 name = "allaerris"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-scoped",
@@ -489,7 +489,7 @@ checksum = "486f806e73c5707928240ddc295403b1b93c96a02038563881c4a2fd84b81ac4"
 
 [[package]]
 name = "ferrallay"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "async-scoped",

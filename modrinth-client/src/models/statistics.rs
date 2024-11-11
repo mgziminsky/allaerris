@@ -15,21 +15,21 @@ use crate::models;
 pub struct Statistics {
     /// Number of projects on Modrinth
     #[serde(rename = "projects")]
-    pub projects: u32,
+    pub projects: i32,
     /// Number of projects on Modrinth
     #[serde(rename = "versions")]
-    pub versions: u32,
+    pub versions: i32,
     /// Number of version files on Modrinth
     #[serde(rename = "files")]
-    pub files: u32,
+    pub files: i32,
     /// Number of authors (users with projects) on Modrinth
     #[serde(rename = "authors")]
-    pub authors: u32,
+    pub authors: i32,
 }
 
 impl Statistics {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(projects: u32, versions: u32, files: u32, authors: u32) -> Self {
+    pub fn new(projects: i32, versions: i32, files: i32, authors: i32) -> Self {
         Self {
             projects,
             versions,

@@ -74,7 +74,7 @@ pub struct WithdrawPayoutParams<'l1,> {
     /// The ID or username of the user
     pub user: &'l1 str,
     /// Amount to withdraw
-    pub amount: u32,
+    pub amount: i32,
 }
 
 

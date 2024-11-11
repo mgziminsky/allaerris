@@ -31,7 +31,7 @@ pub struct Version {
     /// The release channel for this version
     #[serde(rename = "version_type")]
     pub version_type: VersionType,
-    /// The mod loaders that this version supports
+    /// The mod loaders that this version supports. In case of resource packs, use \"minecraft\"
     #[serde(rename = "loaders", default)]
     pub loaders: Vec<String>,
     /// Whether the version is featured or not
@@ -54,7 +54,7 @@ pub struct Version {
     pub date_published: String,
     /// The number of times this version has been downloaded
     #[serde(rename = "downloads")]
-    pub downloads: u32,
+    pub downloads: i32,
     /// A link to the changelog for this version. Always null, only kept for legacy compatibility.
     #[deprecated]
     #[serde(rename = "changelog_url", skip_serializing_if = "Option::is_none")]
@@ -66,7 +66,7 @@ pub struct Version {
 
 impl Version {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(name: String, version_number: String, dependencies: Vec<models::VersionDependency>, game_versions: Vec<String>, version_type: VersionType, loaders: Vec<String>, featured: bool, status: Status, id: String, project_id: String, author_id: String, date_published: String, downloads: u32, files: Vec<models::VersionFile>) -> Self {
+    pub fn new(name: String, version_number: String, dependencies: Vec<models::VersionDependency>, game_versions: Vec<String>, version_type: VersionType, loaders: Vec<String>, featured: bool, status: Status, id: String, project_id: String, author_id: String, date_published: String, downloads: i32, files: Vec<models::VersionFile>) -> Self {
         Self {
             name,
             version_number,

@@ -30,12 +30,12 @@ pub struct GalleryImage {
     pub created: String,
     /// The order of the gallery image. Gallery images are sorted by this field and then alphabetically by title.
     #[serde(rename = "ordering")]
-    pub ordering: u32,
+    pub ordering: i32,
 }
 
 impl GalleryImage {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(url: String, featured: bool, created: String, ordering: u32) -> Self {
+    pub fn new(url: String, featured: bool, created: String, ordering: i32) -> Self {
         Self {
             url,
             featured,

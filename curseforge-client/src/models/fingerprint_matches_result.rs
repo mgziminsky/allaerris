@@ -22,9 +22,7 @@ pub struct FingerprintMatchesResult {
     #[serde(rename = "partialMatches", default)]
     pub partial_matches: Vec<models::FingerprintMatch>,
     #[serde(rename = "partialMatchFingerprints")]
-    pub partial_match_fingerprints: serde_json::Value,
-    #[serde(rename = "additionalProperties", default)]
-    pub additional_properties: Vec<u64>,
+    pub partial_match_fingerprints: std::collections::HashMap<String, Vec<i64>>,
     #[serde(rename = "installedFingerprints", default)]
     pub installed_fingerprints: Vec<u32>,
     #[serde(rename = "unmatchedFingerprints", default)]
@@ -33,14 +31,13 @@ pub struct FingerprintMatchesResult {
 
 impl FingerprintMatchesResult {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(is_cache_built: bool, exact_matches: Vec<models::FingerprintMatch>, exact_fingerprints: Vec<u32>, partial_matches: Vec<models::FingerprintMatch>, partial_match_fingerprints: serde_json::Value, additional_properties: Vec<u64>, installed_fingerprints: Vec<u32>, unmatched_fingerprints: Vec<u32>) -> Self {
+    pub fn new(is_cache_built: bool, exact_matches: Vec<models::FingerprintMatch>, exact_fingerprints: Vec<u32>, partial_matches: Vec<models::FingerprintMatch>, partial_match_fingerprints: std::collections::HashMap<String, Vec<i64>>, installed_fingerprints: Vec<u32>, unmatched_fingerprints: Vec<u32>) -> Self {
         Self {
             is_cache_built,
             exact_matches,
             exact_fingerprints,
             partial_matches,
             partial_match_fingerprints,
-            additional_properties,
             installed_fingerprints,
             unmatched_fingerprints,
         }

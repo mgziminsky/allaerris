@@ -238,7 +238,7 @@ mod from {
                 created: Some(project.published),
                 updated: Some(project.updated),
                 icon: project.icon_url,
-                downloads: project.downloads as _,
+                downloads: project.downloads.try_into().unwrap_or_default(),
                 authors: vec![Author {
                     name: project.team,
                     url: None,
@@ -291,7 +291,7 @@ mod from {
                     .filename
                     .try_into()
                     .expect("Modrinth API should always return a proper relative file"),
-                length: file.size as _,
+                length: file.size.try_into().unwrap_or_default(),
                 date: value.date_published,
                 sha1: Some(file.hashes.sha1),
                 deps: value.dependencies.into_iter().filter_map(|d| d.try_into().ok()).collect(),

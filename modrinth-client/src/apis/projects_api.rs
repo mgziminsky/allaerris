@@ -29,7 +29,7 @@ pub struct AddGalleryImageParams<'l1,'l2,'l4,'l5,> {
     /// Description of the image
     pub description: Option<&'l5 str>,
     /// Ordering of the image
-    pub ordering: Option<u32>,
+    pub ordering: Option<i32>,
     pub body: Option<std::path::PathBuf>,
 }
 
@@ -123,7 +123,7 @@ pub struct ModifyGalleryImageParams<'l1,'l2,'l4,'l5,> {
     /// New description of the image
     pub description: Option<&'l5 str>,
     /// New ordering of the image
-    pub ordering: Option<u32>,
+    pub ordering: Option<i32>,
 }
 
 /// struct for passing parameters to the method [`ProjectsApi::modify_project`]
@@ -170,7 +170,7 @@ pub struct SearchProjectsParams<'l1,'l2,'l3,> {
     /// The sorting method used for sorting search results
     pub index: Option<&'l3 str>,
     /// The offset into the search. Skips this number of results
-    pub offset: Option<u32>,
+    pub offset: Option<i32>,
     /// The number of results returned by the search
     pub limit: Option<u8>,
 }

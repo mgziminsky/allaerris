@@ -1,10 +1,5 @@
-## [Planned] - In no particular order
-- Github use graphql. Requires API token
-
-## [WIP]
-
-## [Unreleased]
-
+## [0.1.2]
+- Openapi client updates
 
 ## [0.1.1]
 - Fix modpack changes not saving

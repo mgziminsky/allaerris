@@ -18,7 +18,7 @@ pub struct UserPayoutHistoryEntry {
     pub created: String,
     /// The amount of this transaction in USD
     #[serde(rename = "amount")]
-    pub amount: u32,
+    pub amount: i32,
     /// The status of this transaction
     #[serde(rename = "status")]
     pub status: String,
@@ -26,7 +26,7 @@ pub struct UserPayoutHistoryEntry {
 
 impl UserPayoutHistoryEntry {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(created: String, amount: u32, status: String) -> Self {
+    pub fn new(created: String, amount: i32, status: String) -> Self {
         Self {
             created,
             amount,

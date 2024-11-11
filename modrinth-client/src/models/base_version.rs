@@ -31,7 +31,7 @@ pub struct BaseVersion {
     /// The release channel for this version
     #[serde(rename = "version_type")]
     pub version_type: VersionType,
-    /// The mod loaders that this version supports
+    /// The mod loaders that this version supports. In case of resource packs, use \"minecraft\"
     #[serde(rename = "loaders", default)]
     pub loaders: Vec<String>,
     /// Whether the version is featured or not

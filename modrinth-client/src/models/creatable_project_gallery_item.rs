@@ -27,12 +27,12 @@ pub struct CreatableProjectGalleryItem {
     pub description: Option<String>,
     /// The order of the gallery image. Gallery images are sorted by this field and then alphabetically by title.
     #[serde(rename = "ordering")]
-    pub ordering: u32,
+    pub ordering: i32,
 }
 
 impl CreatableProjectGalleryItem {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(item: String, featured: bool, ordering: u32) -> Self {
+    pub fn new(item: String, featured: bool, ordering: i32) -> Self {
         Self {
             item,
             featured,

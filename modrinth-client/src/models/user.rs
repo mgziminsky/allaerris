@@ -41,7 +41,7 @@ pub struct User {
     pub role: Role,
     /// Any badges applicable to this user. These are currently unused and undisplayed, and as such are subject to change  In order from first to seventh bit, the current bits are: - (unused) - EARLY_MODPACK_ADOPTER - EARLY_RESPACK_ADOPTER - EARLY_PLUGIN_ADOPTER - ALPHA_TESTER - CONTRIBUTOR - TRANSLATOR 
     #[serde(rename = "badges")]
-    pub badges: u32,
+    pub badges: i32,
     /// A list of authentication providers you have signed up for (only displayed if requesting your own account)
     #[serde(rename = "auth_providers", default, skip_serializing_if = "Option::is_none")]
     pub auth_providers: Option<Vec<String>>,
@@ -57,12 +57,12 @@ pub struct User {
     /// Deprecated - this is no longer public for security reasons and is always null
     #[deprecated]
     #[serde(rename = "github_id", skip_serializing_if = "Option::is_none")]
-    pub github_id: Option<u32>,
+    pub github_id: Option<i32>,
 }
 
 impl User {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(username: String, bio: String, id: String, avatar_url: String, created: String, role: Role, badges: u32) -> Self {
+    pub fn new(username: String, bio: String, id: String, avatar_url: String, created: String, role: Role, badges: i32) -> Self {
         Self {
             username,
             bio,
