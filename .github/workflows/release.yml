@@ -33,7 +33,7 @@ jobs:
       - id: find-id
         run: |
           echo -n run_id= >> $GITHUB_OUTPUT
-          gh api '/repos/{owner}/{repo}/actions/runs' -X GET \
+          gh api '/repos/${{ github.repository }}/actions/runs' -X GET \
             -f status=success -f head_sha=${{ github.sha }} \
             -q '.workflow_runs | map(select(.path == ".github/workflows/ci.yml")) | max_by(.run_started_at).id' >> $GITHUB_OUTPUT
       - run: test -n '${{ steps.find-id.outputs.id }}'
