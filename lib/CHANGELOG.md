@@ -1,8 +1,5 @@
-## [0.1.2]
-- Openapi client updates
-
-## [0.1.1]
-- Fix apply after changing modpacks
+## [0.2.0]
+- Support any project type, not just mods and packs
 
 ## [0.1.0]
 - Initial Release

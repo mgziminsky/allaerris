@@ -1,9 +1,9 @@
 {
-    "rust-analyzer.cargo.cfgs": {
-        "ide": null,
-        "debug_assertions": null,
-        "miri": null
-    },
+    "rust-analyzer.cargo.cfgs": [
+        "ide",
+        "debug_assertions",
+        "miri",
+    ],
     "terminal.integrated.env.windows": {
         "ALLAERRIS_CONFIG_FILE": "${workspaceFolder}/target/config.json"
     },

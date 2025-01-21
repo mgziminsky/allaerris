@@ -1,3 +1,6 @@
+## [0.1.3]
+- Update ferrallay to 0.2 supporting any project type
+
 ## [0.1.2]
 - Openapi client updates
 

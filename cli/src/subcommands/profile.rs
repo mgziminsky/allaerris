@@ -88,6 +88,6 @@ pub async fn process(subcommand: ProfileSubcommand, config: &mut Config) -> Resu
             let profiles = config.get_profiles();
             switch_profile!(config, profiles, profile_name);
         },
-    };
+    }
     Ok(())
 }

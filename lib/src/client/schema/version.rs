@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use github::models::AssetId;
-use serde::{Deserialize, Serialize};
 use url::Url;
 
 use super::ProjectId;
@@ -14,8 +13,7 @@ use crate::{
 
 
 svc_id_type! {
-    #[derive(Deserialize, Serialize, Debug, Clone, Eq, Hash)]
-    #[serde(rename_all = "lowercase")]
+    #[derive(Debug, Clone, Eq, Hash)]
     pub enum VersionId {
         Forge(u64),
         Modrinth(String = &str),

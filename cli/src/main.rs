@@ -191,7 +191,7 @@ async fn actual_main(mut cli_app: Allaerris) -> Result<()> {
             }
         },
         Subcommand::Cache { subcommand } => cache::process(subcommand.unwrap_or_default()),
-    };
+    }
 
     if let Some(config) = config_.get_mut() {
         config.save_to(config_path).await?;

@@ -10,7 +10,7 @@ use github::models::repos::Asset;
 
 use super::{
     common,
-    schema::{GameVersion, Mod, Modpack, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
+    schema::{GameVersion, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
     ApiOps, GithubClient,
 };
 use crate::{
@@ -24,16 +24,11 @@ impl ApiOps for GithubClient {
 
     common::get_version!();
 
-    async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
-        fetch_repo(self, id.get_github()?).await.map(Mod)
+    async fn get_project(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Project> {
+        fetch_repo(self, id.get_github()?).await
     }
 
-    // No distinction between mods and modpacks for github
-    async fn get_modpack(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Modpack> {
-        fetch_repo(self, id.get_github()?).await.map(Modpack)
-    }
-
-    async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
+    async fn get_projects(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Project>> {
         // let repos = ids
         //     .iter()
         //     .filter_map(|id| id.get_github().ok())
@@ -74,7 +69,7 @@ impl ApiOps for GithubClient {
                 s.spawn(fetch_repo(self, id));
             }
         });
-        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(Result::ok).map(Mod)).collect();
+        let mods = mods.into_iter().filter_map(|r| r.ok().and_then(Result::ok)).collect();
         Ok(mods)
     }
 
@@ -187,7 +182,7 @@ mod from {
 
     use crate::{
         client::{
-            schema::{self, Project, ProjectId},
+            schema::{self, Project, ProjectId, ProjectType},
             Client, ClientInner, GithubClient,
         },
         github::models::Repository,
@@ -212,10 +207,12 @@ mod from {
     impl From<Repository> for Project {
         fn from(repo: Repository) -> Self {
             let owner = repo.owner.expect("repo should always have owner");
+            let slug = repo.full_name.expect("repo should always have full_name");
             Self {
                 id: ProjectId::Github((owner.login.clone(), repo.name.clone())),
+                project_type: guess_type(&slug),
                 name: repo.name,
-                slug: repo.full_name.expect("repo should always have full_name"),
+                slug,
                 description: repo.description.unwrap_or_default(),
                 created: repo.created_at.map(|d| d.to_rfc3339()),
                 updated: repo.updated_at.map(|d| d.to_rfc3339()),
@@ -250,6 +247,22 @@ mod from {
                 spdx_id,
                 url: html_url,
             }
+        }
+    }
+
+
+    fn guess_type(repo: &str) -> ProjectType {
+        let repo = repo.to_ascii_lowercase();
+        if repo.contains("modpack") {
+            ProjectType::ModPack
+        } else if repo.contains("resourcepack") {
+            ProjectType::ResourcePack
+        } else if repo.contains("datapack") {
+            ProjectType::DataPack
+        } else if repo.contains("shader") {
+            ProjectType::Shader
+        } else {
+            ProjectType::Mod
         }
     }
 }

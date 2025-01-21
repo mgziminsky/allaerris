@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::{project_with_version::VersionedProject, ProjectWithVersion};
-use crate::client::schema::{self, Project, ProjectId, VersionId};
+use crate::client::schema::{Project, ProjectId, ProjectType, VersionId};
 
 /// The basic data needed to lookup and install a particular mod from one of the
 /// [supported clients](crate::client)
@@ -17,6 +17,9 @@ pub struct Mod {
     /// The local name of this mod. May not match actual project name from the
     /// [client](crate::Client)
     pub name: String,
+
+    /// The [type](ProjectType) of this mod
+    pub project_type: ProjectType,
 
     /// If `true`, will prevent this mod from being installed by a modpack
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
@@ -48,11 +51,6 @@ impl std::hash::Hash for Mod {
     }
 }
 
-impl From<schema::Mod> for Mod {
-    fn from(m: schema::Mod) -> Self {
-        m.0.into()
-    }
-}
 impl From<Project> for Mod {
     fn from(proj: Project) -> Self {
         Self {
@@ -60,6 +58,7 @@ impl From<Project> for Mod {
             slug: proj.slug,
             name: proj.name,
             exclude: false,
+            project_type: proj.project_type,
         }
     }
 }

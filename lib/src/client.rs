@@ -14,7 +14,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use self::schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType};
+use self::schema::{GameVersion, Project, ProjectIdSvcType, Version, VersionIdSvcType};
 pub use self::service_id::ServiceId;
 use crate::{config::ModLoader, mgmt::LockedMod, Result};
 
@@ -60,37 +60,19 @@ macro_rules! api {
     };
 }
 api! {
-    /// Get the [mod](Mod) with `id`
+    /// Get the [project](Project) with `id`
     ///
     /// # Errors
     ///
     /// [[ErrorKind::InvalidIdentifier]]: if `id` fails to parse into the
     /// format expected by the backing client
     ///
-    /// [[ErrorKind::WrongType]]: if the fetched project type is not a mod
-    ///
     /// Any other network or api errors from the backing client
     ///
     /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
-    /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
-    pub get_mod(id: &(impl ProjectIdSvcType + ?Sized)) -> Mod;
+    pub get_project(id: &(impl ProjectIdSvcType + ?Sized)) -> Project;
 
-    /// Get the [modpack](Modpack) with `id`
-    ///
-    /// # Errors
-    ///
-    /// [[ErrorKind::InvalidIdentifier]]: if `id` fails to parse into the
-    /// format expected by the backing client
-    ///
-    /// [[ErrorKind::WrongType]]: if the fetched project type is not a modpack
-    ///
-    /// Any other network or api errors from the backing client
-    ///
-    /// [ErrorKind::InvalidIdentifier]: crate::ErrorKind::InvalidIdentifier
-    /// [ErrorKind::WrongType]: crate::ErrorKind::WrongType
-    pub get_modpack(id: &(impl ProjectIdSvcType + ?Sized)) -> Modpack;
-
-    /// Get all [mods](Mod) listed in `ids`
+    /// Get all [projects](Project) listed in `ids`
     ///
     /// If called on a multi-client, then the results from all clients
     /// will be combined with no attempt to dedup. Any invalid ids will
@@ -99,7 +81,7 @@ api! {
     /// # Errors
     ///
     /// Any network or api errors from the backing client
-    ++pub get_mods(ids: &[&dyn ProjectIdSvcType]) -> Vec<Mod>;
+    ++pub get_projects(ids: &[&dyn ProjectIdSvcType]) -> Vec<Project>;
 
     /// Get all [versions](Version) of the project with `id`
     ///
@@ -160,7 +142,7 @@ api! {
 /// # async fn async_main() -> ferrallay::Result<()> {
 /// // Single client
 /// let client = Client::from(ModrinthClient::builder("<USER_AGENT>").build()?);
-/// let m = client.get_mod("mod_id").await;
+/// let m = client.get_project("mod_id").await;
 /// assert!(matches!(m, Err(_)));
 ///
 /// // Or with multiple clients
@@ -170,7 +152,7 @@ api! {
 ///     GithubClient::builder().build()?.into(),
 /// ]
 /// .try_into()?;
-/// let m = client.get_mod("mod_id").await;
+/// let m = client.get_project("mod_id").await;
 /// assert!(matches!(m, Err(_)));
 /// # Ok(())
 /// # }
@@ -202,7 +184,7 @@ macro_rules! as_inner {
                 pub fn [<as_ $ty:lower>](&self) -> Option<&[<$ty Client>]> {
                     match &self.0 {
                         ClientInner::$ty(v) => Some(v),
-                        ClientInner::Multi(clients) => clients.iter().filter_map(|c| c.[<as_ $ty:lower>]()).next(),
+                        ClientInner::Multi(clients) => clients.iter().find_map(|c| c.[<as_ $ty:lower>]()),
                         _ => None,
                     }
                 }

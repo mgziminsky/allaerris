@@ -65,7 +65,7 @@ impl ProfileManager {
         lockfile.sort();
         if let Err(e) = lockfile.save(profile_path).await {
             self.send_err(e);
-        };
+        }
 
         Ok(())
     }
@@ -436,7 +436,7 @@ impl ProfileManager {
                         );
                         return;
                     }
-                };
+                }
             }
 
             target.parent().map(fs::create_dir_all);

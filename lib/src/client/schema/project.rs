@@ -12,12 +12,34 @@ use crate::{
 
 svc_id_type! {
     /// The [client](crate::client) specific project id types
-    #[derive(Deserialize, Serialize, Debug, Clone, Eq, Hash, Ord)]
-    #[serde(rename_all = "lowercase")]
+    #[derive(Debug, Clone, Eq, Hash, Ord)]
     pub enum ProjectId {
         Forge(u64),
         Modrinth(String = &str),
         Github((String, String) = (&str, &str)),
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProjectType {
+    #[default]
+    Mod,
+    ModPack,
+    ResourcePack,
+    DataPack,
+    Shader,
+}
+impl ProjectType {
+    pub fn install_dir(&self) -> &'static str {
+        match self {
+            Self::Mod => "mods",
+            Self::ModPack => "",
+            Self::ResourcePack => "resourcepacks",
+            Self::DataPack => "datapacks",
+            Self::Shader => "shaderpacks",
+        }
     }
 }
 
@@ -27,6 +49,7 @@ pub struct Project {
     pub slug: String,
     pub name: String,
     pub description: String,
+    pub project_type: ProjectType,
     pub downloads: u64,
     pub created: Option<String>,
     pub updated: Option<String>,

@@ -15,7 +15,7 @@ use curseforge::{
 
 use super::{
     common::{self, compute_lookup_hashes},
-    schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
+    schema::{GameVersion, Project, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ForgeClient,
 };
 use crate::{
@@ -31,15 +31,16 @@ impl ApiOps for ForgeClient {
 
     common::get_version!();
 
-    async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
-        fetch_mod(self, id).await?.try_into()
+    async fn get_project(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Project> {
+        let mod_id = id.get_forge()?;
+        self.mods()
+            .get_mod(&GetModParams { mod_id })
+            .await
+            .map_err(Into::into)
+            .and_then(|m| m.data.try_into())
     }
 
-    async fn get_modpack(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Modpack> {
-        fetch_mod(self, id).await?.try_into()
-    }
-
-    async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
+    async fn get_projects(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Project>> {
         let ids: Vec<_> = ids.iter().filter_map(|i| i.get_forge().ok()).collect();
         let mods = fetch_mods(self, ids).await?.into_iter().filter_map(|m| m.try_into().ok()).collect();
         Ok(mods)
@@ -163,11 +164,6 @@ impl ApiOps for ForgeClient {
     }
 }
 
-async fn fetch_mod(client: &ForgeClient, id: impl ProjectIdSvcType) -> Result<curseforge::models::Mod> {
-    let mod_id = id.get_forge()?;
-    Ok(client.mods().get_mod(&GetModParams { mod_id }).await?.data)
-}
-
 async fn fetch_mods(client: &ForgeClient, mod_ids: Vec<u64>) -> Result<Vec<curseforge::models::Mod>> {
     if mod_ids.is_empty() {
         return Ok(vec![]);
@@ -194,7 +190,7 @@ mod from {
 
     use crate::{
         client::{
-            schema::{Author, Dependency, DependencyType, GameVersion, Mod, Modpack, Project, ProjectId, Version, VersionId},
+            schema::{Author, Dependency, DependencyType, GameVersion, Project, ProjectId, ProjectType, Version, VersionId},
             Client, ClientInner, ForgeClient,
         },
         config::ModLoader,
@@ -202,14 +198,56 @@ mod from {
     };
 
     pub const MINECRAFT_GAME_ID: u64 = 432;
-    pub const MOD_CLASS_ID: u64 = 6;
-    pub const MODPACK_CLASS_ID: u64 = 4471;
-
     static HOME: LazyLock<Url> = LazyLock::new(|| {
         "https://www.curseforge.com/minecraft/"
             .parse()
             .expect("base url should always parse successfully")
     });
+
+    #[derive(Debug, Copy, Clone, PartialEq, Eq)]
+    struct ClassId(u64);
+    #[rustfmt::skip]
+    impl ClassId {
+        /// Values taken from the api as of 2024-11
+        const BUKKIT: u64        = 5;
+        const MOD: u64           = 6;
+        const RESOURCEPACK: u64  = 12;
+        const WORLD: u64         = 17;
+        const MODPACK: u64       = 4471;
+        const CUSTOMIZATION: u64 = 4546;
+        const ADDON: u64         = 4559;
+        const SHADER: u64        = 6552;
+        const DATAPACK: u64      = 6945;
+    }
+    impl ClassId {
+        const fn to_project_type(self) -> Option<ProjectType> {
+            Some(match self.0 {
+                Self::MOD => ProjectType::Mod,
+                Self::MODPACK => ProjectType::ModPack,
+                Self::RESOURCEPACK => ProjectType::ResourcePack,
+                Self::DATAPACK => ProjectType::DataPack,
+                Self::SHADER => ProjectType::Shader,
+                _ => return None,
+            })
+        }
+
+        const fn class_slug(self) -> Option<&'static str> {
+            // NOTE: No leading slash, and trailing slash are required for url joining to
+            // work properly
+            Some(match self.0 {
+                Self::ADDON => "mc-addons/",
+                Self::BUKKIT => "bukkit-plugins/",
+                Self::CUSTOMIZATION => "customization/",
+                Self::DATAPACK => "data-packs/",
+                Self::MOD => "mc-mods/",
+                Self::MODPACK => "modpacks/",
+                Self::RESOURCEPACK => "texture-packs/",
+                Self::SHADER => "shaders/",
+                Self::WORLD => "worlds/",
+                _ => return None,
+            })
+        }
+    }
 
 
     impl From<ForgeClient> for Client {
@@ -227,9 +265,14 @@ mod from {
         }
     }
 
-    impl From<curseforge::models::Mod> for Project {
-        fn from(value: curseforge::models::Mod) -> Self {
-            Self {
+    impl TryFrom<curseforge::models::Mod> for Project {
+        type Error = crate::Error;
+
+        fn try_from(value: curseforge::models::Mod) -> crate::Result<Self> {
+            if value.game_id != MINECRAFT_GAME_ID {
+                return Err(ErrorKind::Incompatible.into());
+            }
+            Ok(Self {
                 id: ProjectId::Forge(value.id),
                 name: value.name,
                 website: proj_website(value.class_id, &value.slug),
@@ -243,31 +286,13 @@ mod from {
                 license: None,
                 downloads: value.download_count,
                 source_url: Some(value.links.source_url),
-            }
+                project_type: value
+                    .class_id
+                    .map(ClassId)
+                    .and_then(ClassId::to_project_type)
+                    .ok_or(ErrorKind::Incompatible)?,
+            })
         }
-    }
-
-    macro_rules! try_from {
-        ($($ty:ty = $val:path),* $(,)?) => {$(
-            impl TryFrom<curseforge::models::Mod> for $ty {
-                type Error = crate::Error;
-                fn try_from(value: curseforge::models::Mod) -> Result<Self, Self::Error> {
-                    if value.game_id != MINECRAFT_GAME_ID {
-                        return Err(ErrorKind::Incompatible)?;
-                    }
-
-                    if value.class_id != Some($val) {
-                        return Err(ErrorKind::WrongType(stringify!($ty)))?;
-                    }
-
-                    Ok(Self(value.into()))
-                }
-            }
-        )*};
-    }
-    try_from! {
-        Mod = MOD_CLASS_ID,
-        Modpack = MODPACK_CLASS_ID,
     }
 
     impl From<ModLoader> for ModLoaderType {
@@ -310,7 +335,7 @@ mod from {
                     .file_name
                     .try_into()
                     .expect("Curseforge API should always return a proper relative file"),
-                length: file.file_length as _,
+                length: file.file_length,
                 date: file.file_date,
                 sha1: file.hashes.into_iter().find(|h| matches!(h.algo, HashAlgo::Sha1)).map(|h| h.value),
                 deps: file.dependencies.into_iter().map(Into::into).collect(),
@@ -358,27 +383,10 @@ mod from {
 
     fn proj_website(class_id: Option<u64>, slug: &str) -> Option<Url> {
         class_id
-            .and_then(class_slug)
+            .map(ClassId)
+            .and_then(ClassId::class_slug)
             .and_then(|class| HOME.join(class).ok())
             .and_then(|url| url.join(slug).ok())
-    }
-
-    /// Values taken from the api as of 2024-06
-    const fn class_slug(cid: u64) -> Option<&'static str> {
-        // NOTE: No leading slash, and trailing slash are required for url joining to
-        // work properly
-        Some(match cid {
-            5 => "bukkit-plugins/",
-            6 => "mc-mods/",
-            12 => "texture-packs/",
-            17 => "worlds/",
-            4471 => "modpacks/",
-            4546 => "customization/",
-            4559 => "mc-addons/",
-            6552 => "shaders/",
-            6945 => "data-packs/",
-            _ => return None,
-        })
     }
 
 
@@ -392,21 +400,8 @@ mod from {
         }
 
         #[test]
-        fn proj_website_mod() {
-            const EXPECTED: &str = "/mc-mods/test";
-
-            let site = proj_website(Some(MOD_CLASS_ID), "test").expect("should produce a valid url");
-            let path = site.path();
-            assert_eq!(&path[path.len() - EXPECTED.len()..], EXPECTED);
-        }
-
-        #[test]
-        fn proj_website_pack() {
-            const EXPECTED: &str = "/modpacks/test";
-
-            let site = proj_website(Some(MODPACK_CLASS_ID), "test").expect("should produce a valid url");
-            let path = site.path();
-            assert_eq!(&path[path.len() - EXPECTED.len()..], EXPECTED);
+        fn proj_website_unknown() {
+            assert_eq!(proj_website(Some(u64::MAX), "test"), None);
         }
     }
 }

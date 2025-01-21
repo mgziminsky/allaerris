@@ -14,10 +14,9 @@ const ID_STYLE: Style = Style::new().bright().bold();
 const PREV_STYLE: Style = Style::new().bright_red().italic().strike();
 
 macro_rules! mods {
-    ($profile:expr) => {{
-        let data = $profile.data_mut().await?;
-        data.mods.iter_mut().chain(data.modpack.as_mut().map(|mp| &mut mp.info))
-    }};
+    ($profile:expr) => {
+        $profile.data_mut().await?.mods.iter_mut()
+    };
 }
 macro_rules! take_else_cont {
     ($id:expr, $mods:expr $(, $else:expr)?$(,)?) => {{

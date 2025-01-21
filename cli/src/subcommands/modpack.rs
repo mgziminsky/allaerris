@@ -78,7 +78,7 @@ async fn add(id: String, data: &mut ProfileData, install_overrides: Option<bool>
         bail!("Modpack update cancelled");
     }
 
-    let pack = client.get_modpack(&id).await?;
+    let pack = client.get_project(&id).await?;
     let install_overrides = prompt_overrides(install_overrides, true)?;
     data.modpack.replace(Modpack::new(pack, install_overrides));
 

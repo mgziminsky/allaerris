@@ -123,7 +123,7 @@ impl Profile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::client::schema::ProjectId;
+    use crate::client::schema::{ProjectId, ProjectType};
 
     #[test]
     fn save_sort() {
@@ -133,24 +133,28 @@ mod tests {
                 slug: "test-3".to_owned(),
                 name: "Test 3".to_owned(),
                 exclude: false,
+                project_type: ProjectType::Mod,
             },
             Mod {
                 id: ProjectId::Forge(1).into(),
                 slug: "test-1".to_owned(),
                 name: "test 1".to_owned(),
                 exclude: false,
+                project_type: ProjectType::ModPack,
             },
             Mod {
                 id: ProjectId::Forge(2).into(),
                 slug: "test-2".to_owned(),
                 name: "Test 2".to_owned(),
                 exclude: false,
+                project_type: ProjectType::Shader,
             },
             Mod {
                 id: ProjectId::Forge(0).into(),
                 slug: "test-0".to_owned(),
                 name: "test 0".to_owned(),
                 exclude: false,
+                project_type: ProjectType::DataPack,
             },
         ];
         let sorted = {

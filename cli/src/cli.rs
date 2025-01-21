@@ -187,8 +187,8 @@ pub enum MgmtCommand {
         apply: bool,
     },
 
-    /// Attempt to lookup all unknown files non-recursively in the profile mods
-    /// folder and prompt adding them to the profile
+    /// Attempt to lookup all unknown files non-recursively in the profile
+    /// folders and prompt adding them to the profile
     Scan {
         /// Check all files, even if they are already known to be in the profile
         #[arg(long, short)]

@@ -37,12 +37,14 @@ pub const TICK_YELLOW: Painted<&str> = Painted::new(TICK).yellow();
 
 pub static THEME: LazyLock<ColorfulTheme> = LazyLock::new(Default::default);
 pub static PROG_BYTES: LazyLock<ProgressStyle> = LazyLock::new(|| {
+    #[allow(clippy::literal_string_with_formatting_args)]
     ProgressStyle::with_template(
         "{spinner} {msg:50!} {eta:>3.bold.yellow} {wide_bar:.cyan/blue} [{bytes_per_sec:.green} | {bytes:.cyan} / {total_bytes:.blue}]",
     )
     .expect("template should be valid")
 });
 pub static PROG_DONE: LazyLock<ProgressStyle> = LazyLock::new(|| {
+    #[allow(clippy::literal_string_with_formatting_args)]
     ProgressStyle::with_template("{prefix:.bold} {bytes:>10.cyan} {elapsed:>3.yellow} {msg}").expect("template should be valid")
 });
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, ops::Deref, sync::LazyLock};
+use std::{collections::HashMap, sync::LazyLock};
 
 use anyhow::{Context, Result};
 use ferrallay::{
@@ -37,7 +37,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
 
     let data = profile.data().await?;
     let mut projects = client
-        .get_mods(&data.mods.iter().map(Mod::project).map(|id| id as _).collect::<Vec<_>>())
+        .get_projects(&data.mods.iter().map(Mod::project).map(|id| id as _).collect::<Vec<_>>())
         .await
         .context("Failed to load mod details")?;
 
@@ -106,7 +106,7 @@ pub async fn verbose(client: &Client, profile: &Profile, markdown: bool) -> Resu
 
     let print = if markdown { print_project_markdown } else { print_project_verbose };
 
-    projects.iter().map(Deref::deref).for_each(print);
+    projects.iter().for_each(print);
 
     Ok(())
 }

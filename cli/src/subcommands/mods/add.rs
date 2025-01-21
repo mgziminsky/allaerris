@@ -12,12 +12,12 @@ use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
 pub async fn add(client: &Client, profile: &mut ProfileData, ids: Vec<String>, exclude: bool) -> Result<usize> {
     eprintln!("Fetching mod information...");
     let mods = if ids.len() == 1 {
-        let m = client.get_mod(&ids[0]).await?;
+        let m = client.get_project(&ids[0]).await?;
         println!("{} {}", TICK_GREEN, m.name.bold());
         vec![m]
     } else {
         let ids = ids.iter().map(|id| id as _).collect::<Vec<_>>();
-        let mods = client.get_mods(&ids).await?;
+        let mods = client.get_projects(&ids).await?;
         println!("{} {}/{} mods found", TICK_GREEN, mods.len().bright_blue(), ids.len().blue());
         mods
     }

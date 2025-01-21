@@ -2,18 +2,18 @@ use std::collections::{HashMap, HashSet};
 
 use crate::{
     checked_types::PathScoped,
-    client::schema::Version,
+    client::schema::{ProjectType, Version},
     config::Profile,
     mgmt::{events::EventSouce, lockfile::LockFile},
     Client, ProfileManager, Result,
 };
 
 impl ProfileManager {
-    /// Lookup all unknown files non-recursively in the profile mods folder. If
+    /// Lookup all unknown files non-recursively in the profile folder. If
     /// `all` is `true`, check all files, otherwise only check files that aren't
     /// already in `profile`
     #[allow(clippy::missing_panics_doc)]
-    pub async fn scan(&self, client: &Client, profile: &Profile, all: bool) -> Result<HashMap<PathScoped, Version>> {
+    pub async fn scan(&self, client: &Client, profile: &Profile, typ: ProjectType, all: bool) -> Result<HashMap<PathScoped, Version>> {
         let profile_path = profile.path();
         let locked = if all {
             HashSet::new()
@@ -26,7 +26,7 @@ impl ProfileManager {
                 .collect()
         };
 
-        let mut files = tokio::fs::read_dir(profile_path.join("mods")).await?;
+        let mut files = tokio::fs::read_dir(profile_path.join(typ.install_dir())).await?;
         let mut paths = vec![];
         while let Some(entry) = files.next_entry().await.transpose() {
             match entry {

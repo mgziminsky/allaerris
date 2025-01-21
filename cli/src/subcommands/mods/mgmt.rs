@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::mpsc};
 use anyhow::{bail, Result};
 use dialoguer::MultiSelect;
 use ferrallay::{
+    client::schema::ProjectType,
     config::{Mod, ModLoader, Profile, ProjectWithVersion},
     mgmt::{
         events::{DownloadId, DownloadProgress, ProgressEvent},
@@ -50,7 +51,7 @@ pub async fn process(command: MgmtCommand, client: &Client, profile: &mut Profil
                 }
             },
             Scan { all, lock } => {
-                scan(manager, client, profile, all, lock).await?;
+                scan_all(&manager, client, profile, all, lock).await?;
             },
             Server(subcommand) => match subcommand {
                 ServerSubcommand::Install {
@@ -107,19 +108,43 @@ async fn update(manager: &ProfileManager, profile: &Profile, client: &Client, id
                 up.to.1.display().bold().blue(),
             );
         }
-    };
+    }
     Ok(())
 }
 
-async fn scan(manager: ProfileManager, client: &Client, profile: &mut Profile, all: bool, lock: bool) -> Result<()> {
-    let found = manager.scan(client, profile, all).await?.into_iter().collect::<Vec<_>>();
-    if found.is_empty() {
-        println!("All mod files are already present in profile");
-        return Ok(());
+async fn scan_all(manager: &ProfileManager, client: &Client, profile: &mut Profile, all: bool, lock: bool) -> Result<()> {
+    const TYPES: [ProjectType; 4] = [
+        ProjectType::Mod,
+        ProjectType::ResourcePack,
+        ProjectType::DataPack,
+        ProjectType::Shader,
+    ];
+    let mut found = vec![];
+    for typ in TYPES {
+        found.extend(scan(manager, client, profile, typ, all, lock).await?);
     }
+    let new = super::add::add_mods(profile.data_mut().await?, &found);
+    if new > 0 {
+        profile.save().await?;
+    }
+    Ok(())
+}
 
+async fn scan(
+    manager: &ProfileManager,
+    client: &Client,
+    profile: &mut Profile,
+    typ: ProjectType,
+    all: bool,
+    lock: bool,
+) -> Result<Vec<Mod>> {
+    let found = manager.scan(client, profile, typ, all).await?.into_iter().collect::<Vec<_>>();
+    if found.is_empty() {
+        println!("All `{}` files are already present in profile", typ.install_dir());
+        return Ok(vec![]);
+    }
     let selection = MultiSelect::new()
-        .with_prompt("Select mods to add to profile")
+        .with_prompt("Select which mods to add to profile")
         .report(false)
         .items_checked(
             &found
@@ -137,10 +162,11 @@ async fn scan(manager: ProfileManager, client: &Client, profile: &mut Profile, a
                 })
                 .collect::<Vec<_>>(),
         )
-        .interact_opt()?;
-    if let Some(selected) = selection {
+        .interact_opt()?
+        .unwrap_or_default();
+    Ok({
         let mut found = found;
-        let mods = selected
+        selection
             .into_iter()
             .rev()
             .map(|i| found.swap_remove(i).1)
@@ -149,14 +175,10 @@ async fn scan(manager: ProfileManager, client: &Client, profile: &mut Profile, a
                 slug: String::new(),
                 name: format!("[SCANNED] {}", v.title),
                 exclude: false,
+                project_type: typ,
             })
-            .collect::<Vec<_>>();
-        let new = super::add::add_mods(profile.data_mut().await?, mods.iter());
-        if new > 0 {
-            profile.save().await?;
-        }
-    }
-    Ok(())
+            .collect::<Vec<_>>()
+    })
 }
 
 fn prompt_apply() -> bool {

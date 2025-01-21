@@ -14,7 +14,7 @@ use modrinth::{
 
 use super::{
     common::{self, compute_lookup_hashes},
-    schema::{GameVersion, Mod, Modpack, ProjectIdSvcType, Version, VersionIdSvcType},
+    schema::{GameVersion, Project, ProjectIdSvcType, Version, VersionIdSvcType},
     ApiOps, ModrinthClient,
 };
 use crate::{
@@ -27,15 +27,11 @@ use crate::{
 impl ApiOps for ModrinthClient {
     common::get_latest!();
 
-    async fn get_mod(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Mod> {
-        fetch_project(self, id.get_modrinth()?).await?.try_into()
+    async fn get_project(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Project> {
+        fetch_project(self, id.get_modrinth()?).await.map(Into::into)
     }
 
-    async fn get_modpack(&self, id: &(impl ProjectIdSvcType + ?Sized)) -> Result<Modpack> {
-        fetch_project(self, id.get_modrinth()?).await?.try_into()
-    }
-
-    async fn get_mods(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Mod>> {
+    async fn get_projects(&self, ids: &[&dyn ProjectIdSvcType]) -> Result<Vec<Project>> {
         let ids: &Vec<_> = &ids.iter().filter_map(|id| id.get_modrinth().ok()).collect();
         if ids.is_empty() {
             return Ok(vec![]);
@@ -45,7 +41,7 @@ impl ApiOps for ModrinthClient {
             .get_projects(&GetProjectsParams { ids })
             .await?
             .into_iter()
-            .filter_map(|p| p.try_into().ok())
+            .map(Into::into)
             .collect();
 
         Ok(projects)
@@ -235,6 +231,7 @@ mod from {
                     .ok(),
                 slug: project.slug,
                 description: project.description,
+                project_type: project.project_type.into(),
                 created: Some(project.published),
                 updated: Some(project.updated),
                 icon: project.icon_url,
@@ -248,25 +245,6 @@ mod from {
                 source_url: project.source_url,
             }
         }
-    }
-
-    macro_rules! try_from {
-        ($($ty:ident),*$(,)?) => {$(
-            impl TryFrom<ApiProject> for schema::$ty {
-                type Error = crate::Error;
-                fn try_from(project: ApiProject) -> Result<Self, Self::Error> {
-                    if let ProjectType::$ty = project.project_type {
-                        Ok(Self(project.into()))
-                    } else {
-                        Err(ErrorKind::WrongType(stringify!($ty)))?
-                    }
-                }
-            }
-        )*};
-    }
-    try_from! {
-        Mod,
-        Modpack,
     }
 
     impl From<ApiVersion> for schema::Version {
@@ -346,6 +324,16 @@ mod from {
         }
     }
 
+    impl From<ProjectType> for schema::ProjectType {
+        fn from(typ: ProjectType) -> Self {
+            match typ {
+                ProjectType::Mod => Self::Mod,
+                ProjectType::Modpack => Self::ModPack,
+                ProjectType::Resourcepack => Self::ResourcePack,
+                ProjectType::Shader => Self::Shader,
+            }
+        }
+    }
 
     const fn proj_type_path(ty: ProjectType) -> &'static str {
         // Trailing slash is necessary for Url::join
