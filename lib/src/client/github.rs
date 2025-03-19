@@ -95,7 +95,7 @@ impl ApiOps for GithubClient {
                 filter.iter().all(|f| a.name.contains(f))
                     && check_ext!(".jar" || ".zip" || ".mrpack")
                     && !a.name.ends_with("-sources.jar")
-                    && !a.label.as_ref().is_some_and(|l| l == "Source code")
+                    && a.label.as_ref().is_none_or(|l| l != "Source code")
             };
 
             let files = this

@@ -1,9 +1,9 @@
 [workspace]
-resolver = "2"
+resolver = "3"
 members = ["cli", "lib", "*-client"]
 
 [workspace.package]
-edition = "2021"
+edition = "2024"
 repository = "https://github.com/mgziminsky/allaerris"
 
 [workspace.dependencies]

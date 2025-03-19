@@ -119,7 +119,7 @@ pub fn id_tag(id: &ProjectId) -> String {
     match id {
         ProjectId::Forge(id) => format!("{CF} {id}"),
         ProjectId::Modrinth(id) => format!("{MR} {id}"),
-        ProjectId::Github((ref own, ref repo)) => format!("{GH} {own}/{repo}"),
+        ProjectId::Github((own, repo)) => format!("{GH} {own}/{repo}"),
     }
 }
 pub fn vid_tag(id: &VersionId) -> String {

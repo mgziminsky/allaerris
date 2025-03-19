@@ -25,18 +25,13 @@ pub fn pick_folder(default: impl AsRef<Path>, prompt: &str) -> PathBuf {
 
     // Replace a leading ~ with the home dir
     let mut parts = path.components();
-    let path = parts
+
+    parts
         .next()
         .map(
             |part| {
-                if part.as_os_str() == "~" {
-                    HOME.as_path()
-                } else {
-                    part.as_os_str().as_ref()
-                }
+                if part.as_os_str() == "~" { HOME.as_path() } else { part.as_os_str().as_ref() }
             },
         )
-        .map_or_else(PathBuf::new, |p| p.join(parts.as_path()));
-
-    path
+        .map_or_else(PathBuf::new, |p| p.join(parts.as_path()))
 }

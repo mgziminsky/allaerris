@@ -17,7 +17,7 @@ pub async fn process(subcommand: ModpackSubcommand, profile: &mut Profile, clien
     match subcommand {
         ModpackSubcommand::Info => {
             let pack = &profile.data().await?.modpack;
-            if let Some(ref pack) = pack {
+            if let Some(pack) = pack {
                 print_pack(pack);
             }
             return Ok(());

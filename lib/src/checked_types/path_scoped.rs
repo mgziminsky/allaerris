@@ -119,8 +119,10 @@ impl PathScopedRef {
     /// Private to ensure only created from a valid path
     unsafe fn cast<P: AsRef<Path> + ?Sized>(s: &P) -> &Self {
         // Copied from Path::new
-        #[allow(clippy::ref_as_ptr)]
-        &*(s.as_ref() as *const Path as *const Self)
+        unsafe {
+            #[allow(clippy::ref_as_ptr)]
+            &*(s.as_ref() as *const Path as *const Self)
+        }
     }
 
     /// Creates a [`PathScopedRef`] directly referencing `path` without
@@ -219,11 +221,7 @@ fn check_scope(path: &Path) -> Result<i32, PathScopeError> {
                 Normal(_) => 1,
                 RootDir | Prefix(_) => return Err(PathScopeError::NonRelative),
             };
-        if depth < 0 {
-            Err(PathScopeError::Scoping(path.into()))
-        } else {
-            Ok(depth)
-        }
+        if depth < 0 { Err(PathScopeError::Scoping(path.into())) } else { Ok(depth) }
     })
 }
 
