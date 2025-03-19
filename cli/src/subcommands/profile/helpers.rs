@@ -4,12 +4,12 @@ use anyhow::{Context, Result};
 use dialoguer::{Input, Select};
 use ferrallay::{
     checked_types::PathAbsolute,
-    config::{profile::DEFAULT_GAME_VERSION, ModLoader, Profile},
+    config::{ModLoader, Profile, profile::DEFAULT_GAME_VERSION},
 };
 use tokio::sync::OnceCell;
 use yansi::Paint;
 
-use crate::tui::{const_style, fmt_profile_simple, THEME};
+use crate::tui::{THEME, const_style, fmt_profile_simple};
 
 static MC_VERSIONS: OnceCell<Vec<String>> = OnceCell::const_new();
 

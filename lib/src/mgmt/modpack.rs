@@ -6,9 +6,9 @@ use std::{cell::LazyCell, collections::HashMap, io::Read, path::Path};
 
 use ::modrinth::{
     apis::version_files_api::VersionsFromHashesParams,
-    models::{hash_list::Algorithm, HashList},
+    models::{HashList, hash_list::Algorithm},
 };
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use tokio::fs::File;
 use zip::ZipArchive;
 
@@ -18,10 +18,10 @@ use self::{
 };
 use super::{cache, events::EventSouce, version::VersionSet};
 use crate::{
+    Client, ErrorKind, ProfileManager, Result,
     checked_types::{PathScoped, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
-    config::{profile::ProfileData, ModLoader, VersionedProject},
-    Client, ErrorKind, ProfileManager, Result,
+    config::{ModLoader, VersionedProject, profile::ProfileData},
 };
 
 type PackArchive = ZipArchive<std::fs::File>;

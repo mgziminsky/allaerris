@@ -1,6 +1,6 @@
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use reqwest::Client;
 use serde::Deserialize;
 use url::Url;

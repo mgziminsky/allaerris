@@ -1,11 +1,11 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
+    Client, ProfileManager, Result,
     checked_types::PathScoped,
     client::schema::{ProjectType, Version},
     config::Profile,
     mgmt::{events::EventSouce, lockfile::LockFile},
-    Client, ProfileManager, Result,
 };
 
 impl ProfileManager {

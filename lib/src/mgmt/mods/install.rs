@@ -8,24 +8,23 @@ use std::{
     sync::{Arc, LazyLock},
 };
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use async_scoped::TokioScope;
 use itertools::Itertools;
 
 use crate::{
+    Client, ErrorKind, Result, StdResult,
     checked_types::{PathAbsolute, PathScoped, PathScopedRef},
     client::schema::{ProjectId, Version, VersionId},
-    config::{profile::ProfileData, Mod, Profile, VersionedProject},
-    hash::{verify_sha1, verify_sha1_sync, Sha1Writer},
+    config::{Mod, Profile, VersionedProject, profile::ProfileData},
+    hash::{Sha1Writer, verify_sha1, verify_sha1_sync},
     mgmt::{
-        cache,
+        ProfileManager, cache,
         events::{EventSouce, InstallType, ProgressEvent},
         lockfile::{LockFile, LockedMod, LockedPack, PathHashes},
-        modpack::{modrinth::IndexFile, ModpackData},
+        modpack::{ModpackData, modrinth::IndexFile},
         version::VersionSet,
-        ProfileManager,
     },
-    Client, ErrorKind, Result, StdResult,
 };
 
 type Downloads = Vec<StdResult<Option<(Version, PathAbsolute)>, tokio::task::JoinError>>;

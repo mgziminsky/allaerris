@@ -1,10 +1,10 @@
-use serde::{de, ser::SerializeStruct, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de, ser::SerializeStruct};
 use serde_value::ValueVisitor;
 use thiserror::Error;
 
 use crate::{
-    client::schema::{ProjectId, VersionId},
     StdResult,
+    client::schema::{ProjectId, VersionId},
 };
 
 
@@ -182,7 +182,7 @@ impl<'de> Deserialize<'de> for ProjectWithVersion {
 #[cfg(test)]
 mod tests {
     use github::models::AssetId;
-    use serde_test::{assert_tokens, Token::*};
+    use serde_test::{Token::*, assert_tokens};
 
     use super::*;
 

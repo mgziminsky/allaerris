@@ -49,15 +49,5 @@ pub async fn install(
         cmd
     })
     .await
-    .map(|()| {
-        install_dir.join(
-            const {
-                if cfg!(windows) {
-                    "run.bat"
-                } else {
-                    "run.sh"
-                }
-            },
-        )
-    })
+    .map(|()| install_dir.join(const { if cfg!(windows) { "run.bat" } else { "run.sh" } }))
 }

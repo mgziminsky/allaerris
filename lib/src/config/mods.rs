@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{project_with_version::VersionedProject, ProjectWithVersion};
+use super::{ProjectWithVersion, project_with_version::VersionedProject};
 use crate::client::schema::{Project, ProjectId, ProjectType, VersionId};
 
 /// The basic data needed to lookup and install a particular mod from one of the

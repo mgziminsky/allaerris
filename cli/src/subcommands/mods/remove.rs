@@ -1,6 +1,6 @@
 use anyhow::Result;
 use dialoguer::MultiSelect;
-use ferrallay::config::{profile::ProfileData, Mod};
+use ferrallay::config::{Mod, profile::ProfileData};
 
 use crate::tui::mod_single_line;
 

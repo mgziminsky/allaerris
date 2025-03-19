@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::anyhow;
-use sha1::{digest::Output, Digest, Sha1};
+use sha1::{Digest, Sha1, digest::Output};
 
 use crate::Result;
 

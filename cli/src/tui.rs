@@ -50,20 +50,12 @@ pub static PROG_DONE: LazyLock<ProgressStyle> = LazyLock::new(|| {
 
 macro_rules! min {
     ($a:expr, $b:expr) => {
-        if $a < $b {
-            $a
-        } else {
-            $b
-        }
+        if $a < $b { $a } else { $b }
     };
 }
 macro_rules! max {
     ($a:expr, $b:expr) => {
-        if $a > $b {
-            $a
-        } else {
-            $b
-        }
+        if $a > $b { $a } else { $b }
     };
 }
 pub(crate) const fn ellipsis_mid(len: usize, max: usize) -> Range<usize> {
@@ -290,11 +282,7 @@ const fn prop_widths(a: usize, b: usize, max: usize) -> (usize, usize) {
     let short = max * short / total;
     let long = (max * long).div_ceil(total);
 
-    if a < b {
-        (short, long)
-    } else {
-        (long, short)
-    }
+    if a < b { (short, long) } else { (long, short) }
 }
 
 // Compile time tests of the `prop_widths` fn

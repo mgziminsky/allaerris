@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use anyhow::{bail, Context, Ok, Result};
+use anyhow::{Context, Ok, Result, bail};
 use dialoguer::{Confirm, Input};
 use ferrallay::{
-    checked_types::PathAbsolute,
-    config::{profile::ProfileData, ModLoader, Profile},
     Config, DEFAULT_MINECRAFT_DIR,
+    checked_types::PathAbsolute,
+    config::{ModLoader, Profile, profile::ProfileData},
 };
 use yansi::Paint;
 

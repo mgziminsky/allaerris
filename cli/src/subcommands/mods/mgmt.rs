@@ -1,15 +1,15 @@
 use std::{collections::HashMap, sync::mpsc};
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use dialoguer::MultiSelect;
 use ferrallay::{
+    Client, ProfileManager,
     client::schema::ProjectType,
     config::{Mod, ModLoader, Profile, ProjectWithVersion},
     mgmt::{
         events::{DownloadId, DownloadProgress, ProgressEvent},
         server::Version,
     },
-    Client, ProfileManager,
 };
 use indicatif::{MultiProgress, ProgressBar};
 use yansi::Paint;
@@ -18,7 +18,7 @@ use crate::{
     cli::{MgmtCommand, ServerSubcommand},
     consts,
     helpers::path_profile,
-    tui::{const_style, ellipsize, id_tag, CROSS_RED, PROG_BYTES, PROG_DONE, THEME, TICK_GREEN, TICK_YELLOW},
+    tui::{CROSS_RED, PROG_BYTES, PROG_DONE, THEME, TICK_GREEN, TICK_YELLOW, const_style, ellipsize, id_tag},
 };
 
 
@@ -97,7 +97,11 @@ async fn update(manager: &ProfileManager, profile: &Profile, client: &Client, id
     if updates.is_empty() {
         println!("Profile is up to date");
     } else {
-        let (tick, label) = if revert { (TICK_YELLOW, "Reverted") } else { (TICK_GREEN, "Updated") };
+        let (tick, label) = if revert {
+            (TICK_YELLOW, "Reverted")
+        } else {
+            (TICK_GREEN, "Updated")
+        };
         for up in updates {
             println!(
                 "{tick} {label} {} from version {} -> {}\n\t{} -> {}",

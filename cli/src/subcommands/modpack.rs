@@ -1,14 +1,14 @@
-use anyhow::{anyhow, bail, Ok, Result};
+use anyhow::{Ok, Result, anyhow, bail};
 use dialoguer::Confirm;
 use ferrallay::{
-    config::{profile::ProfileData, Modpack, Profile},
     Client,
+    config::{Modpack, Profile, profile::ProfileData},
 };
 use yansi::Paint;
 
 use crate::{
     cli::ModpackSubcommand,
-    tui::{mod_single_line, CROSS_RED, THEME, TICK_GREEN},
+    tui::{CROSS_RED, THEME, TICK_GREEN, mod_single_line},
 };
 
 const MSG_NO_PACK: &str = "No modpack on active profile";

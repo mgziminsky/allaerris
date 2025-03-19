@@ -6,9 +6,9 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    PathAbsolute, Result, StdResult,
     config::{Mod, ModLoader, Modpack, VersionedProject},
     fs_util::{FsUtil, FsUtils},
-    PathAbsolute, Result, StdResult,
 };
 
 

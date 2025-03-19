@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
 use crate::{
+    Client, ProfileManager, Result,
     checked_types::PathScoped,
     client::schema::{ProjectId, ProjectIdSvcType, VersionId},
-    config::{profile::ProfileData, Profile, VersionedProject},
+    config::{Profile, VersionedProject, profile::ProfileData},
     mgmt::lockfile::{LockFile, LockedMod, LockedPack},
-    Client, ProfileManager, Result,
 };
 
 

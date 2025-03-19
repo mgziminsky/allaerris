@@ -16,7 +16,7 @@ use std::{
 
 use self::schema::{GameVersion, Project, ProjectIdSvcType, Version, VersionIdSvcType};
 pub use self::service_id::ServiceId;
-use crate::{config::ModLoader, mgmt::LockedMod, Result};
+use crate::{Result, config::ModLoader, mgmt::LockedMod};
 
 #[rustfmt::skip]
 mod exported {

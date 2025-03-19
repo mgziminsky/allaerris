@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, ValueHint};
 use clap_complete::Shell;
-use ferrallay::{config::ModLoader, DEFAULT_MINECRAFT_DIR};
+use ferrallay::{DEFAULT_MINECRAFT_DIR, config::ModLoader};
 
 #[derive(Parser)]
 #[command(author, version, about)]

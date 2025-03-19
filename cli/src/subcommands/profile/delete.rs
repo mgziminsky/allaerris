@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
-use anyhow::{bail, Result};
-use ferrallay::{config::Profile, Config};
+use anyhow::{Result, bail};
+use ferrallay::{Config, config::Profile};
 
 use super::helpers::pick_profile;
 use crate::subcommands::profile::switch_profile;

@@ -2,9 +2,9 @@ use std::{collections::HashSet, fmt::Display};
 
 use anyhow::Result;
 use ferrallay::{
+    Client,
     client::schema::{ProjectIdSvcType, VersionIdSvcType},
     config::{Mod, Profile, VersionedProject},
-    Client,
 };
 use yansi::{Paint, Style};
 

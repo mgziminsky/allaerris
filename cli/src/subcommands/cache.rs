@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, fs};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use ferrallay::mgmt::CACHE_DIR;
 use walkdir::WalkDir;
 use yansi::Paint;

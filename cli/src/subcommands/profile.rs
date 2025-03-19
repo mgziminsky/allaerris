@@ -3,11 +3,11 @@ mod create;
 mod delete;
 mod helpers;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use ferrallay::{
-    checked_types::PathAbsolute,
-    config::{profile::ProfileData, Profile},
     Config,
+    checked_types::PathAbsolute,
+    config::{Profile, profile::ProfileData},
 };
 use yansi::Paint;
 

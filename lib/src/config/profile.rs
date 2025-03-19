@@ -8,7 +8,7 @@ use tokio::sync::OnceCell;
 
 pub(super) use self::by_path::ProfileByPath;
 pub use self::data::*;
-use crate::{config::Mod, ErrorKind, PathAbsolute, Result};
+use crate::{ErrorKind, PathAbsolute, Result, config::Mod};
 
 fn name_lowercase(m: &Mod) -> String {
     m.name.to_lowercase()

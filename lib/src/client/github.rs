@@ -9,14 +9,13 @@ use async_scoped::TokioScope;
 use github::models::repos::Asset;
 
 use super::{
-    common,
+    ApiOps, GithubClient, common,
     schema::{GameVersion, Project, ProjectId, ProjectIdSvcType, Version, VersionId, VersionIdSvcType},
-    ApiOps, GithubClient,
 };
 use crate::{
+    ErrorKind, Result,
     config::{ModLoader, VersionedProject},
     mgmt::LockedMod,
-    ErrorKind, Result,
 };
 
 impl ApiOps for GithubClient {
@@ -181,12 +180,12 @@ mod from {
     use reqwest::StatusCode;
 
     use crate::{
+        ErrorKind,
         client::{
-            schema::{self, Project, ProjectId, ProjectType},
             Client, ClientInner, GithubClient,
+            schema::{self, Project, ProjectId, ProjectType},
         },
         github::models::Repository,
-        ErrorKind,
     };
 
     impl From<GithubClient> for Client {

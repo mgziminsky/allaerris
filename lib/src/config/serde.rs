@@ -1,4 +1,4 @@
-use serde::{de::Visitor, ser::SerializeMap, Deserializer, Serializer};
+use serde::{Deserializer, Serializer, de::Visitor, ser::SerializeMap};
 
 /// SerDe a list of profiles as a map of `path` => `name` pairs
 pub(super) mod profiles {

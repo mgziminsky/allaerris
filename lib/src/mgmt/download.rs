@@ -1,18 +1,18 @@
 use std::{borrow::Cow, convert::identity, path::Path};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 use sha1::{Digest, Sha1};
 use tokio::{fs::File, io::AsyncWriteExt};
 use url::Url;
 
 use crate::{
+    ErrorKind, Result,
     client::schema::Version,
     hash::{hex_decode, verify_sha1},
     mgmt::{
-        events::{DownloadId, DownloadProgress, EventSouce},
         ProfileManager,
+        events::{DownloadId, DownloadProgress, EventSouce},
     },
-    ErrorKind, Result,
 };
 
 pub trait Downloadable: Sync {

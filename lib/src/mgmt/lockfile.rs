@@ -7,11 +7,11 @@ use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    Result, StdResult,
     checked_types::PathScoped,
     client::schema::{self, ProjectId, VersionId},
-    config::{profile, ModLoader, Profile, ProjectWithVersion, VersionedProject},
+    config::{ModLoader, Profile, ProjectWithVersion, VersionedProject, profile},
     fs_util::{FsUtil, FsUtils},
-    Result, StdResult,
 };
 
 crate::cow::cow!(LockedMod);

@@ -14,16 +14,16 @@ use curseforge::{
 };
 
 use super::{
+    ApiOps, ForgeClient,
     common::{self, compute_lookup_hashes},
     schema::{GameVersion, Project, ProjectIdSvcType, Version, VersionIdSvcType},
-    ApiOps, ForgeClient,
 };
 use crate::{
+    Result,
     client::schema::{ProjectId, VersionId},
     config::{ModLoader, ProjectWithVersion, VersionedProject},
     hash,
     mgmt::LockedMod,
-    Result,
 };
 
 impl ApiOps for ForgeClient {
@@ -182,19 +182,19 @@ mod from {
     use std::sync::LazyLock;
 
     use curseforge::{
-        models::{File, FileDependency, FileRelationType, HashAlgo, MinecraftGameVersion, ModAuthor, ModLoaderType},
         Error as ApiError, ErrorResponse,
+        models::{File, FileDependency, FileRelationType, HashAlgo, MinecraftGameVersion, ModAuthor, ModLoaderType},
     };
     use reqwest::StatusCode;
     use url::Url;
 
     use crate::{
+        ErrorKind,
         client::{
-            schema::{Author, Dependency, DependencyType, GameVersion, Project, ProjectId, ProjectType, Version, VersionId},
             Client, ClientInner, ForgeClient,
+            schema::{Author, Dependency, DependencyType, GameVersion, Project, ProjectId, ProjectType, Version, VersionId},
         },
         config::ModLoader,
-        ErrorKind,
     };
 
     pub const MINECRAFT_GAME_ID: u64 = 432;

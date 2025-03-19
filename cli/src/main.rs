@@ -23,7 +23,7 @@ use yansi::Paint;
 
 use self::{
     cli::{Allaerris, ModpackSubcommand, ProfileSubcommand, Subcommand},
-    helpers::{consts, get_active_profile, path_profile, APP_NAME},
+    helpers::{APP_NAME, consts, get_active_profile, path_profile},
     subcommands::{cache, modpack, mods, profile},
     tui::const_style,
 };

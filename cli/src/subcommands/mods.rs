@@ -1,5 +1,5 @@
-use anyhow::{bail, Result};
-use ferrallay::{config::Profile, Client};
+use anyhow::{Result, bail};
+use ferrallay::{Client, config::Profile};
 use yansi::Paint;
 
 use crate::{cli::ModsSubcommand, helpers, tui::print_mods};

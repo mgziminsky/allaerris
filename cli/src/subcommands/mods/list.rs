@@ -2,10 +2,10 @@ use std::{collections::HashMap, sync::LazyLock};
 
 use anyhow::{Context, Result};
 use ferrallay::{
+    Client,
     client::schema::{Author, ProjectId, ProjectIdSvcType},
     config::{Mod, Profile, VersionedProject},
     modrinth::apis::teams_api::GetTeamsParams,
-    Client,
 };
 use yansi::Paint;
 

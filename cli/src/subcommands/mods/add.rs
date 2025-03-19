@@ -1,11 +1,11 @@
 use anyhow::Result;
 use ferrallay::{
-    config::{profile::ProfileData, Mod, VersionedProject},
     Client,
+    config::{Mod, VersionedProject, profile::ProfileData},
 };
 use yansi::Paint;
 
-use crate::tui::{mod_single_line, CROSS_RED, TICK_GREEN, TICK_YELLOW};
+use crate::tui::{CROSS_RED, TICK_GREEN, TICK_YELLOW, mod_single_line};
 
 /// Add mods with `ids` to `profile` returning the number of added/updated mods,
 /// not counting existing and unchanged mods

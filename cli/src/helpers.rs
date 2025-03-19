@@ -1,7 +1,7 @@
 use std::{borrow::Cow, ffi::OsStr, path::Path};
 
-use anyhow::{anyhow, bail, Context, Result};
-use ferrallay::config::{profile::ProfileData, Config, Profile};
+use anyhow::{Context, Result, anyhow, bail};
+use ferrallay::config::{Config, Profile, profile::ProfileData};
 use yansi::Paint;
 
 macro_rules! consts {

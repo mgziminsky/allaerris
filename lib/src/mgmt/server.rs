@@ -3,15 +3,14 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, anyhow};
 
 use super::{
-    cache,
+    ProfileManager, cache,
     download::Downloadable,
     events::{EventSouce, ProgressEvent},
-    ProfileManager,
 };
-use crate::{config::ModLoader, ErrorKind};
+use crate::{ErrorKind, config::ModLoader};
 
 mod fabric;
 mod forge;
@@ -60,7 +59,14 @@ async fn install_file(
     let install_path = install_dir.join(file);
     let cache_path = cache::server_path(loader).join(file);
     let success = mngr
-        .download(meta, if mngr.no_cache { install_path.as_ref() } else { cache_path.as_ref() })
+        .download(
+            meta,
+            if mngr.no_cache {
+                install_path.as_ref()
+            } else {
+                cache_path.as_ref()
+            },
+        )
         .await
         .is_some();
 

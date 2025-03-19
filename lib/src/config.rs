@@ -19,8 +19,8 @@ pub use self::profile::Profile;
 use self::profile::ProfileByPath;
 pub use self::{loader::*, modpack::*, mods::*, project_with_version::*};
 use crate::{
+    CONF_DIR, ErrorKind, PathAbsolute, Result, StdResult,
     fs_util::{FsUtil, FsUtils},
-    ErrorKind, PathAbsolute, Result, StdResult, CONF_DIR,
 };
 
 /// Full path to the default config file
@@ -268,7 +268,7 @@ impl From<ConfigDe> for Config {
 mod tests {
     use std::iter::zip;
 
-    use serde_test::{assert_de_tokens, assert_ser_tokens, Token};
+    use serde_test::{Token, assert_de_tokens, assert_ser_tokens};
 
     use super::*;
 

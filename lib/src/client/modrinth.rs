@@ -9,19 +9,19 @@ use modrinth::{
         version_files_api::{GetLatestVersionsFromHashesParams, VersionsFromHashesParams},
         versions_api::{GetProjectVersionsParams, GetVersionParams, GetVersionsParams},
     },
-    models::{game_version_tag::VersionType, GetLatestVersionsFromHashesBody, HashList, Project as ApiProject},
+    models::{GetLatestVersionsFromHashesBody, HashList, Project as ApiProject, game_version_tag::VersionType},
 };
 
 use super::{
+    ApiOps, ModrinthClient,
     common::{self, compute_lookup_hashes},
     schema::{GameVersion, Project, ProjectIdSvcType, Version, VersionIdSvcType},
-    ApiOps, ModrinthClient,
 };
 use crate::{
+    Result,
     config::{ModLoader, VersionedProject},
     hash::Sha1Async,
     mgmt::LockedMod,
-    Result,
 };
 
 impl ApiOps for ModrinthClient {
@@ -185,22 +185,22 @@ mod from {
     use std::{str::FromStr, sync::LazyLock};
 
     use modrinth::{
-        models::{
-            project::ProjectType, version_dependency::DependencyType as ModrinthDepType, GameVersionTag, Project as ApiProject,
-            ProjectLicense, Version as ApiVersion, VersionDependency,
-        },
         Error as ApiError, ErrorResponse,
+        models::{
+            GameVersionTag, Project as ApiProject, ProjectLicense, Version as ApiVersion, VersionDependency, project::ProjectType,
+            version_dependency::DependencyType as ModrinthDepType,
+        },
     };
     use reqwest::StatusCode;
     use url::Url;
 
     use crate::{
+        ErrorKind,
         client::{
-            schema::{self, Author, GameVersion, ProjectId, VersionId},
             Client, ClientInner, ModrinthClient,
+            schema::{self, Author, GameVersion, ProjectId, VersionId},
         },
         config::ModLoader,
-        ErrorKind,
     };
 
     static HOME: LazyLock<Url> = LazyLock::new(|| "https://modrinth.com/".parse().expect("base url should always parse successfully"));
@@ -252,11 +252,7 @@ mod from {
             let file = {
                 let len = value.files.len();
                 let mut files = value.files.into_iter();
-                if len > 1 {
-                    files.find(|f| f.primary)
-                } else {
-                    files.next()
-                }
+                if len > 1 { files.find(|f| f.primary) } else { files.next() }
             }
             .expect("Modrinth version should always have at least 1 file");
 
