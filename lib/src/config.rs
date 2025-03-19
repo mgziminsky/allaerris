@@ -20,7 +20,7 @@ use self::profile::ProfileByPath;
 pub use self::{loader::*, modpack::*, mods::*, project_with_version::*};
 use crate::{
     fs_util::{FsUtil, FsUtils},
-    ErrorKind, PathAbsolute, Result, CONF_DIR,
+    ErrorKind, PathAbsolute, Result, StdResult, CONF_DIR,
 };
 
 /// Full path to the default config file
@@ -156,7 +156,8 @@ impl Config {
     ///
     /// This function will return an error containing the passed in profile
     /// if a profile with the same path is already present in the config
-    pub fn add_profile(&mut self, profile: Profile) -> std::result::Result<(), Profile> {
+    #[allow(clippy::result_large_err)]
+    pub fn add_profile(&mut self, profile: Profile) -> StdResult<(), Profile> {
         if self.profiles.contains(&*profile.path) {
             Err(profile)
         } else {
