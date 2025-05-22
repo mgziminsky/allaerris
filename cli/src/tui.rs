@@ -149,7 +149,7 @@ pub async fn print_profile(profile: &Profile, active: bool) {
     Path:        {}
     {}
 ",
-        active.then_some("*").unwrap_or_default(),
+        if active { "*" } else { Default::default() },
         {
             let mut name = profile.name().bold();
             if active {

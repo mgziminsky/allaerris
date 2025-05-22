@@ -2,7 +2,7 @@ pub mod forge;
 pub mod modrinth;
 mod version;
 
-use std::{cell::LazyCell, collections::HashMap, io::Read, path::Path};
+use std::{cell::LazyCell, collections::HashMap, path::Path};
 
 use ::modrinth::{
     apis::version_files_api::VersionsFromHashesParams,
@@ -10,7 +10,7 @@ use ::modrinth::{
 };
 use anyhow::{Context, anyhow};
 use tokio::fs::File;
-use zip::ZipArchive;
+use zip::{ZipArchive, read::ZipFile};
 
 use self::{
     forge::ModpackManifest,
@@ -195,7 +195,7 @@ pub struct ModpackData {
 }
 
 impl ModpackData {
-    pub fn visit_overrides(&mut self, mut cb: impl FnMut(&PathScopedRef, ZipFile)) {
+    pub fn visit_overrides(&mut self, mut cb: impl FnMut(&PathScopedRef, ZipFile<'_, std::fs::File>)) {
         let zip = &mut self.archive;
         for idx in 0..zip.len() {
             let Ok(file) = zip.by_index(idx) else {
@@ -213,16 +213,7 @@ impl ModpackData {
             }
             let path = path.remove_prefix(path.iter().next().unwrap());
 
-            cb(path, ZipFile(file));
+            cb(path, file);
         }
-    }
-}
-
-/// Unit wrapper around lib `ZipFile` only exposing [`Read`] trait
-pub struct ZipFile<'a>(zip::read::ZipFile<'a>);
-impl Read for ZipFile<'_> {
-    #[inline]
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        self.0.read(buf)
     }
 }

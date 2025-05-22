@@ -4,6 +4,9 @@
         "debug_assertions",
         "miri",
     ],
+    "terminal.integrated.env.linux": {
+        "ALLAERRIS_CONFIG_FILE": "${workspaceFolder}/target/config.json"
+    },
     "terminal.integrated.env.windows": {
         "ALLAERRIS_CONFIG_FILE": "${workspaceFolder}/target/config.json"
     },

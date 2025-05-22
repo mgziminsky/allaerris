@@ -487,7 +487,7 @@ async fn merge_sources<'a>(
         use crate::mgmt::modpack::PackMods::*;
         match pack.map(|p| &mut p.mods) {
             Some(Modrinth { known, .. }) => std::mem::swap(pending, known),
-            Some(Forge(mods)) => std::mem::swap(versioned, &mut mods.iter().map(|(k, v)| (k.into(), v.into())).collect()),
+            Some(Forge(mods)) => *versioned = mods.iter().map(|(k, v)| (k.into(), v.into())).collect(),
             None => {},
         }
     }
