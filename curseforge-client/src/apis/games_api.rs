@@ -17,6 +17,7 @@ use crate::{
 
 /// struct for passing parameters to the method [`GamesApi::get_game`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetGameParams<> {
     /// A game unique id
     pub game_id: u64,
@@ -24,6 +25,7 @@ pub struct GetGameParams<> {
 
 /// struct for passing parameters to the method [`GamesApi::get_games`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetGamesParams<> {
     /// A zero based index of the first item to include in the response, the limit is: (index + pageSize <= 10,000).
     pub index: Option<u32>,
@@ -33,6 +35,7 @@ pub struct GetGamesParams<> {
 
 /// struct for passing parameters to the method [`GamesApi::get_version_types`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetVersionTypesParams<> {
     /// A game unique id
     pub game_id: u64,
@@ -40,6 +43,7 @@ pub struct GetVersionTypesParams<> {
 
 /// struct for passing parameters to the method [`GamesApi::get_versions`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetVersionsParams<> {
     /// A game unique id
     pub game_id: u64,
@@ -47,6 +51,7 @@ pub struct GetVersionsParams<> {
 
 /// struct for passing parameters to the method [`GamesApi::get_versions_v2`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetVersionsV2Params<> {
     /// A game unique id
     pub game_id: u64,
@@ -111,15 +116,12 @@ pub struct GamesApi<'c>(pub(crate) &'c crate::ApiClient);
 impl GamesApi<'_> {
     /// Get a single game. A private game is only accessible by its respective API key.
     pub async fn get_game(&self, params: &GetGameParams<>) -> Result<models::GetGameResponse> {
-        // unwrap the parameters
-        let GetGameParams { game_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/games/{gameId}"
-            , gameId=game_id
+            , gameId=params.game_id
             )
         );
 
@@ -131,41 +133,38 @@ impl GamesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetGameError::Status404,
                 500 => GetGameError::Status500,
-                _ => GetGameError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetGameError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get all games that are available to the provided API key.
     pub async fn get_games(&self, params: &GetGamesParams<>) -> Result<models::GetGamesResponse> {
-        // unwrap the parameters
-        let GetGamesParams { index, page_size, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             "/v1/games"
         );
@@ -178,52 +177,47 @@ impl GamesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        if let Some(ref index) = index {
-            local_var_req_builder = local_var_req_builder.query(&[("index", index)]);
+        if let Some(ref param_value) = params.index {
+            req_builder = req_builder.query(&[("index", &param_value)]);
+        }
+        if let Some(ref param_value) = params.page_size {
+            req_builder = req_builder.query(&[("pageSize", &param_value)]);
         }
 
-        if let Some(ref page_size) = page_size {
-            local_var_req_builder = local_var_req_builder.query(&[("pageSize", page_size)]);
-        }
+        let resp = req_builder.send().await?;
 
-        let local_var_resp = local_var_req_builder.send().await?;
+        let status = resp.status();
+        let content = resp.text().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
-
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
-            #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
-                500 => GetGamesError::Status500,
-                _ => GetGamesError::Unknown(serde_json::from_str(&local_var_content)?),
-            };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
         } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            #[allow(clippy::match_single_binding)]
+            let error = match status.as_u16() {
+                500 => GetGamesError::Status500,
+                _ => GetGamesError::Unknown(serde_json::from_str(&content)?),
+            };
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get all available version types of the specified game. A private game is only accessible to its respective API key. Currently, when creating games via the CurseForge Core Console, you are limited to a single game version type. This means that this endpoint is probably not useful in most cases and is relevant mostly when handling existing games that have multiple game versions such as World of Warcraft and Minecraft (e.g. 517 for wow_retail). 
     pub async fn get_version_types(&self, params: &GetVersionTypesParams<>) -> Result<models::GetVersionTypesResponse> {
-        // unwrap the parameters
-        let GetVersionTypesParams { game_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/games/{gameId}/version-types"
-            , gameId=game_id
+            , gameId=params.game_id
             )
         );
 
@@ -235,45 +229,42 @@ impl GamesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetVersionTypesError::Status404,
                 500 => GetVersionTypesError::Status500,
-                _ => GetVersionTypesError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetVersionTypesError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get all available versions for each known version type of the specified game. A private game is only accessible to its respective API key.
     pub async fn get_versions(&self, params: &GetVersionsParams<>) -> Result<models::GetVersionsResponse> {
-        // unwrap the parameters
-        let GetVersionsParams { game_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/games/{gameId}/versions"
-            , gameId=game_id
+            , gameId=params.game_id
             )
         );
 
@@ -285,45 +276,42 @@ impl GamesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetVersionsError::Status404,
                 500 => GetVersionsError::Status500,
-                _ => GetVersionsError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetVersionsError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get all available versions for each known version type of the specified game. A private game is only accessible to its respective API key.
     pub async fn get_versions_v2(&self, params: &GetVersionsV2Params<>) -> Result<models::GetVersionsV2Response> {
-        // unwrap the parameters
-        let GetVersionsV2Params { game_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v2/games/{gameId}/versions"
-            , gameId=game_id
+            , gameId=params.game_id
             )
         );
 
@@ -335,32 +323,32 @@ impl GamesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetVersionsV2Error::Status404,
                 500 => GetVersionsV2Error::Status500,
-                _ => GetVersionsV2Error::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetVersionsV2Error::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
 }

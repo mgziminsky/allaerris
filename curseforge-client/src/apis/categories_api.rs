@@ -17,6 +17,7 @@ use crate::{
 
 /// struct for passing parameters to the method [`CategoriesApi::get_categories`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetCategoriesParams<> {
     /// A game unique id
     pub game_id: u64,
@@ -43,11 +44,8 @@ pub struct CategoriesApi<'c>(pub(crate) &'c crate::ApiClient);
 impl CategoriesApi<'_> {
     /// Get all available classes and categories of the specified game. Specify a game id for a list of all game categories, or a class id for a list of categories under that class.
     pub async fn get_categories(&self, params: &GetCategoriesParams<>) -> Result<models::GetCategoriesResponse> {
-        // unwrap the parameters
-        let GetCategoriesParams { game_id, class_id, classes_only, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             "/v1/categories"
         );
@@ -60,42 +58,39 @@ impl CategoriesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        local_var_req_builder = local_var_req_builder.query(&[("gameId", game_id)]);
-
-        if let Some(ref class_id) = class_id {
-            local_var_req_builder = local_var_req_builder.query(&[("classId", class_id)]);
+        req_builder = req_builder.query(&[("gameId", &params.game_id)]);
+        if let Some(ref param_value) = params.class_id {
+            req_builder = req_builder.query(&[("classId", &param_value)]);
+        }
+        if let Some(ref param_value) = params.classes_only {
+            req_builder = req_builder.query(&[("classesOnly", &param_value)]);
         }
 
-        if let Some(ref classes_only) = classes_only {
-            local_var_req_builder = local_var_req_builder.query(&[("classesOnly", classes_only)]);
-        }
+        let resp = req_builder.send().await?;
 
-        let local_var_resp = local_var_req_builder.send().await?;
+        let status = resp.status();
+        let content = resp.text().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
-
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetCategoriesError::Status404,
                 500 => GetCategoriesError::Status500,
-                _ => GetCategoriesError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetCategoriesError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
 }

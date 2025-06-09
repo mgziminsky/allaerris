@@ -35,7 +35,7 @@ pub struct ApiClient {
 impl ApiClient {
     /// # PANICS (Debug)
     /// If `user_agent` is blank
-    pub const fn builder(user_agent: &str) -> Builder {
+    pub const fn builder(user_agent: &str) -> Builder<'_> {
         Builder::new(user_agent)
     }
 
@@ -45,27 +45,27 @@ impl ApiClient {
         self.client.request(method, format!("{base}{path}"))
     }
 
-    pub fn categories(&self) -> apis::CategoriesApi {
+    pub fn categories(&self) -> apis::CategoriesApi<'_> {
         apis::CategoriesApi(self)
     }
 
-    pub fn files(&self) -> apis::FilesApi {
+    pub fn files(&self) -> apis::FilesApi<'_> {
         apis::FilesApi(self)
     }
 
-    pub fn fingerprints(&self) -> apis::FingerprintsApi {
+    pub fn fingerprints(&self) -> apis::FingerprintsApi<'_> {
         apis::FingerprintsApi(self)
     }
 
-    pub fn games(&self) -> apis::GamesApi {
+    pub fn games(&self) -> apis::GamesApi<'_> {
         apis::GamesApi(self)
     }
 
-    pub fn minecraft(&self) -> apis::MinecraftApi {
+    pub fn minecraft(&self) -> apis::MinecraftApi<'_> {
         apis::MinecraftApi(self)
     }
 
-    pub fn mods(&self) -> apis::ModsApi {
+    pub fn mods(&self) -> apis::ModsApi<'_> {
         apis::ModsApi(self)
     }
 

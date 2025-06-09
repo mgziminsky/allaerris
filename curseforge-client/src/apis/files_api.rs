@@ -17,12 +17,14 @@ use crate::{
 
 /// struct for passing parameters to the method [`FilesApi::get_files`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetFilesParams<'l1,> {
     pub get_mod_files_request_body: &'l1 GetModFilesRequestBody,
 }
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_file`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetModFileParams<> {
     /// The mod id the file belongs to
     pub mod_id: u64,
@@ -32,6 +34,7 @@ pub struct GetModFileParams<> {
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_file_changelog`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetModFileChangelogParams<> {
     /// The mod id the file belongs to
     pub mod_id: u64,
@@ -41,6 +44,7 @@ pub struct GetModFileChangelogParams<> {
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_file_download_url`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetModFileDownloadUrlParams<> {
     /// The mod id the file belongs to
     pub mod_id: u64,
@@ -50,6 +54,7 @@ pub struct GetModFileDownloadUrlParams<> {
 
 /// struct for passing parameters to the method [`FilesApi::get_mod_files`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetModFilesParams<'l2,> {
     /// The mod id the files belong to
     pub mod_id: u64,
@@ -128,11 +133,8 @@ pub struct FilesApi<'c>(pub(crate) &'c crate::ApiClient);
 impl FilesApi<'_> {
     /// Get a list of files.
     pub async fn get_files(&self, params: &GetFilesParams<'_,>) -> Result<models::GetFilesResponse> {
-        // unwrap the parameters
-        let GetFilesParams { get_mod_files_request_body, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::POST,
             "/v1/mods/files"
         );
@@ -145,48 +147,45 @@ impl FilesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
-        local_var_req_builder = local_var_req_builder.json(get_mod_files_request_body);
 
-        let local_var_resp = local_var_req_builder.send().await?;
+        req_builder = req_builder.json(&params.get_mod_files_request_body);
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 400 => GetFilesError::Status400,
                 404 => GetFilesError::Status404,
                 500 => GetFilesError::Status500,
-                _ => GetFilesError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetFilesError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get a single file of the specified mod.
     pub async fn get_mod_file(&self, params: &GetModFileParams<>) -> Result<models::GetModFileResponse> {
-        // unwrap the parameters
-        let GetModFileParams { mod_id, file_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/mods/{modId}/files/{fileId}"
-            , modId=mod_id
-            , fileId=file_id
+            , modId=params.mod_id
+            , fileId=params.file_id
             )
         );
 
@@ -198,46 +197,43 @@ impl FilesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetModFileError::Status404,
                 500 => GetModFileError::Status500,
-                _ => GetModFileError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetModFileError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get the changelog of a file in HTML format.
     pub async fn get_mod_file_changelog(&self, params: &GetModFileChangelogParams<>) -> Result<models::GetModFileChangelogResponse> {
-        // unwrap the parameters
-        let GetModFileChangelogParams { mod_id, file_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/mods/{modId}/files/{fileId}/changelog"
-            , modId=mod_id
-            , fileId=file_id
+            , modId=params.mod_id
+            , fileId=params.file_id
             )
         );
 
@@ -249,46 +245,43 @@ impl FilesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetModFileChangelogError::Status404,
                 500 => GetModFileChangelogError::Status500,
-                _ => GetModFileChangelogError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetModFileChangelogError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get a download url for a specific file.
     pub async fn get_mod_file_download_url(&self, params: &GetModFileDownloadUrlParams<>) -> Result<models::GetModFileDownloadUrlResponse> {
-        // unwrap the parameters
-        let GetModFileDownloadUrlParams { mod_id, file_id, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/mods/{modId}/files/{fileId}/download-url"
-            , modId=mod_id
-            , fileId=file_id
+            , modId=params.mod_id
+            , fileId=params.file_id
             )
         );
 
@@ -300,45 +293,42 @@ impl FilesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetModFileDownloadUrlError::Status404,
                 500 => GetModFileDownloadUrlError::Status500,
-                _ => GetModFileDownloadUrlError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetModFileDownloadUrlError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get all files of the specified mod.
     pub async fn get_mod_files(&self, params: &GetModFilesParams<'_,>) -> Result<models::GetModFilesResponse> {
-        // unwrap the parameters
-        let GetModFilesParams { mod_id, game_version, mod_loader_type, game_version_type_id, index, page_size, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/mods/{modId}/files"
-            , modId=mod_id
+            , modId=params.mod_id
             )
         );
 
@@ -350,52 +340,47 @@ impl FilesApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        if let Some(ref game_version) = game_version {
-            local_var_req_builder = local_var_req_builder.query(&[("gameVersion", game_version)]);
+        if let Some(ref param_value) = params.game_version {
+            req_builder = req_builder.query(&[("gameVersion", &param_value)]);
+        }
+        if let Some(ref param_value) = params.mod_loader_type {
+            req_builder = req_builder.query(&[("modLoaderType", &param_value)]);
+        }
+        if let Some(ref param_value) = params.game_version_type_id {
+            req_builder = req_builder.query(&[("gameVersionTypeId", &param_value)]);
+        }
+        if let Some(ref param_value) = params.index {
+            req_builder = req_builder.query(&[("index", &param_value)]);
+        }
+        if let Some(ref param_value) = params.page_size {
+            req_builder = req_builder.query(&[("pageSize", &param_value)]);
         }
 
-        if let Some(ref mod_loader_type) = mod_loader_type {
-            local_var_req_builder = local_var_req_builder.query(&[("modLoaderType", mod_loader_type)]);
-        }
+        let resp = req_builder.send().await?;
 
-        if let Some(ref game_version_type_id) = game_version_type_id {
-            local_var_req_builder = local_var_req_builder.query(&[("gameVersionTypeId", game_version_type_id)]);
-        }
+        let status = resp.status();
+        let content = resp.text().await?;
 
-        if let Some(ref index) = index {
-            local_var_req_builder = local_var_req_builder.query(&[("index", index)]);
-        }
-
-        if let Some(ref page_size) = page_size {
-            local_var_req_builder = local_var_req_builder.query(&[("pageSize", page_size)]);
-        }
-
-        let local_var_resp = local_var_req_builder.send().await?;
-
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
-
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetModFilesError::Status404,
                 500 => GetModFilesError::Status500,
-                _ => GetModFilesError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetModFilesError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
 }

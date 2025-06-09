@@ -1,18 +1,25 @@
 [package]
 name = "curseforge-client"
 version = "1.0.240719"
-rust-version = "1.80.0"
 authors = ["OpenAPI Generator team and contributors"]
 description = "HTTP API for CurseForge"
 # Override this license by providing a License Object in the OpenAPI.
 license = "Unlicense"
 edition = "2021"
+rust-version = "1.80.0"
 
 [dependencies]
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-serde_repr = "0.1"
+bon = { version = "^3.6", optional = true }
+serde = { version = "^1.0", features = ["derive"] }
+serde_derive = "^1.0"
+serde_json = "^1.0"
+serde_repr = "^0.1"
 thiserror = "2.0"
-url = "2.5"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "multipart"] }
+url = "^2.5"
+reqwest = { version = "^0.12", default-features = false, features = ["json", "multipart"] }
+
+[features]
+default = ["native-tls"]
+native-tls = ["reqwest/native-tls"]
+rustls = ["reqwest/rustls-tls"]
+bon = ["dep:bon"]

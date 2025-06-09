@@ -17,6 +17,7 @@ use crate::{
 
 /// struct for passing parameters to the method [`MinecraftApi::get_minecraft_mod_loaders`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetMinecraftModLoadersParams<'l1,> {
     pub version: Option<&'l1 str>,
     pub include_all: Option<bool>,
@@ -24,18 +25,21 @@ pub struct GetMinecraftModLoadersParams<'l1,> {
 
 /// struct for passing parameters to the method [`MinecraftApi::get_minecraft_versions`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetMinecraftVersionsParams<> {
     pub sort_descending: Option<bool>,
 }
 
 /// struct for passing parameters to the method [`MinecraftApi::get_specific_minecraft_mod_loader`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetSpecificMinecraftModLoaderParams<'l1,> {
     pub mod_loader_name: &'l1 str,
 }
 
 /// struct for passing parameters to the method [`MinecraftApi::get_specific_minecraft_version`]
 #[derive(Clone, Debug)]
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
 pub struct GetSpecificMinecraftVersionParams<'l1,> {
     pub game_version_string: &'l1 str,
 }
@@ -90,11 +94,8 @@ pub struct MinecraftApi<'c>(pub(crate) &'c crate::ApiClient);
 impl MinecraftApi<'_> {
     /// Get Minecraft ModLoaders
     pub async fn get_minecraft_mod_loaders(&self, params: &GetMinecraftModLoadersParams<'_,>) -> Result<models::ApiResponseOfListOfMinecraftModLoaderIndex> {
-        // unwrap the parameters
-        let GetMinecraftModLoadersParams { version, include_all, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             "/v1/minecraft/modloader"
         );
@@ -107,49 +108,44 @@ impl MinecraftApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        if let Some(ref version) = version {
-            local_var_req_builder = local_var_req_builder.query(&[("version", version)]);
+        if let Some(ref param_value) = params.version {
+            req_builder = req_builder.query(&[("version", &param_value)]);
+        }
+        if let Some(ref param_value) = params.include_all {
+            req_builder = req_builder.query(&[("includeAll", &param_value)]);
         }
 
-        if let Some(ref include_all) = include_all {
-            local_var_req_builder = local_var_req_builder.query(&[("includeAll", include_all)]);
-        }
+        let resp = req_builder.send().await?;
 
-        let local_var_resp = local_var_req_builder.send().await?;
+        let status = resp.status();
+        let content = resp.text().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
-
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetMinecraftModLoadersError::Status404,
                 500 => GetMinecraftModLoadersError::Status500,
-                _ => GetMinecraftModLoadersError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetMinecraftModLoadersError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get Minecraft Versions
     pub async fn get_minecraft_versions(&self, params: &GetMinecraftVersionsParams<>) -> Result<models::ApiResponseOfListOfMinecraftGameVersion> {
-        // unwrap the parameters
-        let GetMinecraftVersionsParams { sort_descending, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             "/v1/minecraft/version"
         );
@@ -162,49 +158,45 @@ impl MinecraftApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        if let Some(ref sort_descending) = sort_descending {
-            local_var_req_builder = local_var_req_builder.query(&[("sortDescending", sort_descending)]);
+        if let Some(ref param_value) = params.sort_descending {
+            req_builder = req_builder.query(&[("sortDescending", &param_value)]);
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
+        let resp = req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let status = resp.status();
+        let content = resp.text().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetMinecraftVersionsError::Status404,
                 500 => GetMinecraftVersionsError::Status500,
-                _ => GetMinecraftVersionsError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetMinecraftVersionsError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get Specific Minecraft ModLoader
     pub async fn get_specific_minecraft_mod_loader(&self, params: &GetSpecificMinecraftModLoaderParams<'_,>) -> Result<models::ApiResponseOfMinecraftModLoaderVersion> {
-        // unwrap the parameters
-        let GetSpecificMinecraftModLoaderParams { mod_loader_name, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/minecraft/modloader/{modLoaderName}"
-            , modLoaderName=crate::urlencode(mod_loader_name)
+            , modLoaderName=crate::urlencode(params.mod_loader_name)
             )
         );
 
@@ -216,45 +208,42 @@ impl MinecraftApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetSpecificMinecraftModLoaderError::Status404,
                 500 => GetSpecificMinecraftModLoaderError::Status500,
-                _ => GetSpecificMinecraftModLoaderError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetSpecificMinecraftModLoaderError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     /// Get Specific Minecraft Version
     pub async fn get_specific_minecraft_version(&self, params: &GetSpecificMinecraftVersionParams<'_,>) -> Result<models::ApiResponseOfMinecraftGameVersion> {
-        // unwrap the parameters
-        let GetSpecificMinecraftVersionParams { game_version_string, } = params;
-
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::GET,
             format_args!(
             "/v1/minecraft/version/{gameVersionString}"
-            , gameVersionString=crate::urlencode(game_version_string)
+            , gameVersionString=crate::urlencode(params.game_version_string)
             )
         );
 
@@ -266,32 +255,32 @@ impl MinecraftApi<'_> {
             if let Some(val) = &auth.api_key_auth {
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("x-api-key", val);
+                req_builder = req_builder.header("x-api-key", val);
             }
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
 
-        let local_var_resp = local_var_req_builder.send().await?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text().await?;
+        let resp = req_builder.send().await?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        let status = resp.status();
+        let content = resp.text().await?;
+
+        if !status.is_client_error() && !status.is_server_error() {
+            serde_json::from_str(&content).map_err(Into::into)
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 404 => GetSpecificMinecraftVersionError::Status404,
                 500 => GetSpecificMinecraftVersionError::Status500,
-                _ => GetSpecificMinecraftVersionError::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => GetSpecificMinecraftVersionError::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            serde_json::from_str(&local_var_content).map_err(Into::into)
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
 }
