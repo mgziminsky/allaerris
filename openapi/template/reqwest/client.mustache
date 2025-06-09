@@ -39,7 +39,7 @@ pub struct ApiClient {
 impl ApiClient {
     /// # PANICS (Debug)
     /// If `user_agent` is blank
-    pub const fn builder(user_agent: &str) -> Builder {
+    pub const fn builder(user_agent: &str) -> Builder<'_> {
         Builder::new(user_agent)
     }
 
@@ -51,7 +51,7 @@ impl ApiClient {
 {{#apiInfo}}
 
 {{#apis}}
-    pub fn {{#lambda.snakecase}}{{{classVarName}}}{{/lambda.snakecase}}(&self) -> apis::{{{classname}}} {
+    pub fn {{#lambda.snakecase}}{{{classVarName}}}{{/lambda.snakecase}}(&self) -> apis::{{{classname}}}<'_> {
         apis::{{{classname}}}(self)
     }
 

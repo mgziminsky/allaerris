@@ -96,7 +96,7 @@ impl Downloadable for MavenFile {
         Some(&self.url)
     }
 
-    fn title(&self) -> std::borrow::Cow<str> {
+    fn title(&self) -> std::borrow::Cow<'_, str> {
         self.title.as_str().into()
     }
 

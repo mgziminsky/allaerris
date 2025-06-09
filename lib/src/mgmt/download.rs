@@ -113,7 +113,7 @@ impl Downloadable for Version {
         self.download_url.as_ref()
     }
 
-    fn title(&self) -> Cow<str> {
+    fn title(&self) -> Cow<'_, str> {
         self.title.as_str().into()
     }
 

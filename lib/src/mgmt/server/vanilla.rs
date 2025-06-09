@@ -85,7 +85,7 @@ impl Downloadable for Meta {
         Some(&self.downloads.server.url)
     }
 
-    fn title(&self) -> Cow<str> {
+    fn title(&self) -> Cow<'_, str> {
         format!("Vanilla Server {}", self.id).into()
     }
 

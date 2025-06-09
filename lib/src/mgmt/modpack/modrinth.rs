@@ -113,7 +113,7 @@ impl Downloadable for IndexFile {
         self.downloads.first()
     }
 
-    fn title(&self) -> Cow<str> {
+    fn title(&self) -> Cow<'_, str> {
         self.path
             .file_name()
             .map(OsStr::as_encoded_bytes)
