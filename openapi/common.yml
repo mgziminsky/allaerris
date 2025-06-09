@@ -8,6 +8,7 @@ library: reqwest
 avoidBoxedModels: true
 bestFitInt: true
 preferUnsignedInt: true
+useBonBuilder: true
 useSingleRequestParameter: true
 
 files:

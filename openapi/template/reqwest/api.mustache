@@ -11,6 +11,9 @@ use crate::{
 {{#hasParams}}
 /// struct for passing parameters to the method [`{{classname}}::{{operationId}}`]
 #[derive(Clone, Debug)]
+{{#useBonBuilder}}
+#[cfg_attr(feature = "bon", derive(::bon::Builder))]
+{{/useBonBuilder}}
 pub struct {{{operationIdCamelCase}}}Params<{{#allParams}}{{^isPrimitiveType}}{{^isEnumRef}}'l{{-index}},{{/isEnumRef}}{{/isPrimitiveType}}{{#isString}}'l{{-index}},{{/isString}}{{/allParams}}> {
     {{#allParams}}
     {{#description}}
@@ -83,24 +86,25 @@ impl {{classname}}<'_> {
     {{/isDeprecated}}
     {{#vendorExtensions.x-group-parameters}}
     pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(&self{{#hasParams}}, params: &{{{operationIdCamelCase}}}Params<{{#allParams}}{{^isPrimitiveType}}{{^isEnumRef}}'_,{{/isEnumRef}}{{/isPrimitiveType}}{{#isString}}'_,{{/isString}}{{/allParams}}>{{/hasParams}}) -> Result<{{#supportMultipleResponses}}ErrorResponse<{{{operationIdCamelCase}}}Success>{{/supportMultipleResponses}}{{^supportMultipleResponses}}{{^returnType}}(){{/returnType}}{{{returnType}}}{{/supportMultipleResponses}}> {
-        {{#hasParams}}
-        // unwrap the parameters
-        let {{{operationIdCamelCase}}}Params { {{#allParams}}{{paramName}}, {{/allParams}}} = params;
-
-        {{/hasParams}}
     {{/vendorExtensions.x-group-parameters}}
     {{^vendorExtensions.x-group-parameters}}
     pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(&self{{#allParams}}, {{{paramName}}}: {{>_api_param}}{{/allParams}}) -> Result<{{#supportMultipleResponses}}ErrorResponse<{{{operationIdCamelCase}}}Success>{{/supportMultipleResponses}}{{^supportMultipleResponses}}{{^returnType}}(){{/returnType}}{{{returnType}}}{{/supportMultipleResponses}}> {
+        {{#allParams}}
+        {{#first}}
+        // add a prefix to parameters to efficiently prevent name collisions
+        {{/first}}
+        let {{{vendorExtensions.x-rust-param-identifier}}} = {{{paramName}}};
+        {{/allParams}}
     {{/vendorExtensions.x-group-parameters}}
         #[allow(unused_mut)]
-        let mut local_var_req_builder = self.0.request(
+        let mut req_builder = self.0.request(
             reqwest::Method::{{{httpMethod}}},
             {{#hasPathParams}}
             format_args!(
             {{/hasPathParams}}
             "{{{path}}}"
             {{#pathParams}}
-            , {{{baseName}}}={{#isString}}crate::urlencode({{/isString}}{{{paramName}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}{{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}
+            , {{{baseName}}}={{#isString}}crate::urlencode({{/isString}}{{{vendorExtensions.x-rust-param-identifier}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}{{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}
             {{/pathParams}}
             {{#hasPathParams}}
             )
@@ -119,7 +123,7 @@ impl {{classname}}<'_> {
             {{#isKeyInHeader}}
                 let mut val = reqwest::header::HeaderValue::from_str(val)?;
                 val.set_sensitive(true);
-                local_var_req_builder = local_var_req_builder.header("{{{keyParamName}}}", val);
+                req_builder = req_builder.header("{{{keyParamName}}}", val);
             {{/isKeyInHeader}}
             {{^isKeyInHeader}}
                 let name = crate::urlencode("{{{keyParamName}}}");
@@ -128,73 +132,125 @@ impl {{classname}}<'_> {
                 cookies.push(format!("{name}={val}"));
             {{/isKeyInCookie}}
             {{#isKeyInQuery}}
-                local_var_req_builder = local_var_req_builder.query(&[name, val]);
+                req_builder = req_builder.query(&[name, val]);
             {{/isKeyInQuery}}
             {{/isKeyInHeader}}
             }
         {{/isApiKey}}
         {{#isBasicBasic}}
             if let Some(BasicAuth{username, password}) = &auth.{{#lambda.snakecase}}{{{name}}}{{/lambda.snakecase}} {
-                local_var_req_builder = local_var_req_builder.basic_auth(username, password.as_deref());
+                req_builder = req_builder.basic_auth(username, password.as_deref());
             }
         {{/isBasicBasic}}
         {{#isBasicBearer}}
             if let Some(token) = &auth.{{#lambda.snakecase}}{{{name}}}{{/lambda.snakecase}} {
-                local_var_req_builder = local_var_req_builder.bearer_auth(token);
+                req_builder = req_builder.bearer_auth(token);
             }
         {{/isBasicBearer}}
         {{/authMethods}}
             if !cookies.is_empty() {
-                local_var_req_builder = local_var_req_builder.header(
+                req_builder = req_builder.header(
                     reqwest::header::COOKIE,
                     reqwest::header::HeaderValue::from_str(&cookies.join("; "))?
                 );
             }
         }
+
         {{/hasAuthMethods}}
         {{#queryParams}}
-
         {{#required}}
         {{#isArray}}
-        local_var_req_builder = match "{{collectionFormat}}" {
-            "multi" => local_var_req_builder.query(&{{{paramName}}}.into_iter().map(|p| ("{{{baseName}}}", p)).collect()),
-            _ => local_var_req_builder.query(&[("{{{baseName}}}", &{{{paramName}}}.join(","))]),
+        req_builder = match "{{collectionFormat}}" {
+            "multi" => req_builder.query(&{{{vendorExtensions.x-rust-param-identifier}}}.iter().map(|p| ("{{{baseName}}}", p)).collect::<Vec<_>>()),
+            _ => req_builder.query(&[("{{{baseName}}}", &{{{vendorExtensions.x-rust-param-identifier}}}.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(","))]),
         };
         {{/isArray}}
         {{^isArray}}
         {{^isNullable}}
-        local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}})]);
+        req_builder = req_builder.query(&[("{{{baseName}}}", &{{{vendorExtensions.x-rust-param-identifier}}})]);
         {{/isNullable}}
         {{#isNullable}}
         {{#isDeepObject}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            let params = super::parse_deep_object("{{{baseName}}}", {{{paramName}}});
-            local_var_req_builder = local_var_req_builder.query(&params);
+        if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            {{^isExplode}}
+            let params = crate::apis::parse_deep_object("{{{baseName}}}", &serde_json::to_value(param_value)?);
+            req_builder = req_builder.query(&params);
+            {{/isExplode}}
+            {{#isExplode}}
+            {{#isModel}}
+            req_builder = req_builder.query(&param_value);
+            {{/isModel}}
+            {{#isMap}}
+            let mut query_params = Vec::with_capacity(param_value.len());
+            for (key, value) in param_value.iter() {
+                query_params.push((key, serde_json::to_string(value)?));
+            }
+            req_builder = req_builder.query(&query_params);
+            {{/isMap}}
+            {{/isExplode}}
         };
         {{/isDeepObject}}
         {{^isDeepObject}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}})]);
+        {{#isObject}}
+        if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            req_builder = req_builder.query(&[("{{{baseName}}}", &serde_json::to_string(param_value)?)]);
         };
+        {{/isObject}}
+        {{#isModel}}
+        if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            req_builder = req_builder.query(&[("{{{baseName}}}", &serde_json::to_string(param_value)?)]);
+        };
+        {{/isModel}}
         {{/isDeepObject}}
+        {{^isObject}}
+        {{^isModel}}
+        if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            req_builder = req_builder.query(&[("{{{baseName}}}", &param_value)]);
+        };
+        {{/isModel}}
+        {{/isObject}}
         {{/isNullable}}
         {{/isArray}}
         {{/required}}
         {{^required}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
+        if let Some({{^isModel}}{{^isMap}}{{^isArray}}ref {{/isArray}}{{/isMap}}{{/isModel}}param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
             {{#isArray}}
-            local_var_req_builder = match "{{collectionFormat}}" {
-                "multi" => local_var_req_builder.query(&{{{paramName}}}.into_iter().map(|p| ("{{{baseName}}}", p))),
-                _ => local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}}.join(","))]),
+            req_builder = match "{{collectionFormat}}" {
+                "multi" => req_builder.query(&param_value.iter().map(|p| ("{{{baseName}}}", p)).collect::<Vec<_>>()),
+                _ => req_builder.query(&[("{{{baseName}}}", &param_value.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(","))]),
             };
             {{/isArray}}
             {{^isArray}}
             {{#isDeepObject}}
-            let params = super::parse_deep_object("{{{baseName}}}", {{{paramName}}});
-            local_var_req_builder = local_var_req_builder.query(&params);
+            {{^isExplode}}
+            let params = crate::apis::parse_deep_object("{{{baseName}}}", &serde_json::to_value(param_value)?);
+            req_builder = req_builder.query(&params);
+            {{/isExplode}}
+            {{#isExplode}}
+            {{#isModel}}
+            req_builder = req_builder.query(&param_value);
+            {{/isModel}}
+            {{#isMap}}
+            let mut query_params = Vec::with_capacity(param_value.len());
+            for (key, value) in param_value.iter() {
+                query_params.push((key, serde_json::to_string(value)?));
+            }
+            req_builder = req_builder.query(&query_params);
+            {{/isMap}}
+            {{/isExplode}}
             {{/isDeepObject}}
             {{^isDeepObject}}
-            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", {{{paramName}}})]);
+            {{#isObject}}
+            req_builder = req_builder.query(&[("{{{baseName}}}", &serde_json::to_string(param_value)?)]);
+            {{/isObject}}
+            {{#isModel}}
+            req_builder = req_builder.query(&[("{{{baseName}}}", &serde_json::to_string(param_value)?)]);
+            {{/isModel}}
+            {{^isObject}}
+            {{^isModel}}
+            req_builder = req_builder.query(&[("{{{baseName}}}", &param_value)]);
+            {{/isModel}}
+            {{/isObject}}
             {{/isDeepObject}}
             {{/isArray}}
         }
@@ -204,47 +260,47 @@ impl {{classname}}<'_> {
         {{#headerParams}}
         {{#required}}
         {{^isNullable}}
-        local_var_req_builder = local_var_req_builder.header("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        req_builder = req_builder.header("{{{baseName}}}", {{{vendorExtensions.x-rust-param-identifier}}}{{#isArray}}.join(","){{/isArray}});
         {{/isNullable}}
         {{#isNullable}}
-        local_var_req_builder = match {{{paramName}}} {
-            Some(ref {{{paramName}}}) => local_var_req_builder.header("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}}),
-            None => local_var_req_builder.header("{{{baseName}}}", ""),
+        match {{{vendorExtensions.x-rust-param-identifier}}} {
+            Some(param_value) => { req_builder = req_builder.header("{{{baseName}}}", param_value{{#isArray}}.join(","){{/isArray}}); },
+            None => { req_builder = req_builder.header("{{{baseName}}}", ""); },
         }
         {{/isNullable}}
         {{/required}}
         {{^required}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            local_var_req_builder = local_var_req_builder.header("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            req_builder = req_builder.header("{{{baseName}}}", param_value{{#isArray}}.join(","){{/isArray}});
         }
         {{/required}}
         {{/headerParams}}
         {{/hasHeaderParams}}
         {{#isMultipart}}
         {{#hasFormParams}}
-        let mut local_var_form = reqwest{{^supportAsync}}::blocking{{/supportAsync}}::multipart::Form::new();
+        let mut multipart_form = reqwest{{^supportAsync}}::blocking{{/supportAsync}}::multipart::Form::new();
         {{#formParams}}
         {{#isFile}}
         {{^supportAsync}}
         {{#required}}
         {{^isNullable}}
-        local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}})?;
+        multipart_form = multipart_form.file("{{{baseName}}}", {{{vendorExtensions.x-rust-param-identifier}}})?;
         {{/isNullable}}
         {{#isNullable}}
-        match {{{paramName}}} {
-            Some(ref {{{paramName}}}) => { local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}})?; },
+        match {{{vendorExtensions.x-rust-param-identifier}}} {
+            Some(param_value) => { multipart_form = multipart_form.file("{{{baseName}}}", param_value)?; },
             None => { unimplemented!("Required nullable form file param not supported"); },
         }
         {{/isNullable}}
         {{/required}}
         {{^required}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}})?;
+        if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            multipart_form = multipart_form.file("{{{baseName}}}", param_value)?;
         }
         {{/required}}
         {{/supportAsync}}
         {{#supportAsync}}
-        if let Some(ref _{{{paramName}}}) = {{{paramName}}} {
+        if {{{vendorExtensions.x-rust-param-identifier}}}.is_some() {
             // FIXME
             return Err(crate::ErrorKind::Other("File uploads not yet supported".into()))?;
         }
@@ -253,113 +309,121 @@ impl {{classname}}<'_> {
         {{^isFile}}
         {{#required}}
         {{^isNullable}}
-        local_var_form = local_var_form.text("{{{baseName}}}", serde_json::to_string({{{paramName}}})?);
+        multipart_form = multipart_form.text("{{{baseName}}}", serde_json::to_string({{{vendorExtensions.x-rust-param-identifier}}})?);
         {{/isNullable}}
         {{#isNullable}}
-        local_var_form = match {{{paramName}}} {
-            Some(ref {{{paramName}}}) => local_var_form.text("{{{baseName}}}", serde_json::to_string({{{paramName}}})?),
-            None => local_var_form.text("{{{baseName}}}", ""),
+        match {{{vendorExtensions.x-rust-param-identifier}}} {
+            Some(param_value) => { multipart_form = multipart_form.text("{{{baseName}}}", serde_json::to_string(param_value)?); },
+            None => { multipart_form = multipart_form.text("{{{baseName}}}", ""); },
         }
         {{/isNullable}}
         {{/required}}
         {{^required}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            local_var_form = local_var_form.text("{{{baseName}}}", serde_json::to_string({{{paramName}}})?);
+        if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            multipart_form = multipart_form.text("{{{baseName}}}", serde_json::to_string(param_value)?);
         }
         {{/required}}
         {{/isFile}}
         {{/formParams}}
-        local_var_req_builder = local_var_req_builder.multipart(local_var_form);
+        req_builder = req_builder.multipart(multipart_form);
         {{/hasFormParams}}
         {{/isMultipart}}
         {{^isMultipart}}
         {{#hasFormParams}}
-        let mut local_var_form_params = std::collections::HashMap::new();
+        let mut multipart_form_params = std::collections::HashMap::new();
         {{#formParams}}
         {{#isFile}}
         {{#required}}
         {{^isNullable}}
-        local_var_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content"));
+        multipart_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content"));
         {{/isNullable}}
         {{#isNullable}}
-        match {{{paramName}}} {
-            Some(ref {{{paramName}}}) => { local_var_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content")); },
+        match {{{vendorExtensions.x-rust-param-identifier}}} {
+            Some(param_value) => { multipart_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content")); },
             None => { unimplemented!("Required nullable file form param not supported with x-www-form-urlencoded content"); },
         }
         {{/isNullable}}
         {{/required}}
         {{^required}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            local_var_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content"));
+        if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            multipart_form_params.insert("{{{baseName}}}", unimplemented!("File form param not supported with x-www-form-urlencoded content"));
         }
         {{/required}}
         {{/isFile}}
         {{^isFile}}
         {{#required}}
         {{^isNullable}}
-        local_var_form_params.insert("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        multipart_form_params.insert("{{{baseName}}}", {{{vendorExtensions.x-rust-param-identifier}}}{{#isArray}}.into_iter().map(|p| p.to_string()).collect::<Vec<String>>().join(","){{/isArray}}.to_string());
         {{/isNullable}}
         {{#isNullable}}
-        match {{{paramName}}} {
-            Some(ref {{{paramName}}}) => { local_var_form_params.insert("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}}); },
-            None => { local_var_form_params.insert("{{{baseName}}}", ""); },
+        match {{{vendorExtensions.x-rust-param-identifier}}} {
+            Some(param_value) => { multipart_form_params.insert("{{{baseName}}}", param_value{{#isArray}}.into_iter().map(|p| p.to_string()).collect::<Vec<String>>().join(","){{/isArray}}.to_string()); },
+            None => { multipart_form_params.insert("{{{baseName}}}", ""); },
         }
         {{/isNullable}}
         {{/required}}
         {{^required}}
-        if let Some(ref {{{paramName}}}) = {{{paramName}}} {
-            local_var_form_params.insert("{{{baseName}}}", {{{paramName}}}{{#isArray}}.join(","){{/isArray}});
+        if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+            multipart_form_params.insert("{{{baseName}}}", param_value{{#isArray}}.into_iter().map(|p| p.to_string()).collect::<Vec<String>>().join(","){{/isArray}}.to_string());
         }
         {{/required}}
         {{/isFile}}
         {{/formParams}}
-        local_var_req_builder = local_var_req_builder.form(local_var_form_params);
+        req_builder = req_builder.form(&multipart_form_params);
         {{/hasFormParams}}
         {{/isMultipart}}
         {{#hasBodyParam}}
         {{#bodyParams}}
-        local_var_req_builder = local_var_req_builder.json({{{paramName}}});
+        req_builder = req_builder.json(&{{{vendorExtensions.x-rust-param-identifier}}});
         {{/bodyParams}}
         {{/hasBodyParam}}
 
-        let local_var_resp = local_var_req_builder.send(){{#supportAsync}}.await{{/supportAsync}}?;
+        let resp = req_builder.send(){{#supportAsync}}.await{{/supportAsync}}?;
 
-        let local_var_status = local_var_resp.status();
-        let local_var_content = local_var_resp.text(){{#supportAsync}}.await{{/supportAsync}}?;
+        let status = resp.status();
+        let content = resp.text(){{#supportAsync}}.await{{/supportAsync}}?;
 
-        if local_var_status.is_client_error() || local_var_status.is_server_error() {
+        if !status.is_client_error() && !status.is_server_error() {
+            {{^supportMultipleResponses}}
+            {{#isResponseFile}}
+            Ok(resp)
+            {{/isResponseFile}}
+            {{^isResponseFile}}
+            {{^returnType}}
+            Ok(())
+            {{/returnType}}
+            {{#returnType}}
+            serde_json::from_str(&content).map_err(Into::into)
+            {{/returnType}}
+            {{/isResponseFile}}
+            {{/supportMultipleResponses}}
+            {{#supportMultipleResponses}}
+            {{#isResponseFile}}
+            Ok(resp)
+            {{/isResponseFile}}
+            {{^isResponseFile}}
+            let entity: Option<{{{operationIdCamelCase}}}Success> = serde_json::from_str(&content).ok();
+            Ok(ResponseContent { status, content, entity })
+            {{/isResponseFile}}
+            {{/supportMultipleResponses}}
+        } else {
             #[allow(clippy::match_single_binding)]
-            let local_var_error = match local_var_status.as_u16() {
+            let error = match status.as_u16() {
                 {{#responses}}
                 {{^is1xx}}
                 {{^is2xx}}
                 {{^is3xx}}
                 {{^isDefault}}
-                {{code}} => {{{operationIdCamelCase}}}Error::Status{{code}}{{#content}}(serde_json::from_str(&local_var_content)?){{/content}},
+                {{code}} => {{{operationIdCamelCase}}}Error::Status{{code}}{{#content}}(serde_json::from_str(&content)?){{/content}},
                 {{/isDefault}}
                 {{/is3xx}}
                 {{/is2xx}}
                 {{/is1xx}}
                 {{/responses}}
-                _ => {{{operationIdCamelCase}}}Error::Unknown(serde_json::from_str(&local_var_content)?),
+                _ => {{{operationIdCamelCase}}}Error::Unknown(serde_json::from_str(&content)?),
             };
-            Err(ErrorResponse { status: local_var_status, content: local_var_content, source: Some(local_var_error.into()) }.into())
-        } else {
-            {{^supportMultipleResponses}}
-            {{^returnType}}
-            Ok(())
-            {{/returnType}}
-            {{#returnType}}
-            serde_json::from_str(&local_var_content).map_err(Into::into)
-            {{/returnType}}
-            {{/supportMultipleResponses}}
-            {{#supportMultipleResponses}}
-            let local_var_entity = serde_json::from_str::<{{{operationIdCamelCase}}}Success>(&local_var_content).ok();
-            let local_var_result = ErrorResponse { status: local_var_status, content: local_var_content, entity: local_var_entity };
-            Ok(local_var_result.into())
-            {{/supportMultipleResponses}}
+            Err(ErrorResponse { status, content, source: Some(error.into()) }.into())
         }
     }
-
     {{/operations.operation}}
 }

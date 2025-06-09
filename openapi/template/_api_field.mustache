@@ -1,1 +1,5 @@
-{{^required}}Option<{{/required}}{{#required}}{{#isNullable}}Option<{{/isNullable}}{{/required}}{{^isPrimitiveType}}{{^isEnumRef}}&'l{{-index}} {{/isEnumRef}}{{/isPrimitiveType}}{{#isString}}&'l{{-index}} str{{/isString}}{{^isString}}{{{dataType}}}{{/isString}}{{#required}}{{#isNullable}}>{{/isNullable}}{{/required}}{{^required}}>{{/required}}
+{{!
+OPTIONAL       }}{{^required}}Option<{{/required}}{{#required}}{{#isNullable}}Option<{{/isNullable}}{{/required}}{{!
+PRIMITIVES     }}{{^isPrimitiveType}}{{^isEnumRef}}&'l{{-index}} {{/isEnumRef}}{{/isPrimitiveType}}{{!
+STRING         }}{{#isString}}&'l{{-index}} str{{/isString}}{{^isString}}{{{dataType}}}{{/isString}}{{!
+CLOSE OPTIONAL }}{{#required}}{{#isNullable}}>{{/isNullable}}{{/required}}{{^required}}>{{/required}}
