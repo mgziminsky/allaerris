@@ -11,21 +11,23 @@
 #[allow(unused_imports)]
 use crate::models;
 
-/// CoreApiStatus Possible enum values:  * 1 = Private  * 2 = Public 
+/// * 0 = All * 1 = Premium * 2 = Free 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
 #[repr(u8)]
-pub enum CoreApiStatus {
+pub enum PremiumType {
     #[default]
-    Private = 1,
-    Public = 2,
+    All = 0,
+    Premium = 1,
+    Free = 2,
 }
 
-impl std::fmt::Display for CoreApiStatus {
+impl std::fmt::Display for PremiumType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Private => "1",
-            Self::Public => "2",
+            Self::All => "0",
+            Self::Premium => "1",
+            Self::Free => "2",
         })
     }
 }

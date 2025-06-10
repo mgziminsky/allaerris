@@ -9,6 +9,7 @@ src/apis/mod.rs
 src/apis/mods_api.rs
 src/client.rs
 src/lib.rs
+src/models/affiliation_service_type.rs
 src/models/api_response_of_list_of_minecraft_game_version.rs
 src/models/api_response_of_list_of_minecraft_mod_loader_index.rs
 src/models/api_response_of_minecraft_game_version.rs
@@ -70,10 +71,17 @@ src/models/mod_description_response.rs
 src/models/mod_links.rs
 src/models/mod_loader_install_method.rs
 src/models/mod_loader_type.rs
+src/models/mod_search_sort_field.rs
 src/models/mod_status.rs
 src/models/model_mod.rs
-src/models/mods_search_sort_field.rs
 src/models/pagination.rs
+src/models/platform_type.rs
+src/models/premium_type.rs
+src/models/rating_details.rs
+src/models/rating_score.rs
 src/models/search_mods_response.rs
+src/models/server_affiliation.rs
+src/models/social_link.rs
+src/models/social_link_type.rs
 src/models/sort_order.rs
 src/models/sortable_game_version.rs

@@ -36,8 +36,14 @@ url = { workspace = true, features = ["serde"] }
 
 # Supported Clients
 # TODO: Make each a feature?
-curseforge = { package = "curseforge-client", path = "../curseforge-client", version = "1.0" }
-modrinth = { package = "modrinth-client", path = "../modrinth-client", version = "2.7" }
+curseforge = { package = "curseforge-client", path = "../curseforge-client", version = "1.0", features = [
+    "bon",
+    "rustls",
+] }
+modrinth = { package = "modrinth-client", path = "../modrinth-client", version = "2.7", features = [
+    "bon",
+    "rustls",
+] }
 github = { package = "octocrab", version = "0.44.1", default-features = false, features = [
     "rustls",
     "default-client",

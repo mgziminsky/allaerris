@@ -55,14 +55,13 @@ impl ApiOps for ForgeClient {
         let mod_id = id.get_forge()?;
         let files = self
             .files()
-            .get_mod_files(&GetModFilesParams {
-                mod_id,
-                game_version,
-                mod_loader_type: loader.map(Into::into),
-                game_version_type_id: None,
-                index: None,
-                page_size: None,
-            })
+            .get_mod_files(
+                &GetModFilesParams::builder()
+                    .mod_id(mod_id)
+                    .maybe_game_version(game_version)
+                    .maybe_mod_loader_type(loader.map(Into::into))
+                    .build(),
+            )
             .await?
             .data
             .into_iter()
@@ -115,7 +114,7 @@ impl ApiOps for ForgeClient {
         let updates = data
             .into_iter()
             .flat_map(|m| {
-                m.latest_file_indexes.into_iter().filter_map(move |fi| {
+                m.latest_files_indexes.into_iter().filter_map(move |fi| {
                     let vid = mods[&m.id].version().unwrap();
                     if fi.mod_loader == loader.into() && vid != &fi.file_id && fi.game_version == game_version {
                         fi.filename.try_into().ok().map(|file| LockedMod {
@@ -197,7 +196,7 @@ mod from {
         config::ModLoader,
     };
 
-    pub const MINECRAFT_GAME_ID: u64 = 432;
+    pub const MINECRAFT_GAME_ID: u32 = 432;
     static HOME: LazyLock<Url> = LazyLock::new(|| {
         "https://www.curseforge.com/minecraft/"
             .parse()
@@ -205,19 +204,19 @@ mod from {
     });
 
     #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-    struct ClassId(u64);
+    struct ClassId(u32);
     #[rustfmt::skip]
     impl ClassId {
         /// Values taken from the api as of 2024-11
-        const BUKKIT: u64        = 5;
-        const MOD: u64           = 6;
-        const RESOURCEPACK: u64  = 12;
-        const WORLD: u64         = 17;
-        const MODPACK: u64       = 4471;
-        const CUSTOMIZATION: u64 = 4546;
-        const ADDON: u64         = 4559;
-        const SHADER: u64        = 6552;
-        const DATAPACK: u64      = 6945;
+        const BUKKIT: u32        = 5;
+        const MOD: u32           = 6;
+        const RESOURCEPACK: u32  = 12;
+        const WORLD: u32         = 17;
+        const MODPACK: u32       = 4471;
+        const CUSTOMIZATION: u32 = 4546;
+        const ADDON: u32         = 4559;
+        const SHADER: u32        = 6552;
+        const DATAPACK: u32      = 6945;
     }
     impl ClassId {
         const fn to_project_type(self) -> Option<ProjectType> {
@@ -309,8 +308,8 @@ mod from {
         }
     }
 
-    const VERSION_TYPE_ID: u64 = 75125;
-    const LOADER_TYPE_ID: u64 = 68441;
+    const VERSION_TYPE_ID: u32 = 75125;
+    const LOADER_TYPE_ID: u32 = 68441;
     impl From<File> for Version {
         fn from(file: File) -> Self {
             let (game_versions, loaders) = file.sortable_game_versions.into_iter().fold((vec![], vec![]), |mut acc, version| {
@@ -381,7 +380,7 @@ mod from {
     }
 
 
-    fn proj_website(class_id: Option<u64>, slug: &str) -> Option<Url> {
+    fn proj_website(class_id: Option<u32>, slug: &str) -> Option<Url> {
         class_id
             .map(ClassId)
             .and_then(ClassId::class_slug)
@@ -401,7 +400,7 @@ mod from {
 
         #[test]
         fn proj_website_unknown() {
-            assert_eq!(proj_website(Some(u64::MAX), "test"), None);
+            assert_eq!(proj_website(Some(u32::MAX), "test"), None);
         }
     }
 }

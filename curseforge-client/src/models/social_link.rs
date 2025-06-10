@@ -12,16 +12,19 @@
 use crate::models;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GetModFileResponse {
-    #[serde(rename = "data")]
-    pub data: models::File,
+pub struct SocialLink {
+    #[serde(rename = "type")]
+    pub r#type: models::SocialLinkType,
+    #[serde(rename = "url")]
+    pub url: ::url::Url,
 }
 
-impl GetModFileResponse {
+impl SocialLink {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(data: models::File) -> Self {
+    pub fn new(r#type: models::SocialLinkType, url: ::url::Url) -> Self {
         Self {
-            data,
+            r#type,
+            url,
         }
     }
 }

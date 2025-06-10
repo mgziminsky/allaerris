@@ -11,21 +11,23 @@
 #[allow(unused_imports)]
 use crate::models;
 
-/// CoreApiStatus Possible enum values:  * 1 = Private  * 2 = Public 
+/// * 1 = Bisect  Note: Bisect appears to have both id 1 and 2 for some reason. This is not documented in the official API spec The official spec also does not mention 0 which appears to be the default for projects that do not use the affiliate program. 
 #[derive(Default, Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[derive(serde_repr::Serialize_repr, serde_repr::Deserialize_repr)]
 #[repr(u8)]
-pub enum CoreApiStatus {
+pub enum AffiliationServiceType {
     #[default]
-    Private = 1,
-    Public = 2,
+    None = 0,
+    Bisect = 1,
+    BisectTwo = 2,
 }
 
-impl std::fmt::Display for CoreApiStatus {
+impl std::fmt::Display for AffiliationServiceType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::Private => "1",
-            Self::Public => "2",
+            Self::None => "0",
+            Self::Bisect => "1",
+            Self::BisectTwo => "2",
         })
     }
 }
