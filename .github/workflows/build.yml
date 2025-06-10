@@ -38,6 +38,7 @@ jobs:
           target: ${{ matrix.target }}
           token: ${{ secrets.GITHUB_TOKEN }}
           checksum: sha256
+          locked: true
           dry-run: ${{ inputs.dry-run }}
       - name: Save Artifacts
         if: ${{ inputs.dry-run }}
