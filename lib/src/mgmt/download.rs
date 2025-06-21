@@ -19,7 +19,7 @@ pub trait Downloadable: Sync {
     /// A unique id for identifying this download
     fn id(&self) -> DownloadId;
     fn download_url(&self) -> Option<&Url>;
-    fn title(&self) -> Cow<str>;
+    fn title(&self) -> Cow<'_, str>;
     fn length(&self) -> u64;
     fn sha1(&self) -> Option<&str>;
 }
