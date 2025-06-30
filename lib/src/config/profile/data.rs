@@ -57,6 +57,10 @@ pub struct ProfileData {
     /// The modpack to use as the base for this profile
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub modpack: Option<Modpack>,
+
+    /// When `true`, client-only mods from modpacks will not be installed
+    #[serde(default, rename = "server")]
+    pub is_server: bool,
 }
 
 macro_rules! remove_sorted {
@@ -166,6 +170,7 @@ impl Default for ProfileData {
             loader: Default::default(),
             mods: Default::default(),
             modpack: None,
+            is_server: false,
         }
     }
 }

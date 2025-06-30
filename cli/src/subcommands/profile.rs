@@ -39,8 +39,9 @@ pub async fn process(subcommand: ProfileSubcommand, config: &mut Config) -> Resu
             loader,
             name,
             path,
+            server,
         } => {
-            create(config, game_version, loader, name, path).await?;
+            create(config, game_version, loader, name, path, server).await?;
             println!(
                 "{}",
                 format!(

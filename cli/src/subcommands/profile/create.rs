@@ -21,6 +21,7 @@ pub async fn create(
     loader: Option<ModLoader>,
     name: Option<String>,
     path: Option<PathBuf>,
+    server: bool,
 ) -> Result<()> {
     let path = path.map_or_else(
         || {
@@ -76,6 +77,7 @@ pub async fn create(
         loader,
         mods: vec![],
         modpack: None,
+        is_server: server,
     });
     config
         .add_profile(profile)

@@ -49,6 +49,7 @@ struct Version {
 }
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[allow(dead_code)]
 enum Type {
     Release,
     Snapshot,

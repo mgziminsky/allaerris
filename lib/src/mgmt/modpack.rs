@@ -14,7 +14,7 @@ use zip::{ZipArchive, read::ZipFile};
 
 use self::{
     forge::ModpackManifest,
-    modrinth::{IndexFile, ModpackIndex, PackDependency},
+    modrinth::{DependencyType, IndexFile, ModpackIndex, PackDependency},
 };
 use super::{cache, events::EventSouce, version::VersionSet};
 use crate::{
@@ -48,10 +48,10 @@ impl ProfileManager {
         };
         pack_version.sha1.replace(sha1);
 
-        self.read_pack(client, &cache_path).await.map(|p| (pack_version, p))
+        self.read_pack(client, &cache_path, data.is_server).await.map(|p| (pack_version, p))
     }
 
-    pub(super) async fn read_pack(&self, client: &Client, path: &Path) -> Result<ModpackData> {
+    pub(super) async fn read_pack(&self, client: &Client, path: &Path, server: bool) -> Result<ModpackData> {
         let mut zip = PackArchive::new(File::open(path).await?.into_std().await).map_err(anyhow::Error::new)?;
 
         macro_rules! parse {
@@ -78,7 +78,7 @@ impl ProfileManager {
             };
         }
         parse!(|index = "modrinth.index.json"| {
-            let (known, unknown) = self.parse_modrinth(client, read_json!(index)).await?;
+            let (known, unknown) = self.parse_modrinth(client, read_json!(index), server).await?;
             (PackMods::Modrinth { known, unknown }, PathScoped::new("overrides").unwrap())
         });
         parse!(|manifest = "manifest.json"| {
@@ -89,7 +89,7 @@ impl ProfileManager {
         Err(anyhow!("Invalid or unsupported modpack").into())
     }
 
-    async fn parse_modrinth(&self, client: &Client, index: ModpackIndex) -> Result<(VersionSet, Vec<IndexFile>)> {
+    async fn parse_modrinth(&self, client: &Client, index: ModpackIndex, server: bool) -> Result<(VersionSet, Vec<IndexFile>)> {
         let client = LazyCell::new(|| client.as_modrinth());
         match index {
             ModpackIndex::V1 {
@@ -114,6 +114,10 @@ impl ProfileManager {
                 let mut pending = vec![];
 
                 for f in &files {
+                    // skip client-only mods on a server
+                    if server && f.env.is_some_and(|env| env.server == DependencyType::Unsupported) {
+                        continue;
+                    }
                     let path = match f.path_scoped() {
                         Ok(p) => p,
                         Err(e) => {

@@ -18,11 +18,11 @@ keywords = [
 
 [dependencies]
 paste = "1"
-quick-xml = { version = "0.37", default-features = false, features = ["serialize"] }
+quick-xml = { version = "0.38", default-features = false, features = ["serialize"] }
 serde-value = "0.7"
 sha1 = "0.10"
 thiserror = "2.0"
-zip = { version = "4.0", default-features = false, features = ["deflate"] }
+zip = { version = "4.3", default-features = false, features = ["deflate"] }
 
 anyhow.workspace = true
 async-scoped.workspace = true

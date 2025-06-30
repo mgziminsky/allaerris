@@ -215,7 +215,7 @@ impl ProfileManager {
                         PathScopedRef::new("modpacks").ok(),
                     );
                     if !self.force && cached.exists() && verify_sha1(&lp.sha1, &cached).await.is_ok_and(identity) {
-                        self.read_pack(client, &cached).await
+                        self.read_pack(client, &cached, data.is_server).await
                     } else {
                         self.fetch_pack(client, lp, data).await.map(|(data, _)| data)
                     }
@@ -231,7 +231,7 @@ impl ProfileManager {
         Ok((data, v.into()))
     }
 
-    /// Fetch the [version] details of all mods that will be installed
+    /// Fetch the [version](Version) details of all mods that will be installed
     ///
     /// [version]: crate::client::schema::Version
     async fn fetch_versions(

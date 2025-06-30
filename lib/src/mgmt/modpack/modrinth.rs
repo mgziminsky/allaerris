@@ -66,13 +66,13 @@ pub enum PackDependency {
     QuiltLoader,
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PackEnv {
     pub client: DependencyType,
     pub server: DependencyType,
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum DependencyType {
     Required,

@@ -226,6 +226,9 @@ pub enum ProfileSubcommand {
         #[arg(long, short)]
         #[arg(value_hint(ValueHint::DirPath))]
         path: Option<PathBuf>,
+        // Profile is for a server. Skip installing client-only mods
+        #[arg(long, short)]
+        server: bool,
     },
     /// Add/import an existing profile path to the config
     #[command(visible_aliases = ["add"])]
